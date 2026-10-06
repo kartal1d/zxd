@@ -54,10 +54,14 @@ STYLES = {
     "tonton_sad":    dict(model="fahrettin", speed=0.85, f0=1.80, contour=1.10, formant=1.28, whisper=0.2, vibrato=(6.5, 0.035)),
     "narrator":      dict(model="fettah",    speed=0.92, f0=0.72, contour=1.10, formant=0.92),
     "narrator_slow": dict(model="fettah",    speed=0.74, f0=0.58, contour=0.60, formant=0.90),
+    # 3-10. kasetler: Nermin hala (kurgucu), yapımcı Rıza Bey, 1998'deki gerçek, yaşayan Beste
+    "nermin":        dict(model="fettah",    speed=0.92, f0=1.32, contour=0.80, formant=1.09, whisper=0.12),
+    "riza":          dict(model="fahrettin", speed=1.00, f0=0.86, contour=0.55, formant=0.93),
+    "beste_kiz":     dict(model="fettah",    speed=0.98, f0=1.58, contour=1.00, formant=1.22, whisper=0.06, vibrato=(5.0, 0.01)),
 }
 
 # Ileri yonde ters calinan (geri sarinca anlasilan) replikler.
-REVERSED = {"b2_real"}
+REVERSED = {"b2_real", "k3_ters", "k4_ters", "k6_ters", "k7_ters", "k8_ters", "k9_ters", "k10_ters"}
 
 _tts_cache = {}
 

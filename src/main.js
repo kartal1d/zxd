@@ -13,13 +13,14 @@ import { UI, SECRETS } from './ui.js';
 import * as S from './draw/scenes.js';
 import { tape1 } from './tapes/tape1.js';
 import { tape2 } from './tapes/tape2.js';
-import { tape3 } from './tapes/tape3.js';
+import { tape10 } from './tapes/tape10.js';
 import { storage, clamp } from './util.js';
 
 const $ = (id) => document.getElementById(id);
 const SAVE_KEY = 'beste-kayit-v1';
 const SETTINGS_KEY = 'beste-ayarlar-v1';
-const TAPES = { 1: tape1, 2: tape2, 3: tape3 };
+// geçiş dönemi: final kaseti (tape10.js) şimdilik 3. sırada; yeni kasetler eklenince 10'a taşınır
+const TAPES = { 1: tape1, 2: tape2, 3: tape10 };
 /** Son kaset: bitince oyun sona erer. */
 const FINAL = 3;
 const TAPE_NAMES = { 1: "Kaset 1 — 'Beste ile Tanışalım!'", 2: "Kaset 2 — 'Tonton Kedi'nin Kuyruğu'", 3: "Kaset 3 — 'SON'" };
@@ -447,6 +448,18 @@ class Game {
     }
     if (this.mode !== 'play') return;
 
+    // kasetin kendi tuş dinleyicisi (ör. heykel oyunu); cevap kutusu açıkken çağrılmaz
+    const dir = this.director;
+    if (dir.active && !dir.input && dir.onKey && dir.onKey(e)) {
+      e.preventDefault();
+      return;
+    }
+    // sahte bitişte F ve E sessizce yutulur (kaset bitmiş gibi görünmeli)
+    if (dir.fakeEnding && /^[fFeE]$/.test(k)) {
+      e.preventDefault();
+      return;
+    }
+
     if (k === 'ArrowLeft') {
       e.preventDefault();
       if (!e.repeat) {
@@ -507,6 +520,7 @@ class Game {
       case 'tapebox':
         return !st.tapes.includes(1) ? 'Kaseti al' : 'Eski kaset kutuları';
       case 'vcr':
+        if (this.director.fakeEnding) return 'Video oynatıcı';
         if (playing || this.loadingTape) return 'Kaset oynuyor';
         if (this.newTape()) return '<b>Kaseti tak</b>';
         return st.tapes.length ? 'Kaset seç' : 'Video oynatıcı';
@@ -535,7 +549,7 @@ class Game {
   }
 
   async interact(id) {
-    if (!id || this.overlay || this.room.locked) return;
+    if (!id || this.overlay || this.room.locked || this.director.fakeEnding) return;
     const st = this.state;
     const ui = this.ui;
     const au = this.audio;
@@ -626,6 +640,7 @@ class Game {
 
   /** Kaset oynarken ekrandan ayrılmak yok: odak kilitli kalır. */
   toggleFocus() {
+    if (this.director.fakeEnding) return;
     if (this.director.active || this.loadingTape) {
       this.room.setFocus(true);
       this.ui.toast('Kaset oynarken ekrandan ayrılamazsın.', 2.5);
@@ -723,7 +738,7 @@ class Game {
     this.room.vcrText = 'PLAY';
     this.audio.sfx('tvOn');
     this.ui.show('vcr-hint', true);
-    const res = await this.director.play(TAPES[n], 't' + n);
+    const res = await this.director.play(TAPES[n], 't' + n, { firstViewing: n > st.stage });
     this.ui.show('vcr-hint', false);
     this.audio.setHiss(false);
     this.audio.setTapeFx('off', 0.5);
@@ -782,6 +797,23 @@ class Game {
       return;
     }
     this.updateObjective();
+  }
+
+  /** Kasetin sahte bitişi: VCR ve bildirimler gerçekten bitmiş gibi davranır. */
+  fakeEnd(on) {
+    const r = this.room;
+    if (on) {
+      this.audio.sfx('vcrEject', r.points.vcr);
+      r.vcrText = 'STOP';
+      setTimeout(() => {
+        if (this.director.fakeEnding) r.vcrText = '12:00';
+      }, 1200);
+      this.ui.show('vcr-hint', false);
+      this.ui.toast('Kaset bitti ve kendiliğinden dışarı çıktı.');
+    } else if (this.director.active) {
+      r.vcrText = 'PLAY';
+      this.ui.show('vcr-hint', true);
+    }
   }
 
   foundSecret(id, text) {

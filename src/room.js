@@ -567,6 +567,14 @@ export class Room {
     this.bulb.shadow.camera.near = 0.05;
     this.bulbGroup.add(this.bulb);
     this.points.bulb = new THREE.Vector3(0, 2.2, -0.35);
+    // yeni kasetlerin konumlu sesleri için noktalar
+    this.points.phone = new THREE.Vector3(-2.45, 0.42, 1.9);
+    this.points.chest = new THREE.Vector3(1.3, 0.3, 0.85);
+    this.points.chairLeg = new THREE.Vector3(-0.2, 0.2, 0.53);
+    this.points.behind = new THREE.Vector3(0, 1.1, 1.5);
+    this.points.floorboard = new THREE.Vector3(-0.6, 0.02, 0.9);
+    this.points.giftbox = new THREE.Vector3(2.2, 0.15, 2.2);
+    this.points.stairs = new THREE.Vector3(-1.2, 0.6, 3.6);
     this.tag(bulb, 'bulb');
 
     // ay ışığı

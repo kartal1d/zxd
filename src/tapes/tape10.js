@@ -1,9 +1,9 @@
-// KASET 3 — "Zamanın Sonu ve Gerçek" (final ve kaçış)
+// KASET 10 — "Zamanın Sonu" (final ve kaçış)
 import * as S from '../draw/scenes.js';
 import { has, digits, norm } from '../util.js';
 import { parseNum, YES, NO, repeatText } from './common.js';
 
-export async function tape3(d) {
+export async function tape10(d) {
   const g = d.g;
   const st = g.state;
   const B = d.chars.beste;

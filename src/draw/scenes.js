@@ -2,25 +2,25 @@
 import { hash, clamp } from '../util.js';
 import { TV_W as W, TV_H as H } from '../tv.js';
 
-const OUT = '#2a1712';
+export const OUT = '#2a1712';
 export const FONT_CARTOON = '"Baloo 2", "Comic Sans MS", sans-serif';
 export const FONT_OSD = '"VT323", "Courier New", monospace';
 export const FONT_HAND = '"Caveat", "Segoe Print", cursive';
 
-function rr(ctx, x, y, w, h, r) {
+export function rr(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h);
 }
-function stroke(ctx, lw = 4, c = OUT) {
+export function stroke(ctx, lw = 4, c = OUT) {
   ctx.lineWidth = lw;
   ctx.strokeStyle = c;
   ctx.stroke();
 }
-function fill(ctx, c) {
+export function fill(ctx, c) {
   ctx.fillStyle = c;
   ctx.fill();
 }
-function star(ctx, x, y, r, rot = 0) {
+export function star(ctx, x, y, r, rot = 0) {
   ctx.beginPath();
   for (let i = 0; i < 10; i++) {
     const a = rot + (i * Math.PI) / 5 - Math.PI / 2;
@@ -29,7 +29,7 @@ function star(ctx, x, y, r, rot = 0) {
   }
   ctx.closePath();
 }
-function cloud(ctx, x, y, s) {
+export function cloud(ctx, x, y, s) {
   ctx.beginPath();
   ctx.arc(x, y, 18 * s, Math.PI * 0.5, Math.PI * 1.5);
   ctx.arc(x + 20 * s, y - 16 * s, 22 * s, Math.PI, Math.PI * 2);
@@ -39,7 +39,7 @@ function cloud(ctx, x, y, s) {
   stroke(ctx, 3);
 }
 /** Karanlık / solma katmanı */
-function shade(ctx, dark) {
+export function shade(ctx, dark) {
   if (dark > 0) {
     ctx.fillStyle = `rgba(5,2,10,${clamp(dark, 0, 1)})`;
     ctx.fillRect(0, 0, W, H);
@@ -88,7 +88,7 @@ export function staticNoise(ctx, t, amount = 1) {
   ctx.restore();
 }
 
-export function warning(ctx, t) {
+export function warning(ctx, t, o = {}) {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = '#0d2fb0';
@@ -100,9 +100,9 @@ export function warning(ctx, t) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.font = `bold 40px ${FONT_OSD}`;
-  ctx.fillText('UYARI', W / 2, 96);
+  ctx.fillText(o.title || 'UYARI', W / 2, 96);
   ctx.font = `26px ${FONT_OSD}`;
-  const lines = [
+  const lines = o.lines || [
     'Bu kaset yalnızca evde, aile ile',
     'birlikte izlenmek içindir.',
     '',
@@ -544,7 +544,7 @@ export function bgGarden(ctx, t, o = {}) {
   ctx.beginPath();
   ctx.arc(320, 145, 95, 0, Math.PI * 2);
   ctx.fill();
-  APPLES.forEach(([x, y], i) => {
+  (o.apples || APPLES).forEach(([x, y], i) => {
     const hl = o.counted != null && i < o.counted;
     ctx.beginPath();
     ctx.arc(x, y, 15, 0, Math.PI * 2);
@@ -804,7 +804,7 @@ export function bgForest(ctx, t, o = {}) {
   shade(ctx, dark * 0.3);
 }
 
-function pine(ctx, x, base, h, color) {
+export function pine(ctx, x, base, h, color) {
   ctx.fillStyle = '#5a3a1e';
   ctx.fillRect(x - 5, base - 20, 10, 20);
   for (let k = 0; k < 3; k++) {
@@ -860,7 +860,7 @@ function bigTree(ctx, x, t, carving) {
 }
 
 /** Ağaçtaki oymanın yakın planı */
-export function treeCarving(ctx, t) {
+export function treeCarving(ctx, t, o = {}) {
   ctx.fillStyle = '#6e3f1e';
   ctx.fillRect(0, 0, W, H);
   ctx.strokeStyle = 'rgba(40,20,8,.6)';
@@ -881,13 +881,21 @@ export function treeCarving(ctx, t) {
   ctx.font = `800 54px ${FONT_CARTOON}`;
   ctx.lineWidth = 10;
   ctx.strokeStyle = '#2a1206';
-  ctx.strokeText('B.A.', 0, -112);
+  const top = o.top ?? 'B.A.';
+  const big = o.big ?? '1405';
+  ctx.strokeText(top, 0, -112);
   ctx.fillStyle = '#ffe2b8';
-  ctx.fillText('B.A.', 0, -112);
-  ctx.font = `800 170px ${FONT_CARTOON}`;
+  ctx.fillText(top, 0, -112);
+  ctx.font = `800 ${o.bigSize || 170}px ${FONT_CARTOON}`;
   ctx.lineWidth = 16;
-  ctx.strokeText('1405', 0, 30);
-  ctx.fillText('1405', 0, 30);
+  ctx.strokeText(big, 0, 30);
+  ctx.fillText(big, 0, 30);
+  if (o.bottom) {
+    ctx.font = `800 40px ${FONT_CARTOON}`;
+    ctx.lineWidth = 8;
+    ctx.strokeText(o.bottom, 0, 150);
+    ctx.fillText(o.bottom, 0, 150);
+  }
   ctx.restore();
   // kalp yerine çizik bir daire
   ctx.strokeStyle = '#ffe2b8';
@@ -913,17 +921,18 @@ export function bgRules(ctx, t, o = {}) {
   ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(255,255,255,.92)';
   ctx.font = `700 34px ${FONT_HAND}`;
-  ctx.fillText("BESTE'NİN KURALLARI", 64, 98);
+  ctx.fillText(o.title || "BESTE'NİN KURALLARI", 64, 98);
   ctx.fillRect(64, 118, 300, 3);
   ctx.font = `700 30px ${FONT_HAND}`;
-  const shown = o.shown ?? 4;
-  RULES.slice(0, shown).forEach((r, i) => {
+  const rules = o.rules || RULES;
+  const shown = o.shown ?? rules.length;
+  rules.slice(0, shown).forEach((r, i) => {
     ctx.fillStyle = o.highlight === i ? '#ffe14d' : 'rgba(255,255,255,.9)';
     ctx.fillText(r, 70, 160 + i * 44);
   });
   if (o.extra) {
-    ctx.fillStyle = 'rgba(255,90,90,.9)';
-    ctx.fillText(o.extra, 70, 160 + 4 * 44);
+    ctx.fillStyle = o.extraColor || 'rgba(255,90,90,.9)';
+    ctx.fillText(o.extra, 70, 160 + Math.min(rules.length, 4) * 44);
   }
   for (const [x, y] of [[420, 70], [60, 320]]) {
     star(ctx, x, y, 14, 0.3);
@@ -1126,7 +1135,7 @@ export function promptBox(ctx, t, text, o = {}) {
   ctx.fillStyle = evil ? '#ff6060' : '#2c7be5';
   const shown = (text || '').toLocaleUpperCase('tr');
   const cursor = Math.floor(t * 2.4) % 2 ? '_' : ' ';
-  ctx.fillText('> ' + shown + cursor, 92, y + 30);
+  ctx.fillText((o.label ? o.label + ' ' : '> ') + shown + cursor, 92, y + 30);
   ctx.restore();
 }
 
@@ -1182,7 +1191,7 @@ export function bigText(ctx, text, o = {}) {
   ctx.restore();
 }
 
-function mixHex(a, b, t) {
+export function mixHex(a, b, t) {
   if (!t) return a;
   const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
   const r = Math.round(((pa >> 16) & 255) * (1 - t) + ((pb >> 16) & 255) * t);

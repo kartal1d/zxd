@@ -41,7 +41,8 @@ function limb(ctx, pts, w, color) {
 /**
  * Beste.
  * s = { x, y, scale, mouth 0..1, look {x,y} -1..1, blink 0..1, expr, wave 0..1, t, flip, dress }
- * expr: 'happy' | 'neutral' | 'frozen' | 'sad' | 'void' | 'angry'
+ * expr: 'happy' | 'neutral' | 'frozen' | 'sad' | 'void' | 'angry' | 'blank' (yüzü yok)
+ * back: true ise arkadan görünüş (yalnızca saç, örgüler, elbisenin arkası)
  */
 export function drawBeste(ctx, s) {
   const t = s.t || 0;
@@ -140,6 +141,18 @@ function drawBesteHead(ctx, s, t) {
   // saç kütlesi
   circle(ctx, 0, -6, 68);
   fs(ctx, HAIR);
+  if (s.back) {
+    // arkadan: ense saçı ve ayrık çizgisi, yüz görünmez
+    ellipse(ctx, 0, 10, 60, 58);
+    fs(ctx, HAIR, 3.5);
+    ctx.strokeStyle = 'rgba(0,0,0,.35)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, -70);
+    ctx.lineTo(0, 30);
+    ctx.stroke();
+    return;
+  }
   // kulaklar
   circle(ctx, -60, 6, 11);
   fs(ctx, SKIN, 3.5);
@@ -167,6 +180,8 @@ function drawBesteHead(ctx, s, t) {
   ctx.stroke();
 
   const expr = s.expr || 'happy';
+  // yüzsüz: yalnızca boş ten
+  if (expr === 'blank') return;
   // yanaklar
   if (expr !== 'void') {
     ctx.fillStyle = expr === 'frozen' ? 'rgba(255,90,110,.6)' : 'rgba(255,120,140,.45)';
@@ -318,6 +333,8 @@ function drawMouth(ctx, expr, m, t) {
 
 /**
  * Tonton Kedi. s = { x, y, scale, mouth, look, blink, expr: 'happy'|'sad'|'scared', tail: bool, tremble 0..1, t }
+ * stitched: true -> yeniden dikilmiş hali: düğme gözler, dikişli ağız (hiç açılmaz), göğüste dikiş, gri X dikişli kuyruk.
+ * tailColor: kuyruk rengi (varsayılan turuncu; dikişlide gri)
  */
 export function drawTonton(ctx, s) {
   const t = s.t || 0;
@@ -333,21 +350,36 @@ export function drawTonton(ctx, s) {
 
   // kuyruk
   if (s.tail !== false) {
-    const sw = Math.sin(t * 3) * 10;
+    const sw = s.stitched ? Math.sin(t * 1.2) * 3 : Math.sin(t * 3) * 10;
+    const tailCol = s.tailColor || (s.stitched ? '#8d8f94' : ORANGE);
     ctx.beginPath();
     ctx.moveTo(34, -24);
     ctx.bezierCurveTo(80, -20, 80 + sw * 0.3, -70, 62 + sw, -96);
     ctx.strokeStyle = OUT;
     ctx.lineWidth = 22;
     ctx.stroke();
-    ctx.strokeStyle = ORANGE;
+    ctx.strokeStyle = tailCol;
     ctx.lineWidth = 14;
     ctx.stroke();
-    ctx.strokeStyle = DARK;
-    ctx.lineWidth = 14;
-    ctx.setLineDash([6, 12]);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    if (s.stitched) {
+      // kuyruğun dikildiği yer: siyah X dikişler
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 2;
+      for (const [x, y] of [[38, -26], [44, -24], [50, -23]]) {
+        ctx.beginPath();
+        ctx.moveTo(x - 3, y - 6);
+        ctx.lineTo(x + 3, y + 6);
+        ctx.moveTo(x + 3, y - 6);
+        ctx.lineTo(x - 3, y + 6);
+        ctx.stroke();
+      }
+    } else {
+      ctx.strokeStyle = DARK;
+      ctx.lineWidth = 14;
+      ctx.setLineDash([6, 12]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
   } else {
     // kuyruğun olması gereken yerde küçük bir yara bandı
     ctx.save();
@@ -365,6 +397,21 @@ export function drawTonton(ctx, s) {
   fs(ctx, ORANGE);
   ellipse(ctx, 0, -32 + breathe * 0.5, 26, 28);
   fs(ctx, '#ffe7c4', 0);
+  if (s.stitched) {
+    // göğüs dikişi
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -58);
+    ctx.lineTo(0, -12);
+    ctx.stroke();
+    for (let y = -54; y < -12; y += 7) {
+      ctx.beginPath();
+      ctx.moveTo(-5, y);
+      ctx.lineTo(5, y + 4);
+      ctx.stroke();
+    }
+  }
   // patiler
   for (const px of [-20, 20]) {
     ellipse(ctx, px, -4, 14, 9);
@@ -400,7 +447,28 @@ export function drawTonton(ctx, s) {
   // gözler
   const look = s.look || { x: 0, y: 0 };
   const expr = s.expr || 'happy';
-  for (const side of [-1, 1]) {
+  if (s.stitched) {
+    // düğme gözler: dört delik ve çapraz iplik, bakış yok
+    for (const side of [-1, 1]) {
+      const ex = side * 17, ey = -4;
+      circle(ctx, ex, ey, 10);
+      fs(ctx, '#1a1a1e', 3);
+      ctx.fillStyle = '#4a4a52';
+      for (const [dx, dy] of [[-3, -3], [3, -3], [-3, 3], [3, 3]]) {
+        circle(ctx, ex + dx, ey + dy, 1.6);
+        ctx.fill();
+      }
+      ctx.strokeStyle = '#d9d2c0';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(ex - 3, ey - 3);
+      ctx.lineTo(ex + 3, ey + 3);
+      ctx.moveTo(ex + 3, ey - 3);
+      ctx.lineTo(ex - 3, ey + 3);
+      ctx.stroke();
+    }
+  }
+  for (const side of s.stitched ? [] : [-1, 1]) {
     const ex = side * 17, ey = -4;
     ellipse(ctx, ex, ey, 11, expr === 'scared' ? 16 : 14);
     fs(ctx, '#ffffff', 3);
@@ -442,10 +510,24 @@ export function drawTonton(ctx, s) {
   ctx.lineTo(0, 15);
   ctx.closePath();
   fs(ctx, '#ff7f9a', 2.5);
-  const m = s.mouth || 0;
+  const m = s.stitched ? 0 : s.mouth || 0;
   ctx.strokeStyle = OUT;
   ctx.lineWidth = 3;
-  if (m > 0.08) {
+  if (s.stitched) {
+    // dikişli ağız: konuşsa da kıpırdamaz
+    ctx.beginPath();
+    ctx.moveTo(-10, 19);
+    ctx.lineTo(10, 19);
+    ctx.stroke();
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 1.6;
+    for (let x = -8; x <= 8; x += 4) {
+      ctx.beginPath();
+      ctx.moveTo(x - 1.5, 16);
+      ctx.lineTo(x + 1.5, 22);
+      ctx.stroke();
+    }
+  } else if (m > 0.08) {
     ellipse(ctx, 0, 22 + m * 3, 7, 3 + m * 7);
     fs(ctx, '#7a1f2b', 2.5);
   } else {

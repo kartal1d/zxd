@@ -16,6 +16,7 @@ export class AudioEngine {
     this.buffers = new Map();
     this.level = 0;
     this.voices = new Set();
+    this.roomVoices = new Set();
     this.fx = { ...TAPE_FX.off };
   }
 
@@ -200,17 +201,56 @@ export class AudioEngine {
   }
 
   // ---------------------------------------------------------------- sesler
+  /**
+   * opts.bucket === 'room': odadan gelen ses; kaset duraklatma / ileri sarma bunu etkilemez.
+   * opts.filter: 'talkback' (kontrol odası hoparlörü) | 'camcorder' (1998 kamera kaydı)
+   */
   playVoice(id, opts = {}) {
     const buf = this.buffers.get(id);
+    const room = opts.bucket === 'room';
     const h = new VoiceHandle(this, buf, {
-      rate: (opts.rate ?? 1) * this.fx.rate,
+      rate: (opts.rate ?? 1) * (room ? 1 : this.fx.rate),
       gain: opts.gain ?? 1,
       detune: opts.detune ?? 0,
-      dest: opts.dest ?? this.voiceIn,
+      dest: opts.dest ?? (opts.filter ? this.filterDest(opts.filter) : room ? this.room : this.voiceIn),
     });
-    this.voices.add(h);
-    h.promise.then(() => this.voices.delete(h));
+    const set = room ? this.roomVoices : this.voices;
+    set.add(h);
+    h.promise.then(() => set.delete(h));
     return h;
+  }
+
+  /** Odada belirli bir noktadan gelen ses (duraklatmadan etkilenmez). */
+  playRoomVoice(id, { pos, gain = 1, rate = 1, detune = 0, wet = 0.4 } = {}) {
+    const dest = pos ? this.at(pos.x, pos.y, pos.z, wet) : this.room;
+    return this.playVoice(id, { bucket: 'room', dest, gain, rate, detune });
+  }
+
+  filterDest(name) {
+    this._filters = this._filters || {};
+    if (this._filters[name]) return this._filters[name];
+    const ctx = this.ctx;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    if (name === 'talkback') {
+      hp.frequency.value = 300;
+      lp.frequency.value = 3000;
+      const sh = ctx.createWaveShaper();
+      sh.curve = this.makeCurve(0.45);
+      hp.connect(lp).connect(sh).connect(this.voiceIn);
+    } else {
+      // camcorder: dar bantlı, hafif oda yankılı
+      hp.frequency.value = 180;
+      lp.frequency.value = 5500;
+      hp.connect(lp).connect(this.voiceIn);
+      const send = ctx.createGain();
+      send.gain.value = 0.25;
+      lp.connect(send).connect(this.reverb);
+    }
+    this._filters[name] = hp;
+    return hp;
   }
 
   pauseVoices() {
@@ -219,8 +259,10 @@ export class AudioEngine {
   resumeVoices() {
     for (const v of this.voices) v.resume();
   }
-  stopVoices() {
+  /** all = true: odadaki sesler de durur (kaset iptali, ana menü). */
+  stopVoices(all = true) {
     for (const v of [...this.voices]) v.stop();
+    if (all) for (const v of [...this.roomVoices]) v.stop();
   }
 
   /** Dudak senkronu için ses seviyesi (0..1). */
@@ -362,6 +404,31 @@ export class AudioEngine {
   }
 }
 
+/** Sürekli çalan ses döngüsü: make(ctx, out) kaynakları döndürür; dönen fonksiyon sesi kısıp durdurur. */
+function loop(dest, gain, make) {
+  const ctx = this.ctx;
+  const out = ctx.createGain();
+  out.gain.setValueAtTime(0, this.now);
+  out.gain.linearRampToValueAtTime(gain, this.now + 0.4);
+  out.connect(dest);
+  const srcs = make(ctx, out);
+  return () => {
+    const now = this.now;
+    out.gain.cancelScheduledValues(now);
+    out.gain.setTargetAtTime(0, now, 0.05);
+    setTimeout(() => {
+      for (const s of srcs) {
+        try {
+          s.stop();
+        } catch {
+          /* zaten durdu */
+        }
+      }
+      out.disconnect();
+    }, 400);
+  };
+}
+
 function setPos(p, x, y, z) {
   if (p.positionX) {
     p.positionX.value = x;
@@ -449,6 +516,18 @@ const THEME = [
   [67, 1], [64, 1], [62, 1], [67, 1], [60, 4],
 ];
 const BASS_ROOTS = [48, 45, 50, 43, 48, 41, 43, 48];
+// "İyi ki doğdun" (Happy Birthday, kamu malı). null = es. 3/4 ölçü, ilk iki vuruş es + öncü notalar.
+const BIRTHDAY = [
+  [null, 2], [67, 0.75], [67, 0.25],
+  [69, 1], [67, 1], [72, 1], [71, 2], [67, 0.75], [67, 0.25],
+  [69, 1], [67, 1], [74, 1], [72, 2], [67, 0.75], [67, 0.25],
+  [79, 1], [76, 1], [72, 1], [71, 1], [69, 1], [77, 0.75], [77, 0.25],
+  [76, 1], [72, 1], [74, 1], [72, 3],
+];
+const SONGS = {
+  theme: { notes: THEME, roots: BASS_ROOTS, meter: 4 },
+  birthday: { notes: BIRTHDAY, roots: [48, 48, 43, 43, 48, 48, 41, 48, 48], meter: 3 },
+};
 const MINOR = { 4: 3, 9: 8, 11: 10 }; // Mi->Mib, La->Lab, Si->Sib (do minör)
 const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
@@ -461,15 +540,18 @@ class Music {
   }
 
   /**
-   * mode: 'jingle' (açılış, ksilofon + bas + davul), 'box' (müzik kutusu), 'creepy' (minör, yavaşlayan)
+   * mode: 'jingle' (açılış, ksilofon + bas + davul), 'box' (müzik kutusu), 'creepy' (minör, yavaşlayan),
+   *       'birthday' (İyi ki doğdun, ksilofon + bas, bir kez çalar).
+   * o.song: 'theme' | 'birthday' (varsayılan moda göre), o.loop, o.tempo, o.detune, o.drift, o.minor, o.gain
    */
   play(mode, o = {}) {
     this.stop(0.05);
     const ctx = this.e.ctx;
     this.mode = mode;
+    this.song = SONGS[o.song || (mode === 'birthday' ? 'birthday' : 'theme')];
     this.o = {
-      tempo: mode === 'jingle' ? 152 : mode === 'creepy' ? 58 : 96,
-      loop: mode !== 'jingle',
+      tempo: mode === 'jingle' ? 152 : mode === 'creepy' ? 58 : mode === 'birthday' ? 104 : 96,
+      loop: mode !== 'jingle' && mode !== 'birthday',
       minor: mode === 'creepy',
       detune: mode === 'creepy' ? -220 : 0,
       drift: mode === 'creepy' ? 0.012 : 0,
@@ -492,8 +574,10 @@ class Music {
   tick() {
     if (this.paused || !this.playing) return;
     const ctx = this.e.ctx;
+    const notes = this.song.notes;
+    const meter = this.song.meter;
     while (this.next < ctx.currentTime + 0.25) {
-      if (this.idx >= THEME.length) {
+      if (this.idx >= notes.length) {
         if (!this.o.loop) {
           const end = this.next + 0.8;
           setTimeout(() => this.finish(), (end - ctx.currentTime) * 1000);
@@ -503,20 +587,26 @@ class Music {
         }
         this.idx = 0;
       }
-      const [m0, beats] = THEME[this.idx];
+      const [m0, beats] = notes[this.idx];
       const spb = (60 / this.o.tempo) * (1 + this.o.drift * this.beat);
       const dur = beats * spb;
       let m = m0;
-      if (this.o.minor && MINOR[m % 12] !== undefined) m = m - (m % 12) + MINOR[m % 12];
+      if (m != null && this.o.minor && MINOR[m % 12] !== undefined) m = m - (m % 12) + MINOR[m % 12];
       const det = this.o.detune + (this.o.minor ? rand(-18, 18) : 0);
-      this.note(this.next, m, dur, det);
-      // bas: her ölçünün başında
-      if (this.beat % 4 === 0) {
-        const bar = Math.floor(this.beat / 4) % 8;
-        let r = BASS_ROOTS[bar];
+      if (m != null) this.note(this.next, m, dur, det);
+      // bas: her ölçünün başında (4/4: kök + beşli, 3/4: um-pa-pa)
+      if (Math.abs(this.beat % meter) < 1e-6) {
+        const bar = Math.floor(this.beat / meter) % this.song.roots.length;
+        let r = this.song.roots[bar];
         if (this.o.minor && MINOR[r % 12] !== undefined) r = r - (r % 12) + MINOR[r % 12];
-        this.bass(this.next, r, spb * 2, det);
-        this.bass(this.next + spb * 2, r + 7, spb * 2, det);
+        if (meter === 4) {
+          this.bass(this.next, r, spb * 2, det);
+          this.bass(this.next + spb * 2, r + 7, spb * 2, det);
+        } else {
+          this.bass(this.next, r, spb, det);
+          this.bass(this.next + spb, r + 7, spb * 0.8, det);
+          this.bass(this.next + spb * 2, r + 7, spb * 0.8, det);
+        }
       }
       if (this.mode === 'jingle') this.drums(this.next, beats, spb);
       this.next += dur;
@@ -528,7 +618,7 @@ class Music {
   note(t, m, dur, det) {
     const e = this.e;
     const f = mtof(m) * Math.pow(2, det / 1200);
-    if (this.mode === 'jingle') {
+    if (this.mode === 'jingle' || this.mode === 'birthday') {
       e.tone(this.bus, t, f, 0.55, { gain: 0.5 });
       e.tone(this.bus, t, f * 3.93, 0.12, { gain: 0.12 });
       e.tone(this.bus, t, f * 2, Math.min(dur, 0.4), { type: 'triangle', gain: 0.08 });
@@ -541,7 +631,7 @@ class Music {
 
   bass(t, m, dur, det) {
     const f = mtof(m) * Math.pow(2, det / 1200);
-    if (this.mode === 'jingle') this.e.tone(this.bus, t, f, dur * 0.9, { type: 'triangle', gain: 0.35, attack: 0.01 });
+    if (this.mode === 'jingle' || this.mode === 'birthday') this.e.tone(this.bus, t, f, dur * 0.9, { type: 'triangle', gain: 0.35, attack: 0.01 });
     else if (this.mode === 'creepy') this.e.tone(this.bus, t, f / 2, dur * 1.4, { type: 'sine', gain: 0.25, attack: 0.3 });
   }
 
@@ -565,7 +655,7 @@ class Music {
     this.paused = false;
     this.bus.gain.setTargetAtTime(this.o.gain, this.e.now, 0.05);
     this.next = Math.max(this.next, this.e.now + 0.05);
-    if (!this.timer && this.idx < THEME.length) this.timer = setInterval(() => this.tick(), 40);
+    if (!this.timer && this.idx < this.song.notes.length) this.timer = setInterval(() => this.tick(), 40);
   }
 
   stop(fade = 0.6) {
@@ -705,13 +795,235 @@ const SFX = {
     this.tone(d, t, 75, 0.35, { gain: 0.6, endFreq: 40 });
     this.noiseBurst(d, t, 0.2, { type: 'lowpass', freq: 350, gain: 0.5 });
   },
-  knock(t, pos, n = 3) {
+  knock(t, pos, n = 3, gap = 0.42) {
     const d = this.at(pos.x, pos.y, pos.z, 0.5);
     for (let i = 0; i < n; i++) {
-      const tt = t + i * 0.42 + rand(-0.03, 0.03);
+      const tt = t + i * gap + rand(-0.03, 0.03);
       this.noiseBurst(d, tt, 0.12, { type: 'lowpass', freq: 420, gain: 0.9, attack: 0.001 });
       this.tone(d, tt, 115, 0.16, { gain: 0.5, attack: 0.001 });
     }
+  },
+  // ---------------------------------------------------------------- 3-9. kaset efektleri
+  /** Film makası: kesik + yapışkan bant */
+  splice(t) {
+    this.noiseBurst(this.tvIn, t, 0.03, { type: 'highpass', freq: 4000, gain: 0.6, attack: 0.001 });
+    this.tone(this.tvIn, t, 2400, 0.02, { type: 'square', gain: 0.08 });
+    this.noiseBurst(this.tvIn, t + 0.05, 0.25, { freq: 900, q: 0.6, gain: 0.15 });
+  },
+  /** Kumaş kayması (çarşaf), pos verilirse odada */
+  clothSlide(t, pos, dur = 1.4) {
+    const d = pos ? this.at(pos.x, pos.y, pos.z, 0.4) : this.room;
+    const n = this.noiseBurst(d, t, dur, { type: 'bandpass', freq: 1200, q: 0.4, gain: 0.22, attack: 0.25 });
+    n.f.frequency.setValueAtTime(700, t);
+    n.f.frequency.linearRampToValueAtTime(1800, t + dur);
+  },
+  /** Ahşap sürtünmesi (mobilya itilir) */
+  woodScrape(t, pos, dur = 1.6) {
+    const d = pos ? this.at(pos.x, pos.y, pos.z, 0.5) : this.room;
+    for (let i = 0; i < 10; i++) this.noiseBurst(d, t + (i * dur) / 10, dur / 8, { type: 'bandpass', freq: 320 + rand(-60, 60), q: 3, gain: 0.35 });
+    this.tone(d, t, 70, dur, { type: 'sawtooth', gain: 0.05, attack: 0.1 });
+  },
+  /** Eski çift çalan telefon zili. Durdurmak için dönen fonksiyonu çağır. */
+  phoneRing(t, pos, rings = 6) {
+    const d = pos ? this.at(pos.x, pos.y, pos.z, 0.35) : this.room;
+    const nodes = [];
+    for (let r = 0; r < rings; r++) {
+      const base = t + r * 3;
+      for (const off of [0, 0.4]) {
+        nodes.push(this.tone(d, base + off, 1150, 0.35, { type: 'square', gain: 0.07, attack: 0.002 }));
+        nodes.push(this.tone(d, base + off, 1480, 0.35, { type: 'square', gain: 0.05, attack: 0.002 }));
+        // zil titreşimi
+        for (let k = 0; k < 7; k++) nodes.push(this.noiseBurst(d, base + off + k * 0.05, 0.03, { type: 'highpass', freq: 3000, gain: 0.08 }));
+      }
+    }
+    return () => {
+      const now = this.now;
+      for (const n of nodes) {
+        try {
+          n.g.gain.cancelScheduledValues(now);
+          n.g.gain.setTargetAtTime(0, now, 0.01);
+        } catch {
+          /* bitti */
+        }
+      }
+    };
+  },
+  /** Döner kadranlı telefonda bir rakam çevirme (n = rakam, 0 = 10 tık) */
+  rotaryDial(t, n = 5, dest) {
+    const d = dest || this.tvIn;
+    const clicks = n === 0 ? 10 : n;
+    this.noiseBurst(d, t, 0.25, { type: 'bandpass', freq: 600, q: 1, gain: 0.15, attack: 0.05 });
+    for (let i = 0; i < clicks; i++) this.noiseBurst(d, t + 0.3 + i * 0.07, 0.02, { type: 'highpass', freq: 2500, gain: 0.35, attack: 0.001 });
+    return 0.3 + clicks * 0.07 + 0.1;
+  },
+  hangup(t, pos) {
+    const d = pos ? this.at(pos.x, pos.y, pos.z, 0.3) : this.tvIn;
+    this.noiseBurst(d, t, 0.08, { type: 'lowpass', freq: 900, gain: 0.7, attack: 0.001 });
+    this.tone(d, t + 0.01, 1300, 0.06, { type: 'triangle', gain: 0.06 });
+  },
+  phonePickup(t, pos) {
+    const d = pos ? this.at(pos.x, pos.y, pos.z, 0.3) : this.room;
+    this.noiseBurst(d, t, 0.1, { type: 'lowpass', freq: 1100, gain: 0.5, attack: 0.002 });
+    this.tone(d, t + 0.05, 1600, 0.05, { type: 'triangle', gain: 0.05 });
+  },
+  /** Çalıyor sesi (arayan taraf), n kez */
+  ringback(t, n = 3, dest) {
+    const d = dest || this.room;
+    for (let i = 0; i < n; i++) this.tone(d, t + i * 4, 425, 1.5, { gain: 0.06, attack: 0.02 });
+    return n * 4;
+  },
+  /** Meşgul sesi */
+  busy(t, n = 6, dest) {
+    const d = dest || this.room;
+    for (let i = 0; i < n; i++) this.tone(d, t + i * 0.5, 425, 0.25, { gain: 0.07, attack: 0.01 });
+    return n * 0.5;
+  },
+  pencil(t, dur = 1.2) {
+    for (let i = 0; i < dur / 0.09; i++) this.noiseBurst(this.tvIn, t + i * 0.09 + rand(0, 0.03), 0.06, { freq: 4200 + rand(-800, 800), q: 1.5, gain: 0.12 });
+  },
+  talkShowSting(t) {
+    [523, 659, 784, 1046].forEach((f, i) => this.tone(this.tvIn, t + i * 0.09, f, 0.5, { gain: 0.16 }));
+    this.noiseBurst(this.tvIn, t + 0.36, 0.4, { type: 'highpass', freq: 6000, gain: 0.1 });
+  },
+  match(t, pos) {
+    const d = pos ? this.at(pos.x, pos.y, pos.z, 0.3) : this.tvIn;
+    this.noiseBurst(d, t, 0.15, { type: 'highpass', freq: 2500, gain: 0.5, attack: 0.002 });
+    this.noiseBurst(d, t + 0.12, 0.6, { type: 'bandpass', freq: 1200, q: 0.5, gain: 0.15, attack: 0.05 });
+  },
+  /** Mum üfleme; pos verilirse odada (ör. sandalyenin arkasından) */
+  blow(t, pos) {
+    const d = pos ? this.at(pos.x, pos.y, pos.z, 0.2) : this.tvIn;
+    const n = this.noiseBurst(d, t, 0.9, { type: 'bandpass', freq: 800, q: 0.7, gain: 0.45, attack: 0.08 });
+    n.f.frequency.setValueAtTime(1400, t);
+    n.f.frequency.exponentialRampToValueAtTime(400, t + 0.9);
+  },
+  whoosh(t, dest) {
+    const n = this.noiseBurst(dest || this.tvIn, t, 0.7, { type: 'bandpass', freq: 400, q: 0.8, gain: 0.35, attack: 0.2 });
+    n.f.frequency.setValueAtTime(300, t);
+    n.f.frequency.exponentialRampToValueAtTime(2600, t + 0.6);
+  },
+  /** Bant kopması / sıkışması */
+  tapeSnap(t) {
+    this.tone(this.tvIn, t, 900, 0.4, { type: 'sawtooth', gain: 0.1, endFreq: 60 });
+    this.noiseBurst(this.tvIn, t + 0.05, 0.3, { type: 'lowpass', freq: 800, gain: 0.5 });
+  },
+  /** Kapı kolu tıkırdatması (pos: kapı) */
+  handle(t, pos, n = 3) {
+    const d = this.at(pos.x, pos.y, pos.z, 0.45);
+    for (let i = 0; i < n; i++) {
+      this.noiseBurst(d, t + i * 0.22, 0.05, { type: 'highpass', freq: 2200, gain: 0.45, attack: 0.001 });
+      this.tone(d, t + i * 0.22 + 0.02, 640, 0.08, { type: 'square', gain: 0.03 });
+    }
+  },
+  /** Döşeme tahtası gıcırtısı (pos'ta) */
+  footCreak(t, pos) {
+    const d = this.at(pos.x, pos.y, pos.z, 0.45);
+    this.tone(d, t, 210 + rand(-30, 30), 0.5, { type: 'sawtooth', gain: 0.06, endFreq: 150, attack: 0.05 });
+    this.noiseBurst(d, t, 0.3, { type: 'bandpass', freq: 500, q: 4, gain: 0.25 });
+    this.noiseBurst(d, t + 0.02, 0.12, { type: 'lowpass', freq: 250, gain: 0.4 });
+  },
+  /** Sandık kapağı açılması (pos'ta) */
+  chestLid(t, pos) {
+    SFX.creak.call(this, t, pos, 1.4);
+    this.noiseBurst(this.at(pos.x, pos.y, pos.z, 0.4), t + 1.35, 0.15, { type: 'lowpass', freq: 400, gain: 0.6 });
+  },
+  /** Dinleyicinin kulağına nefes (pos: dinleyicinin hemen yanı) */
+  breath(t, pos, n = 2) {
+    const d = pos ? this.at(pos.x, pos.y, pos.z, 0.05) : this.room;
+    for (let i = 0; i < n; i++) {
+      const tt = t + i * 1.6;
+      this.noiseBurst(d, tt, 0.9, { type: 'bandpass', freq: 900, q: 0.6, gain: 0.25, attack: 0.35 });
+      this.noiseBurst(d, tt + 1.0, 0.5, { type: 'bandpass', freq: 600, q: 0.6, gain: 0.12, attack: 0.1 });
+    }
+  },
+  /** Video kafası uğultusu (sürekli). Durdurmak için dönen fonksiyonu çağır. */
+  deckHum(t, gain = 0.03) {
+    return loop.call(this, this.tvIn, gain, (ctx, out) => {
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = 50;
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = 260;
+      o.connect(f).connect(out);
+      o.start(t);
+      return [o];
+    });
+  },
+  clap(t) {
+    this.noiseBurst(this.tvIn, t, 0.08, { type: 'highpass', freq: 1500, gain: 0.9, attack: 0.001 });
+    this.tone(this.tvIn, t, 180, 0.06, { gain: 0.3, attack: 0.001 });
+  },
+  deckClunk(t) {
+    this.noiseBurst(this.tvIn, t, 0.08, { type: 'lowpass', freq: 700, gain: 0.7, attack: 0.001 });
+    this.tone(this.tvIn, t, 90, 0.12, { gain: 0.35, attack: 0.001 });
+  },
+  /** Kafada bant arama sesi (hızlı ileri/geri) */
+  tapeSearch(t, dur = 1.2) {
+    this.tone(this.tvIn, t, 500, dur, { type: 'sawtooth', gain: 0.04, endFreq: 1400, attack: 0.05 });
+    this.noiseBurst(this.tvIn, t, dur, { freq: 5000, q: 0.5, gain: 0.05, attack: 0.05 });
+  },
+  typewriter(t, n = 8) {
+    for (let i = 0; i < n; i++) this.noiseBurst(this.tvIn, t + i * 0.11 + rand(0, 0.04), 0.03, { type: 'highpass', freq: 2000, gain: 0.45, attack: 0.001 });
+    this.tone(this.tvIn, t + n * 0.12, 1800, 0.25, { gain: 0.05 });
+  },
+  leaderBeep(t) {
+    this.tone(this.tvIn, t, 1000, 0.08, { gain: 0.15, attack: 0.002 });
+  },
+  /** Kuş cıvıltısı döngüsü (kamera kaydı arka planı) */
+  birds(t, gain = 0.06) {
+    let alive = true;
+    const out = this.ctx.createGain();
+    out.gain.value = gain;
+    out.connect(this.tvIn);
+    const chirp = () => {
+      if (!alive) return;
+      const tt = this.now + 0.05;
+      const f = 2600 + rand(-600, 900);
+      for (let i = 0; i < 2 + Math.floor(rand(0, 3)); i++) this.tone(out, tt + i * 0.09, f, 0.07, { gain: 0.4, endFreq: f * 1.25, attack: 0.005 });
+      setTimeout(chirp, rand(250, 1400));
+    };
+    chirp();
+    return () => {
+      alive = false;
+      out.gain.setTargetAtTime(0, this.now, 0.02);
+    };
+  },
+  /** Rüzgâr döngüsü (TV'den) */
+  wind(t, gain = 0.05) {
+    return loop.call(this, this.tvIn, gain, (ctx, out) => {
+      const src = this.loopNoise();
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = 500;
+      src.connect(f).connect(out);
+      return [src];
+    });
+  },
+  /** Uzak trafik uğultusu (TV'den) */
+  traffic(t, gain = 0.035) {
+    return loop.call(this, this.tvIn, gain, (ctx, out) => {
+      const src = this.loopNoise();
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = 220;
+      src.connect(f).connect(out);
+      return [src];
+    });
+  },
+  /** Programın jenerik melodisi, uzaktan ve yavaşça ıslıkla (pos verilirse odada) */
+  whistle(t, pos, speed = 0.6) {
+    const d = pos ? this.at(pos.x, pos.y, pos.z, 0.6) : this.tvIn;
+    const notes = [64, 67, 72, 67, 69, 67, 64, 65, 69, 74, 69, 67];
+    let tt = t;
+    for (const m of notes) {
+      const f = 440 * Math.pow(2, (m + 12 - 69) / 12);
+      const dur = 0.42 / speed;
+      this.tone(d, tt, f, dur, { type: 'sine', gain: 0.07, attack: 0.06 });
+      this.tone(d, tt, f * 1.004, dur, { type: 'sine', gain: 0.03, attack: 0.08 });
+      tt += dur;
+    }
+    return tt - t;
   },
   creakTv(t) {
     SFX.creak.call(this, t, null, 1.6, this.tvIn);

@@ -17,7 +17,14 @@ const WHO = {
   tonton_sad: { label: 'TONTON', cls: 'tonton' },
   narrator: { label: 'ANLATICI', cls: 'anlatici' },
   narrator_slow: { label: 'ANLATICI', cls: 'anlatici' },
+  nermin: { label: 'NERMİN', cls: 'anlatici' },
+  riza: { label: 'KONTROL ODASI', cls: 'anlatici' },
+  beste_kiz: { label: 'BESTE', cls: '' },
 };
+
+/** Ses stiline göre varsayılan filtre (kayıt hissi). */
+const STYLE_FILTER = { riza: 'talkback', nermin: 'camcorder' };
+const GUNLER = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 
 function newChar(x, y, scale) {
   return { x, y, scale, mouth: 0, look: { x: 0, y: 0 }, lookTarget: null, blink: 0, expr: 'happy', wave: 0, tilt: 0, nextBlink: 2, blinkT: -1, frozenMouth: false };
@@ -60,6 +67,17 @@ export class Director {
     this.noFF = false;
     this.ffSkipped = null;
     this.ejectPolicy = 'deny'; // video oynarken kaset çıkarılamaz
+    // --- 3-10. kasetlerin ortak araçları
+    this.onKey = null; // (KeyboardEvent) => true ise tuş tüketilir (cevap kutusu açık değilken)
+    this.onPause = null; // (paused: boolean) => void
+    this.pausedAt = 0;
+    this.pausedFor = 0; // son duraklatmanın gerçek süresi (sn)
+    this.labelOverride = null; // { 'BESTE': 'DENİZ' } gibi: altyazı etiketi eşlemesi
+    this.promptLabel = null; // cevap kutusunun başındaki etiket ('BESTE:' gibi)
+    this.voiceMods = {}; // { tonton: { rate: 0.93, detune: -70 } } ses stili/kişi başına
+    this.lastAnswer = '';
+    this.fakeEnding = false;
+    this.realTimers = [];
     this.baseFx = { ...SCREEN_DEFAULT };
     this.chars = {
       beste: newChar(320, 450, 1),
@@ -69,10 +87,12 @@ export class Director {
   }
 
   // ---------------------------------------------------------------- yaşam döngüsü
-  async play(tapeFn, tapeId) {
+  /** opts.firstViewing: kaset ilk kez mi izleniyor (hikâye bayrakları yalnızca ilk izlemede yazılır) */
+  async play(tapeFn, tapeId, opts = {}) {
     this.reset();
     this.active = true;
     this.tapeId = tapeId;
+    this.firstViewing = opts.firstViewing ?? true;
     this.tv.clearBuffer();
     this.showOsd('▶ OYNAT', 3);
     try {
@@ -98,7 +118,10 @@ export class Director {
 
   cleanup() {
     this.active = false;
-    this.audio.stopVoices();
+    this.realTimers = [];
+    if (this.fakeEnding) this.g.fakeEnd?.(false);
+    this.fakeEnding = false;
+    this.audio.stopVoices(true);
     this.audio.music?.stop(0.3);
     this.rw?.stopSfx?.();
     this.rw = null;
@@ -135,6 +158,7 @@ export class Director {
   // ---------------------------------------------------------------- güncelleme
   update(dt) {
     if (!this.active) return false;
+    this.runRealTimers();
     if (this.rewinding) {
       this.updateRewind(dt);
       return true;
@@ -150,6 +174,66 @@ export class Director {
     this.drawFrame();
     if (!this.paused) this.tv.record(dt, this.meta);
     return true;
+  }
+
+  runRealTimers() {
+    if (!this.realTimers.length) return;
+    const now = this.g.clock;
+    const due = this.realTimers.filter((r) => now >= r.at);
+    if (!due.length) return;
+    this.realTimers = this.realTimers.filter((r) => now < r.at);
+    for (const r of due) {
+      try {
+        r.fn();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
+
+  /** Gerçek zamanda (oyun saati) sec sonra fn çalışır; kaset duraklatılmış olsa bile. Dönen fonksiyon iptal eder. */
+  realTimeout(fn, sec) {
+    const r = { at: this.g.clock + sec, fn };
+    this.realTimers.push(r);
+    return () => (this.realTimers = this.realTimers.filter((x) => x !== r));
+  }
+
+  clearRealTimers() {
+    this.realTimers = [];
+  }
+
+  /** Gerçek zamanlı bekleme (duraklatma onu durdurmaz). */
+  realWait(sec) {
+    return this.race(new Promise((resolve) => this.realTimeout(resolve, sec)));
+  }
+
+  /** Oyuncunun ekranda baktığı nokta [x, y, w, h] (640x480 tuval) dikdörtgeninin içinde mi? */
+  gazeIn(rect) {
+    const gz = this.g.gazeOnTv || { x: 0, y: 0 };
+    const x = ((gz.x + 1) / 2) * W;
+    const y = ((1 - gz.y) / 2) * H;
+    return x >= rect[0] && x <= rect[0] + rect[2] && y >= rect[1] && y <= rect[1] + rect[3];
+  }
+
+  /** Oyuncunun ekrandaki bakış noktası (tuval koordinatı) */
+  gazePoint() {
+    const gz = this.g.gazeOnTv || { x: 0, y: 0 };
+    return { x: ((gz.x + 1) / 2) * W, y: ((1 - gz.y) / 2) * H };
+  }
+
+  /**
+   * Sahte bitiş: kaset bitmiş gibi davranır (VCR "STOP", gerçek bildirim), sec saniye (bant zamanı) sonra devam eder.
+   * Bu sırada F/E sessizce yutulur, onTapeDone çağrılmaz. Sahneyi kaset kendisi çizer.
+   */
+  async fakeEnd(sec = 7) {
+    this.fakeEnding = true;
+    this.g.fakeEnd?.(true);
+    try {
+      await this.wait(sec);
+    } finally {
+      this.fakeEnding = false;
+      this.g.fakeEnd?.(false);
+    }
   }
 
   resolveWaiters() {
@@ -168,7 +252,7 @@ export class Director {
     ctx.restore();
     if (this.input) {
       if (this.input.options) S.optionsBar(ctx, this.input.options, { evil: this.input.evil });
-      S.promptBox(ctx, this.time, this.input.text, { evil: this.input.evil });
+      S.promptBox(ctx, this.time, this.input.text, { evil: this.input.evil, label: this.input.label });
     }
     const label = this.paused ? '❚❚ DURAKLAT' : this.ff ? '▶▶ İLERİ SAR' : this.time < this.osdUntil ? this.osdLabel : '';
     if (label) S.osd(ctx, { label, counter: this.counter() });
@@ -243,7 +327,21 @@ export class Director {
 
   fmt(text) {
     const name = this.g.state.name || 'arkadaşım';
-    return text.replaceAll('{ad}', name).replaceAll('{saat}', timeString());
+    const now = new Date();
+    return text
+      .replaceAll('{ad}', name)
+      .replaceAll('{saat}', timeString(now))
+      .replaceAll('{cevap}', (this.lastAnswer || '').toLocaleUpperCase('tr').slice(0, 20))
+      .replaceAll('{gun}', GUNLER[now.getDay()])
+      .replaceAll('{yil}', String(now.getFullYear()));
+  }
+
+  /** Altyazı etiketi: o.label > satırdaki "w" > kaset başına eşleme > ses stilinin etiketi */
+  labelFor(line, o = {}) {
+    const w = WHO[line.v] || WHO.beste;
+    let label = o.label ?? line.w ?? w.label;
+    if (this.labelOverride && this.labelOverride[label] != null && o.label == null && line.w == null) label = this.labelOverride[label];
+    return { label, cls: o.cls ?? w.cls };
   }
 
   /** Repliği seslendirir, altyazıyı gösterir, bitince döner. */
@@ -255,7 +353,8 @@ export class Director {
       return;
     }
     const who = o.who || (line.v.startsWith('tonton') ? 'tonton' : line.v.startsWith('beste') ? 'beste' : 'narrator');
-    const w = WHO[line.v] || WHO.beste;
+    const w = this.labelFor(line, o);
+    o = { ...this.voiceMods[line.v], ...this.voiceMods[who], ...o };
     this.voice?.stop();
     const text = o.sub ?? this.fmt(line.s || line.t);
     this.g.ui.subtitle(w.label, text, w.cls);
@@ -263,7 +362,8 @@ export class Director {
     // ileri sarılırken (ve test kancasında) replik çalınmaz, kısa bir an altyazı görünür
     const skip = this.ff || this.g.debug?.fast;
     this.ffSkipped = this.ff ? { id, o } : null;
-    const h = skip ? { promise: this.wait(this.ff ? 0.6 : 0.2), pause() {}, resume() {}, stop() {} } : this.audio.playVoice(o.file || id, { rate: o.rate, gain: o.gain, detune: o.detune, dest: o.dest });
+    const filter = o.filter === undefined ? STYLE_FILTER[line.v] : o.filter;
+    const h = skip ? { promise: this.wait(this.ff ? 0.6 : 0.2), pause() {}, resume() {}, stop() {} } : this.audio.playVoice(o.file || id, { rate: o.rate, gain: o.gain, detune: o.detune, dest: o.dest, filter: o.dest ? null : filter });
     this.voice = h;
     if (this.paused || this.rewinding) h.pause();
     try {
@@ -282,6 +382,36 @@ export class Director {
   /** Beklemeden başlatılan replik (bekleme uyarıları vb.) */
   sayAsync(id, o) {
     this.say(id, o).catch(() => {});
+  }
+
+  /**
+   * Odadan gelen ses (TV'den değil): duraklatma ve ileri sarma bunu durdurmaz.
+   * o.pos: {x,y,z} ya da g.room.points içindeki ad ('door', 'phone', 'bulb'...); yoksa düz oda sesi.
+   * o.listener: true ise oyuncunun hemen yanından (kulağına) gelir.
+   */
+  async sayRoom(id, o = {}) {
+    this.check();
+    const line = this.lines[id];
+    if (!line) {
+      console.warn('replik yok', id);
+      return;
+    }
+    let pos = typeof o.pos === 'string' ? this.g.room.points[o.pos] : o.pos;
+    if (o.listener) {
+      const l = this.g.room.listener();
+      pos = { x: l.pos.x + 0.25, y: l.pos.y, z: l.pos.z + 0.15 };
+    }
+    const w = this.labelFor(line, o);
+    if (o.sub !== false) this.g.ui.subtitle(w.label, o.sub ?? this.fmt(line.s || line.t), w.cls);
+    const h = this.g.debug?.fast
+      ? { promise: new Promise((r) => setTimeout(r, 150)), stop() {} }
+      : this.audio.playRoomVoice(o.file || id, { pos, gain: o.gain ?? 1.2, rate: o.rate ?? 1, detune: o.detune ?? 0, wet: o.wet ?? 0.35 });
+    try {
+      await this.race(h.promise);
+    } finally {
+      if (this.aborted) h.stop();
+    }
+    if (!o.keep && o.sub !== false) this.g.ui.subtitle(null, null, null, 0.35);
   }
 
   music(mode, o) {
@@ -338,6 +468,8 @@ export class Director {
       lastActivity: this.time,
       idleIdx: 0,
       maxLen: o.maxLen || 24,
+      deadline: o.timeout ? this.time + o.timeout : null,
+      label: o.label ?? this.promptLabel,
     };
     this.g.ui.beginTyping();
     const p = this.race(new Promise((resolve) => (this.input.resolve = resolve)));
@@ -360,6 +492,7 @@ export class Director {
       return;
     }
     this.sfx('click');
+    this.lastAnswer = text;
     this.endTyping();
     inp.resolve(text);
   }
@@ -371,7 +504,14 @@ export class Director {
 
   updateIdle() {
     const inp = this.input;
-    if (!inp || !inp.idle.length || this.voice) return;
+    if (!inp) return;
+    // zaman aşımı: cevap gelmezse null döner
+    if (inp.deadline != null && this.time >= inp.deadline) {
+      this.endTyping();
+      inp.resolve(null);
+      return;
+    }
+    if (!inp.idle.length || this.voice) return;
     if (this.time - inp.lastActivity > inp.idleGap) {
       const id = inp.idle[Math.min(inp.idleIdx, inp.idle.length - 1)];
       inp.idleIdx++;
@@ -388,6 +528,7 @@ export class Director {
   async choose(o) {
     for (let tries = 0; ; tries++) {
       const text = await this.ask(o);
+      if (text == null) return { key: null, text: null, tries, timeout: true };
       const key = o.match(text, tries);
       if (key != null) return { key, text, tries };
       if (o.maxTries && tries + 1 >= o.maxTries) return { key: null, text, tries };
@@ -402,6 +543,7 @@ export class Director {
     this.paused = !this.paused;
     this.sfx('click');
     if (this.paused) {
+      this.pausedAt = this.g.clock;
       this.pauseCount++;
       this.audio.pauseVoices();
       this.audio.music?.pause();
@@ -409,6 +551,7 @@ export class Director {
       this.tv.p.jitter = 0.6;
       if (this.meta?.secret) this.g.foundSecret(this.meta.secret.id, this.meta.secret.text);
     } else {
+      this.pausedFor = this.g.clock - this.pausedAt;
       this.audio.resumeVoices();
       this.audio.music?.resume();
       this.audio.setHiss(true);
@@ -416,7 +559,20 @@ export class Director {
       this.showOsd('▶ OYNAT', 2);
       this.onResume?.(this.pauseCount);
     }
+    this.onPause?.(this.paused);
     return true;
+  }
+
+  /** Kaseti kod içinden duraklatır (oyuncu Boşluk'a basmış gibi). */
+  forcePause() {
+    if (this.paused || !this.active) return;
+    if (this.input) this.endTyping();
+    this.togglePause();
+  }
+
+  /** Şu anki duraklatmanın süresi (duraklatılmış değilse son duraklatmanınki). */
+  pausedSecs() {
+    return this.paused ? this.g.clock - this.pausedAt : this.pausedFor;
   }
 
   /** Sağ ok basılıyken: bant hızlanır, replikler atlanır. Soru gelince kendiliğinden durur. */
@@ -481,7 +637,7 @@ export class Director {
 
   updateRewind(dt) {
     const rw = this.rw;
-    rw.held += dt;
+    if (this.g.input?.rewindHeld !== false) rw.held += dt;
     if (this.onRewindHold?.(rw.held)) return;
     if (rw.stick > 0) rw.stick -= dt;
     else {
@@ -525,7 +681,7 @@ export class Director {
       rw.stick = 99;
       const line = this.lines[meta.rev];
       this.g.ui.subtitle('???', line.t, 'bilinmeyen');
-      this.g.foundSecret('ters-mesaj', null);
+      this.g.foundSecret('ters-' + meta.rev, null);
       const h = this.audio.playVoice(meta.rev, { gain: 1.2 });
       h.promise.then(() => {
         this.g.ui.subtitle(null, null, null, 0.8);

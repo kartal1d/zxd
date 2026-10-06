@@ -1,0 +1,1958 @@
+{
+ "overview": "Ten tapes, one afternoon in May 1998, and the attic of the aunt who edited them.\n\nTapes 1–2 stay as they are. They plant everything the later tapes use:\n- the player's name, seven apples and the rope in the basket;\n- hide-and-seek, with Tonton counting until a slowed Narrator finishes ('Sekiz. Dokuz. On.');\n- 1405 carved on the tree;\n- a grey man seen for one frame;\n- the Rules, the real hand that takes Tonton, and a girl speaking backwards.\n\nTAPE 3 'Tonton Kedi Geri Döndü!' jumps back to over-bright cheer as if nothing happened.\n- Tonton is back, stitched, with a GREY tail that Beste insists is orange. He 'repeats' whatever you type, and his sewn mouth never moves.\n- In Heykel (statues) you must keep your own mouse still. The grey man exists only in the frozen frames and stands closer each time. The third 'Heykel.' is said in the slowed Narrator's voice.\n- Beste teaches the magic word SOBE until an editor's splice cuts her off.\n- After the tape, the sheet-covered furniture in the attic has moved a metre closer.\n\nTAPE 4 'Kaybolursan Ne Yaparsın?' is a safety sing-along that drills the home number 364 27 27.\n- The last chorus rewrites itself on screen: the number becomes the attic phone's own number, and your 'gelmem' becomes 'gelirim'.\n- Beste dials. The real phone behind you rings, and the focus lock keeps you facing the screen.\n\nTAPE 5 'Bugün Sen Beste'sin!' swaps identities.\n- The subtitles carry your name and the answer box says BESTE. A talk-show interview collects your answers.\n- Asked for 'your' surname, silence wins. Meanwhile the reflection behind her writes SÖYLEME backwards, but only while you look at it.\n- A perfect fake ending lowers your guard. Then the real Beste speaks forward from the mirror and teaches you to write backwards so the cartoon cannot read you.\n\nTAPE 6 'İyi ki Doğdun Beste!' claims 14 May as her birthday.\n- You opened her birthday present with 0302 minutes earlier, so you can catch the lie. The thing admits it was born that day, in the forest.\n- Blowing out the candles kills the real attic bulb.\n- The last guest stands behind a chair with your name card.\n\nTAPE 7 'Bir Daha!' is Tape 1 again, as a copy of a copy.\n- Each loop changes one thing while the picture rots.\n- When the copy is too worn to show anything, Beste is only a voice, and she counts the knocks on your real door.\n- In the pristine last pass she turns round without a face.\n- Holding rewind un-sticks the loop, which quietly rehearses the finale.\n\nTAPE 8 'Ebe Sensin!' teaches the real rules of hide-and-seek and names the man: EBE.\n- Pausing means closing your eyes. While the picture is frozen, something counts to ten as it walks from the attic door to your ear, ending in the exact 'Sekiz. Dokuz. On.' from Tape 1.\n- You never find her. One word, 'Sobe', is breathed behind you.\n\nTAPE 9 'HAM KAYIT' drops the cartoon. You search Nermin's edit suite clip by clip:\n- the voice session where the cartoon's first line was recorded and the surname was spliced out;\n- the Çamlık afternoon where Nermin counted to seven and the trees finished the count;\n- a talent form filled in with your own answers, with one empty box (SOYADI);\n- Nermin's last recording, made in this very attic and interrupted.\nThen the faceless man steps out of the trees wearing Beste's drawn face and says the first line you ever heard.\n\nTAPE 10 'Zamanın Sonu' is the existing finale and asks for the three keys: 1405, 7, Aydın.\n- Give all three and you become the ebe.\n- Hold rewind instead: the count runs backwards, the real girl is found, and you finally type 'Sobe'.\n\nDread escalates in four steps:\n1. Wrong cheerfulness with cracks (Tapes 3–5).\n2. The tape reaching into the room through the phone, the light, the knocks and a count behind you (Tapes 4–8).\n3. The tape knowing your answers (Tapes 5 and 9).\n4. The documentary truth, with no cartoon (Tape 9).\n\nRules that hold across all tapes:\n- Every gating question gives the truth after three wrong answers.\n- The F lock is never released while a tape plays, and the camera never turns on its own mid-tape.\n- Each tape owns one mechanic used nowhere else: stillness (3), memory plus a real phone (4), silence, gaze and a fake end (5), contradicting the tape with a document (6), loop difference plus counting real knocks (7), pause as closed eyes (8), clip search (9).",
+ "newVoices": "Exactly three new voice styles go into tools/gen_voices.py STYLES, using the same keys as the existing entries.\n\n1) nermin: Aunt Nermin, the show's editor (kurgucu), about 34 in 1998. Warm, tired, slightly hoarse; frightened in her last recording.\n- Parameters: base fettah, pitch x1.32, formant x1.09, intonation 0.80, whisper 0.12, speed 0.92.\n- As a STYLES entry: dict(model='fettah', speed=0.92, f0=1.32, contour=0.80, formant=1.09, whisper=0.12).\n- WHO label 'NERMİN', cls 'anlatici'.\n- Her 1998 camcorder lines get a runtime band-limit (about 180–5500 Hz) and light room reverb. Her late attic recording (k9_c4_*) plays at rate 0.95 with no reverb.\n\n2) riza: producer Rıza Yıldız. Gruff, flat and impatient, heard only through a talkback speaker or a megaphone.\n- Parameters: base fahrettin, pitch x0.86, formant x0.93, intonation 0.55, whisper 0, speed 1.00.\n- As a STYLES entry: dict(model='fahrettin', speed=1.00, f0=0.86, contour=0.55, formant=0.93, whisper=0.0).\n- Runtime band-pass 300–3000 Hz ('talkback').\n- Label via the per-line 'w' field: KONTROL ODASI (Tape 9 clip 1), RIZA BEY (clip 2).\n- He is strictly an impatient boss: no physical presence near the child, no contact.\n\n3) beste_kiz: the LIVING seven-year-old on the 1998 recordings. Natural; less exaggerated than beste and without beste_real's breathiness.\n- Parameters: base fettah, pitch x1.58, formant x1.22, intonation 1.00, whisper 0.06, slight vibrato, speed 0.98.\n- As a STYLES entry: dict(model='fettah', speed=0.98, f0=1.58, contour=1.00, formant=1.22, whisper=0.06, vibrato=(5.0, 0.01)).\n- Label 'BESTE'.\n\nReused styles (no other new ones):\n- The grey man has no style of his own. Every count he finishes is narrator_slow, and Tape 1's n_count_end file ('Sekiz. Dokuz. On.') is reused verbatim in the Tape 8 room count and Tape 9 clip 2. Nermin's line 'O ses sonra bütün kasetlerin anlatıcısı oldu' then explains Tape 1 and every slowed title card after the fact.\n- His room lines (k8_count_a, k8_count_b, k8_ebe_sobe) are narrator_slow with label '???' set through 'w'. The Tape 3 'Heykel.' trick is also narrator_slow but keeps the 'ANLATICI' label on purpose.\n- Stitched Tonton (Tapes 3–8) reuses tonton / tonton_sad, played at runtime rate 0.93, detune -70.\n- beste_real stays the ghost. She is reversed in the hidden messages and speaks forward only on the Tape 5 phone and after-show, the Tape 7 rewind escape, the Tape 8 pause whisper, and the finale.\n- beste_kiz is the living girl on tape (Tape 9, and the finale line k10_good_sobe).\n\nEngine notes:\n- Add WHO entries for the three new styles.\n- Add an optional per-line 'w' label override in lines.json, and d.say(id, {label}).\n- Add a per-tape label override for the Tape 5 swap: the label is st.name uppercased and the prompt label is 'BESTE:'.\n- New subtitle tokens:\n  - {cevap}: the last typed answer, uppercased, plain text, at most 20 characters.\n  - {gun}: the player's real weekday in Turkish (Pazar, Pazartesi, Salı, Çarşamba, Perşembe, Cuma, Cumartesi).\n  - {yil}: the current year.\n- Add a 'room' voice bucket, audio.playRoomVoice(id, {pos, gain, label}), that pauseVoices() and fast-forward do NOT touch.\n  - It is used for the Tape 5 and Tape 10 room lines, the Tape 8 paused count, the Tape 8 hot/cold game, and the finale's rewind voices.\n  - Voices in it stop on abort and on quit.\n- Add these to REVERSED: k3_ters, k4_ters, k6_ters, k7_ters, k8_ters, k9_ters, k10_ters.\n  - Each gets a *_rev file. Normal playback plays the _rev file at the moment described; rewinding over the tagged frames plays the forward id. This is exactly the b2_real pattern.\n- Line budget: about 300 new lines, many of them short.\n  - Every important number is spelled out in 't' and written as digits in 's'.\n  - No line is longer than 20 words.",
+ "tapes": [
+  {
+   "n": 3,
+   "title": "Tonton Kedi Geri Döndü!",
+   "logline": "The show restarts as if Tape 2 never happened. The colours are too bright and the jingle plays at full speed. Tonton is back from his 'long journey' with button eyes, a mouth sewn into a smile and a new GREY tail that Beste swears is orange, and he repeats whatever you type. Then Beste teaches Heykel: when the music stops everyone freezes, including you, and every time it stops the grey man is standing a little closer.",
+   "look": "An over-corrected 'restoration', cleaner and brighter than Tape 1, which is exactly the wrong note after Tape 2.\n- setBase {saturation 1.25, tintR 1.04, tintG 1.00, tintB 0.94, noise 0.05, tracking 0.15, jitter 0.12, aberration 0.7}; setTapeFx('t1').\n- Jingle at Tape 1 speed (152, detune 0); music box tempo 104.\n- Freezes: the picture snaps to the 'true' frame (saturation 0.28, jitter 0, tracking 0, noise 0.03, hiss ducked to 30%), a dead-still grey picture. Freeze 3 fades the hiss almost to nothing and adds two soft heartbeats.\n- After the game the base settles to saturation 1.10. Goodbye: music box 96, detune -30.\n- The splice at the end of the magic-word segment is the first visible 'editor's cut' in the game: six frames of white leader with a grease-pencil X, a dry click and audio dropout, and the VCR counter jumping +37 s.\nCompared with Tape 2 there is MORE colour and LESS noise. The decay is now moral, not technical; only the freezes show the grey truth.",
+   "mechanic": "STILLNESS (Heykel). During each freeze the game watches the player's body, not the answer box.\n- Counts as moving: an accumulated camera yaw/pitch change above 0.06 rad within any 0.5 s window, any keydown (including Space), or any touch on touch devices. Mouse look is clamped to the TV in focus mode, and the idle breathing sway is position-only, so it is ignored.\n- When the player moves, Beste's pupils snap to the viewer while everything else stays frozen.\n- The dance lasts a random 6–9 s, so a freeze cannot be anticipated.\n- There is no fail state. The result sets st.flags.still (true only if all three freezes were passed) and picks lines.\nTwist 1: the grey man exists only in the freeze frames and vanishes the instant the music returns.\nTwist 2 (label lie): the third 'Heykel.' is spoken in the slowed Narrator's voice while Beste's mouth moves, and the subtitle label reads ANLATICI instead of BESTE. This is the first hint that the slowed narrator is not who he seems; Nermin explains it in Tape 9.\nTwist 3: after the tape the real attic plays Heykel too. The sheet-covered furniture has moved a metre closer to the chair.",
+   "segments": [
+    {
+     "beat": "Blue screen for 1.2 s, then static, then Tape 1's warning card held for 4.5 s. The card is identical except that its first two lines now read 'Bu kaset yalnızca evde, YALNIZ / izlenmek içindir.' Nobody comments on it. At 3.0 s, for 0.2 s, the whole card text is replaced by 'ARKANA BAKMA' (secret 'arkana'). Static cut to the title card at full brightness, with the jingle at Tape 1 speed, as if Tape 2 never happened.",
+     "scene": "S.blueScreen; S.warning with a new 'lines' override param; S.titleCard({episode:'3. Bölüm', title:'Tonton Kedi Geri Döndü!'}).",
+     "lines": [
+      {
+       "id": "k3_title",
+       "voice": "narrator",
+       "text": "Üçüncü bölüm. Tonton Kedi geri döndü!"
+      }
+     ]
+    },
+    {
+     "beat": "Bedroom by day, oversaturated. Beste waves with a smile slightly too wide (expr happy, eyeMode 'viewer'). cartoonPop: Tonton slides in from the right, stitched.\n- Two mismatched buttons for eyes (one black, one red, four thread holes each).\n- A black seam across his chest.\n- A grey tail attached with thick black X-stitches.\n- A mouth sewn into a smile that never opens (frozenMouth = true): his voice plays but his lips never move.\nAll Tonton lines in this tape play at rate 0.93, detune -70. Beste looks proudly at the tail.",
+     "scene": "S.bgBedroom (day, calendar on). Beste at x 250. NEW drawTonton option stitched:true (button eyes, chest seam, grey X-stitched tail, sewn mouth).",
+     "lines": [
+      {
+       "id": "k3_hello",
+       "voice": "beste",
+       "text": "Merhaba arkadaşım! Bugün harika bir gün! Güneş parlıyor, kuşlar cıvıl cıvıl!",
+       "sub": "Merhaba {ad}! Bugün harika bir gün! Güneş parlıyor, kuşlar cıvıl cıvıl!"
+      },
+      {
+       "id": "k3_surprise",
+       "voice": "beste",
+       "text": "Sana kocaman bir sürprizim var! Bil bakalım, uzun yolculuğundan kim döndü?"
+      },
+      {
+       "id": "k3_tonton_back",
+       "voice": "tonton",
+       "text": "Miyav! Ben döndüm! Ben hiç gitmedim!"
+      },
+      {
+       "id": "k3_tonton_tail",
+       "voice": "beste",
+       "text": "Bak, kuyruğu da yerinde! Yepyeni bir kuyruk. Kendi ellerimle diktim!"
+      }
+     ]
+    },
+    {
+     "beat": "ECHO. The player types a greeting and Tonton 'repeats' it. The voice file says 'Hoş geldin' three times, but the subtitle shows the PLAYER'S exact text in capitals, three times, while his sewn mouth stays shut. His head tilts 10 degrees on each repeat. The creepy part is the mismatch between voice and subtitle. Beste giggles; if the player typed something worried, her smile drops for one line.",
+     "scene": "Same bedroom; Tonton centre-right.",
+     "lines": [
+      {
+       "id": "k3_ask_welcome",
+       "voice": "beste",
+       "text": "Hadi, Tonton'a hoş geldin de! Klavyeden yaz bakalım."
+      },
+      {
+       "id": "k3_tonton_echo",
+       "voice": "tonton",
+       "text": "Hoş geldin. Hoş geldin. Hoş geldin.",
+       "sub": "{cevap}... {cevap}... {cevap}..."
+      },
+      {
+       "id": "k3_echo_laugh",
+       "voice": "beste",
+       "text": "Hihi! Tonton artık her şeyi tekrar ediyor. Çok tatlı, değil mi?"
+      },
+      {
+       "id": "k3_echo_cold",
+       "voice": "beste_cold",
+       "text": "Tonton artık öyle kelimeler bilmiyor."
+      }
+     ],
+     "interaction": "Typed question k3_ask_welcome. No options bar; maxLen 20. Any non-empty text is accepted and stored for {cevap}.\n- Reaction: k3_tonton_echo, with the subtitle set to the typed text uppercased, three times.\n- If the text contains yardim, kac, kos, git, ne oldu, iyi misin, canin, uzgun, aci or korku: k3_echo_cold. Otherwise: k3_echo_laugh.\n- Idle: b1_idle1, b1_idle2."
+    },
+    {
+     "beat": "GASLIGHT. A dashed highlight rectangle frames Tonton's tail, which is plainly grey. Beste insists it is orange, so typing the 'right' answer means agreeing with the lie. A player who resists twice gets a one-word correction in the deep voice: the music cuts for 1 s and Beste's face freezes, then she snaps back to cheerful.",
+     "scene": "Bedroom; dashed highlight box around Tonton's grey tail.",
+     "lines": [
+      {
+       "id": "k3_ask_tail",
+       "voice": "beste",
+       "text": "Peki, Tonton'un yeni kuyruğu ne renk? Dikkatli bak!"
+      },
+      {
+       "id": "k3_tail_wrong",
+       "voice": "beste_cold",
+       "text": "Hayır. Turuncu. Tonton'un kuyruğu her zaman turuncuydu."
+      },
+      {
+       "id": "k3_tail_again",
+       "voice": "beste",
+       "text": "Bir daha soruyorum! Tonton'un kuyruğu ne renk?"
+      },
+      {
+       "id": "k3_tail_right",
+       "voice": "beste",
+       "text": "Aferin! Bazen gözlerimiz bizi kandırır. Ama ben seni hiç kandırmam."
+      },
+      {
+       "id": "k3_tail_insist",
+       "voice": "beste_deep",
+       "text": "Turuncu."
+      },
+      {
+       "id": "k3_tail_moveon",
+       "voice": "beste",
+       "text": "Neyse! Gözlerin yorulmuş olmalı. Hadi bahçeye!"
+      }
+     ],
+     "interaction": "Typed question k3_ask_tail.\n- turuncu, portakal or oranj: k3_tail_right; st.flags.tail = 'uydu'.\n- Anything else: k3_tail_wrong, then k3_tail_again, and ask once more.\n- On the second ask, turuncu gives k3_tail_right (tail = 'uydu'); anything else gives k3_tail_insist then k3_tail_moveon (tail = 'direndi').\nThis is not a gate; the tape always continues. Idle: b1_idle2."
+    },
+    {
+     "beat": "SET-PIECE: HEYKEL. The garden, with a new row of dark pines behind the fence. Rules, then 'Hazır mısın?'.\n- Dance: music box at 126; Beste and Tonton bob and sway.\n- After a random 6–9 s the music stops dead (stopMusic 0.02) and Beste shouts 'Heykel!'. EVERYTHING freezes: no blinking or breathing, mouths shut, grey frame preset.\n- The grey man exists ONLY during freezes and vanishes the instant the music resumes ('Ve dans!').\nThe three freezes:\n- Freeze 1 (5 s): the man is small and far, between the pines behind the fence, alpha 0.55.\n- Freeze 2 (6 s): he stands in the middle of the lawn, life-size.\n- Freeze 3 (11 s): the call 'Heykel.' is k3_freeze_last, voiced by narrator_slow while Beste's mouth moves; the subtitle label stays ANLATICI. The man stands directly behind Beste and Tonton, his head cropped by the top of the frame, one very long arm hanging beside Beste's shoulder without touching it. The hiss fades almost to nothing; two soft heartbeats. Underneath, very faint, plays the reversed whisper k3_ters_rev (gain 0.35); these 11 s are tagged rev 'k3_ters'.\nIf the player moves:\n- During freeze 1 or 2: k3_moved plays at once (Beste's pupils snap to the viewer, everything else stays frozen) and the freeze continues.\n- During freeze 3: k3_moved_last plays and the man's head tilts 15 degrees, the only motion on screen.\nThe music returns and he is gone.",
+     "scene": "S.bgGarden with a new param treeLine:true (back pines). drawSilhouette at three depths: (520,300,h120,a.55), (430,360,h230,a.9), (300,470,h520,a1), with the arm drawn beside Beste. Dance via tilt + y-bob.",
+     "lines": [
+      {
+       "id": "k3_game_intro",
+       "voice": "beste",
+       "text": "Şimdi en sevdiğim oyun: Heykel! Müzik çalınca dans ederiz, müzik durunca herkes heykel olur!"
+      },
+      {
+       "id": "k3_game_rule",
+       "voice": "beste",
+       "text": "Sen de oynuyorsun! Müzik durunca hiç kıpırdama. Etrafına bile bakma. Ben görürüm!"
+      },
+      {
+       "id": "k3_ready",
+       "voice": "beste",
+       "text": "Hazır mısın?"
+      },
+      {
+       "id": "k3_ready_yes",
+       "voice": "beste",
+       "text": "Süper! Müzik başlasın!"
+      },
+      {
+       "id": "k3_ready_no",
+       "voice": "beste_cold",
+       "text": "Hazır olmasan da başlıyoruz."
+      },
+      {
+       "id": "k3_freeze",
+       "voice": "beste",
+       "text": "Heykel!"
+      },
+      {
+       "id": "k3_freeze_last",
+       "voice": "narrator_slow",
+       "text": "Heykel."
+      },
+      {
+       "id": "k3_dance",
+       "voice": "beste",
+       "text": "Ve dans!"
+      },
+      {
+       "id": "k3_moved",
+       "voice": "beste_cold",
+       "text": "Kıpırdadın. Gördüm."
+      },
+      {
+       "id": "k3_moved_last",
+       "voice": "beste_deep",
+       "text": "Kıpırdayan yanar."
+      },
+      {
+       "id": "k3_game_end",
+       "voice": "beste",
+       "text": "Oley! Ne güzel heykel olduk! Kimse kıpırdamadı. Değil mi?"
+      },
+      {
+       "id": "k3_ters",
+       "voice": "beste_real",
+       "text": "Kıpırdama. O sadece kıpırdayanı görür. Beni bulursan, sobe de."
+      }
+     ],
+     "interaction": "Typed question k3_ready.\n- evet, hazir, tamam, olur or he: k3_ready_yes.\n- hayir, degil, bekle or yok (whole word): k3_ready_no.\n- Anything else: k3_ready_yes.\n- Idle: b1_idle1.\nThe freezes themselves have NO answer box, so Space is live. The input is the player's stillness (see mechanic). Movement is sampled every frame from room.yaw, room.pitch and keydown (forwarded through a new d.onKey hook while no answer box is open); on touch devices any touch counts. Pausing with Space during a freeze counts as moving, because a key was pressed."
+    },
+    {
+     "beat": "Was anyone behind us? Back to cheerful, but she asks. A 'yes' draws a denial. Then Tonton, trembling, admits he saw it too. Beste turns her head to him slowly with a frozen grin and he goes instantly still (tremble 0, expr neutral). Finally Beste delivers her verdict on the player's stillness.",
+     "scene": "Garden, music box low; the empty lawn where the man stood.",
+     "lines": [
+      {
+       "id": "k3_ask_behind",
+       "voice": "beste",
+       "text": "Bir şey soracağım. Heykel olduğumuzda arkamızda biri var mıydı?"
+      },
+      {
+       "id": "k3_behind_yes",
+       "voice": "beste_cold",
+       "text": "Arkamızda mı? Hayır. Arkamızda kimse yoktu."
+      },
+      {
+       "id": "k3_tonton_saw",
+       "voice": "tonton_sad",
+       "text": "Ben gördüm... Ben de gördüm..."
+      },
+      {
+       "id": "k3_tonton_hush",
+       "voice": "beste_cold",
+       "text": "Tonton. Heykeller konuşmaz."
+      },
+      {
+       "id": "k3_behind_no",
+       "voice": "beste",
+       "text": "Aferin! Burada sadece biz varız. Her zaman sadece biz."
+      },
+      {
+       "id": "k3_still",
+       "voice": "beste_cold",
+       "text": "Sen hiç kıpırdamadın. Tıpkı onun gibi."
+      },
+      {
+       "id": "k3_not_still",
+       "voice": "beste_cold",
+       "text": "Sen kıpırdadın. Bir dahaki sefere kıpırdama. O, kıpırdayanı görür."
+      }
+     ],
+     "interaction": "Typed question k3_ask_behind.\n- evet, vardi, var, adam, amca, biri, siluet, gri, golge, agac or uzun: k3_behind_yes, then k3_tonton_saw, then k3_tonton_hush.\n- hayir, yok, yoktu, kimse, bilmiyorum or anything else: k3_behind_no.\n- Then k3_still if st.flags.still, otherwise k3_not_still.\n- Idle: b1_idle2, b1_idle3."
+    },
+    {
+     "beat": "'HAFTANIN SİHİRLİ SÖZÜ', a 90s-style segment. A jingle sting, then a big yellow star card on purple with sparkles. The letters S, O, B, E pop in one by one (cartoonPop each) as Beste spells them. The player types the word; confetti.\nThen the music stops and Beste's face freezes. The card slowly flips; for 0.25 s its back reads 'O DUYDU' (secret 'oduydu'), then it is blank.\nHer warning line is CUT mid-word by a hard splice: six frames of white leader with a grease-pencil X, the 'splice' sfx (dry click plus dropout), and the VCR counter jumping forward 37 s. These are the editor's scissors, a motif that returns in Tapes 5, 8 and 9.",
+     "scene": "NEW S.wordCard(c, t, {letters:'SOBE', shown:n, flip:0..1, back:'O DUYDU'}), with a small Beste in the corner pointing. NEW S.spliceLeader.",
+     "lines": [
+      {
+       "id": "k3_word_intro",
+       "voice": "beste",
+       "text": "Ve şimdi... Haftanın Sihirli Sözü!"
+      },
+      {
+       "id": "k3_word_spell",
+       "voice": "beste",
+       "text": "Bu haftanın sihirli sözü: Sobe! Se, o, be, e. Saklambaçta birini bulunca bağırırız!",
+       "sub": "Bu haftanın sihirli sözü: SOBE! S-O-B-E. Saklambaçta birini bulunca bağırırız!"
+      },
+      {
+       "id": "k3_word_ask",
+       "voice": "beste",
+       "text": "Hadi, sen de yaz! Haftanın sihirli sözü neydi?"
+      },
+      {
+       "id": "k3_word_right",
+       "voice": "beste",
+       "text": "Süper! Sihirli sözümüzü hiç unutma, tamam mı?"
+      },
+      {
+       "id": "k3_word_wrong",
+       "voice": "beste",
+       "text": "Hayır, hayır! Se, o, be, e. Sobe! Bir daha dene.",
+       "sub": "Hayır, hayır! S-O-B-E. SOBE! Bir daha dene."
+      },
+      {
+       "id": "k3_word_help",
+       "voice": "beste",
+       "text": "Neyse! Ben senin yerine yazarım. Sobe. Unutma!",
+       "sub": "Neyse! Ben senin yerine yazarım: SOBE. Unutma!"
+      },
+      {
+       "id": "k3_word_cold",
+       "voice": "beste_cold",
+       "text": "Ama sakın yüksek sesle söyleme. Yoksa o da duyar. Ve sobelenen kişi..."
+      }
+     ],
+     "interaction": "Typed question k3_word_ask.\n- Accept sobe (also sobee, or 's o b e' with spaces ignored): k3_word_right; st.clues.sobe = true.\n- 1st and 2nd wrong: k3_word_wrong, and the card letters flash.\n- 3rd wrong (truth rule): k3_word_help. Beste 'types' SOBE into the answer box letter by letter herself, and the tape proceeds.\nThe letters stay on screen the whole time. Idle: b1_idle1."
+    },
+    {
+     "beat": "Goodbye in the bedroom at dusk. Tonton sits stiffly. During the goodbye his head jumps 90 degrees to face the viewer in a single frame, with no turning animation, and he parrots the instruction instead of obeying it. Bright end card with the existing n_outro and jingle. Static for 2 s, then black.\nROOM EVENT 2.5 s after eject (first viewing only): a cloth-slide sfx and a soft wooden scrape BEHIND the player; toast 'Arkanda bir şey sürtündü.'",
+     "scene": "S.bgBedroom({window:'night', night:0.3}); S.endCard (bright).",
+     "lines": [
+      {
+       "id": "k3_bye",
+       "voice": "beste",
+       "text": "Bugünlük bu kadar! Tonton, arkadaşımıza hoşça kal de!"
+      },
+      {
+       "id": "k3_tonton_bye",
+       "voice": "tonton",
+       "text": "Hoşça kal de. Hoşça kal de."
+      },
+      {
+       "id": "k3_bye_next",
+       "voice": "beste",
+       "text": "Gelecek bölümde çok önemli bir şey öğreneceğiz: Kaybolursan ne yapmalısın?"
+      }
+     ]
+    }
+   ],
+   "secret": "1) 'arkana' (SECRETS label 'Uyarıdaki yazı'): on the warning card at 3.0 s, for 0.2 s, the whole text is replaced by 'ARKANA BAKMA'. Caught by pausing or rewinding. Text: 'ARKANA BAKMA'. It pays off when the sheet-covered chest turns out to have moved behind the player.\n2) 'oduydu' (SECRETS label 'Sihirli sözün arkası'): the back of the magic-word card, for 0.25 s during k3_word_cold. Text: 'O DUYDU'.\nReversed message 'ters-k3_ters' on the freeze-3 frames.",
+   "clues": "- SOBE (the magic word, spelled on screen and typed by the player) opens the 4-letter lock on the toy chest (Tape 4 find).\n- st.flags.still and st.flags.tail ('uydu' / 'direndi') are printed on the Tape 9 talent form ('Kıpırdamadı.' / 'Tonton'un kuyruğu: turuncu').\n- The ANLATICI label on a line Beste mouths is explained in Tape 9 clip 4 ('O ses sonra bütün kasetlerin anlatıcısı oldu').\n- 'O, kıpırdayanı görür' sets up Tape 8's pause count and its rule 2.\n- 'Ve sobelenen kişi...' and 'O DUYDU' set up the man's single 'Sobe' in Tape 8 and the bad ending's 'Şimdi ebe sensin'.\n- The reversed k3_ters ('Beni bulursan, sobe de') points to the finale's good ending.\n- The splice motif introduces Nermin's interventions (Tapes 5, 8, 9).",
+   "roomFind": "The trigger is unchanged. 2.5 s after Tape 2 ejects there is a thud behind the player: the Tonton plush has fallen from the shelf to the floor (x -0.45, z 2.05), belly torn, tail missing. Clicking it takes the tape; there is no puzzle.\n- New toast: 'Peluşun karnı yırtılmış. İçinden bir kaset düştü. Etiketinde çocuk yazısıyla: Beste 3 — Tonton Döndü.' The old 'SON' label moves to Tape 10.\n- Objective (unchanged): 'Arkandan gelen sesin kaynağına bak.'\n- Hint after 40 s: toast 'Raftaki peluş yerinde değil.'\n- TAPE_NAMES[3] = \"Kaset 3 — 'Tonton Kedi Geri Döndü!'\".",
+   "newAssets": "DRAW:\n- drawTonton option stitched: button eyes with thread holes, chest seam, grey X-stitched tail, sewn mouth (frozenMouth).\n- S.warning 'lines' override.\n- bgGarden option treeLine.\n- A silhouette with a long arm drawn beside Beste.\n- S.wordCard: yellow star card, letters popping, flip with back text.\n- S.spliceLeader: white frame, grease-pencil X, frame numbers.\nSFX: splice, clothSlide, woodScrape.\nCODE:\n- Stillness detector (yaw/pitch window + d.onKey + touch), active only inside freeze windows.\n- {cevap} token.\n- Freeze preset (instant setBase + hiss duck).\nROOM: after the tape (first viewing only), the sheet-covered furniture tweens from (2.25, 0.5, 0.9) to about (1.3, 0.5, 0.85), just right of and slightly behind the seat. The sheet slides half off, revealing the front of a blue toy chest with a yellow star (Tape 4 find).\nVOICE: no new style. Tonton plays at runtime rate 0.93 / detune -70. Reversed file k3_ters_rev."
+  },
+  {
+   "n": 4,
+   "title": "Kaybolursan Ne Yaparsın?",
+   "logline": "A public-safety episode: stay where you are, never go with strangers, and learn your home phone number with a catchy karaoke song. Beste teaches her own number, 364 27 27. In the last chorus the lyrics rewrite themselves into a different number: the number of the phone in your attic. Then she dials it, and the phone behind you starts to ring while you cannot look away from the screen.",
+   "look": "The 'yellowed dub'.\n- Saturation 0.85, tint (1.00, 0.97, 0.82) like an old faded copy, noise 0.07, tracking 0.26, jitter 0.20, aberration 1.0.\n- Title decay 0.15; jingle tempo 140, detune -40; music box 100. The karaoke text jitters a little more on each verse.\n- Turned chorus: a slow vertical roll (roll 0.3) and saturation 0.5.\n- During the call the picture locks: everything is frozen except Beste's mouth and eyes, and the tint drifts green (0.90, 1.05, 0.90).\n- The real ring comes from the room, clean and unfiltered, which makes it sound more real than anything on the TV.\nCompared with Tape 3: the first visible yellowing and roll, and the music now detunes.",
+   "mechanic": "MEMORY + THE TAPE REACHES INTO THE ROOM.\n- A karaoke panel has a bouncing star. The voice stops at a blank and the player types the missing word.\n- Then a 7-digit number must be memorised and typed back.\nTwist: in the last chorus the panel REWRITES itself letter by letter:\n- 'Beste'nin evi' becomes 'senin evin';\n- 27 27 becomes 51 80;\n- the player's own answer GELMEM becomes GELİRİM.\n364 51 80 is printed on the attic phone's dial card from the start, so an attentive player recognises it before Beste says whose it is. Then she dials it, and the real, positional phone behind the player rings during the tape.\nThe focus lock the player asked for is the scare: you hear it and cannot turn round. F gives only the standard 'Kaset oynarken ekrandan ayrılamazsın.' toast.",
+   "segments": [
+    {
+     "beat": "A slightly yellowed title card and the jingle. The narrator announces a 'lesson' episode in a perfectly normal voice.",
+     "scene": "S.titleCard({episode:'4. Bölüm', title:'Kaybolursan Ne Yaparsın?', decay:0.15}).",
+     "lines": [
+      {
+       "id": "k4_title",
+       "voice": "narrator",
+       "text": "Dördüncü bölüm. Kaybolursan ne yaparsın?"
+      }
+     ]
+    },
+    {
+     "beat": "Classroom. A chalkboard headed 'KAYBOLURSAM NE YAPARIM?'; three rules appear as Beste reads them, pointer in hand. Stitched Tonton sits at a tiny school desk, completely motionless, button eyes on the viewer.\nAfter rule 1, the chalk of rule 1 smudges and a 3 s static burst cuts in: the grainy real girl, flipped, with a blinking '◀◀', and the reversed whisper k4_ters_rev (the Tape 2 pattern; frames tagged rev 'k4_ters'). Then back to the board as if nothing happened.",
+     "scene": "S.bgRules with new params {title:'KAYBOLURSAM NE YAPARIM?', rules:['1. Olduğun yerde kal.','2. Yabancılarla gitme.','3. Ev telefonunu ezberle.']}; tiny desk with stitched Tonton; S.realGirl({flip:true}) + staticNoise for the burst.",
+     "lines": [
+      {
+       "id": "k4_hello",
+       "voice": "beste",
+       "text": "Merhaba arkadaşım! Bugün çok önemli bir dersimiz var. Dikkatli dinle, olur mu?",
+       "sub": "Merhaba {ad}! Bugün çok önemli bir dersimiz var. Dikkatli dinle, olur mu?"
+      },
+      {
+       "id": "k4_lesson",
+       "voice": "beste",
+       "text": "Bazen çocuklar kaybolur. Ormanda, çarşıda, pazarda. Kaybolursan ne yapmalısın? Üç kuralımız var!"
+      },
+      {
+       "id": "k4_rule1",
+       "voice": "beste",
+       "text": "Bir! Olduğun yerde kal. Koşma, saklanma. Seni arayanlar seni bulsun."
+      },
+      {
+       "id": "k4_ters",
+       "voice": "beste_real",
+       "text": "Olduğum yerde kaldım. Kimse gelmedi. Evimi ara."
+      },
+      {
+       "id": "k4_rule2",
+       "voice": "beste",
+       "text": "İki! Yabancılarla asla gitme. Sana şeker verse bile. Oyun teklif etse bile."
+      },
+      {
+       "id": "k4_rule3",
+       "voice": "beste",
+       "text": "Üç! Evinin telefonunu ezberle. Sana kendi numaramı öğreteceğim. Hem de şarkıyla!"
+      }
+     ]
+    },
+    {
+     "beat": "KARAOKE, verse 1. A rounded lyric panel slides up over the bottom 40% of the frame. A yellow star bounces over each syllable in time with the voice; the music pauses at the blank '______' and the answer box opens.\n- A right answer fills the blank in sparkly capitals (GELMEM) and the music continues.\n- A wrong answer gets the worst line of the episode, delivered flat, before she snaps back to cheerful.",
+     "scene": "bgRules classroom + NEW karaoke panel (4 lines, syllable highlight, bouncing star, blank slot).",
+     "lines": [
+      {
+       "id": "k4_sing_intro",
+       "voice": "beste",
+       "text": "Şimdi şarkı zamanı! Sözler ekranda. Zıplayan yıldızı takip et, boşluğa gelince sen yaz!"
+      },
+      {
+       "id": "k4_v1",
+       "voice": "beste",
+       "text": "Ormanda bir amca gelse, gel saklambaç oynayalım dese, hiç düşünmem, hemen derim: Ben seninle...",
+       "sub": "Ormanda bir amca gelse, / 'Gel, saklambaç oynayalım' dese, / hiç düşünmem, hemen derim: / Ben seninle ______!"
+      },
+      {
+       "id": "k4_v1_ok",
+       "voice": "beste",
+       "text": "Gelmem! Ben seninle gelmem! Aferin sana!"
+      },
+      {
+       "id": "k4_v1_ok2",
+       "voice": "beste_cold",
+       "text": "Ben de öyle demiştim. Ama o, ağaçların arasında çok güzel saklanıyordu."
+      },
+      {
+       "id": "k4_v1_go",
+       "voice": "beste_cold",
+       "text": "Gelirsin, öyle mi? Ben de gitmiştim."
+      },
+      {
+       "id": "k4_v1_go2",
+       "voice": "beste",
+       "text": "Hihi! Yanlış cevap! Yabancılarla asla gitmiyoruz. Ben seninle gelmem!"
+      },
+      {
+       "id": "k4_v1_hint",
+       "voice": "beste",
+       "text": "Yabancı biri gel derse ne dersin? Ben seninle... gel... gel...?"
+      }
+     ],
+     "interaction": "Typed blank after k4_v1.\n- gelmem, gitmem, oynamam, hayir, asla, olmaz, istemem, kacarim, bagiririm, polis, annem, babam, or yok (whole word): k4_v1_ok + k4_v1_ok2; answers.stranger = 'gitmez'.\n- gelirim, giderim, oynarim, evet, tamam, olur, or gel (whole word): k4_v1_go + k4_v1_go2; answers.stranger = 'gider'.\n- Unrecognised once: k4_v1_hint, and the panel shows 'GEL___'.\n- Unrecognised twice: treated as right (the panel fills GELMEM).\n- Idle: b1_idle1, b1_idle2."
+    },
+    {
+     "beat": "KARAOKE, verse 2: the phone song. Beste stands beside a big red cartoon rotary phone. Bouncy digits '364 · 27 · 27' pop up as she sings. She explains the double 27 (a callback to Tape 1's seven apples) and sings it again (k4_song is played twice). Then the player types the number.",
+     "scene": "NEW big red cartoon rotary phone on a little table + NEW S.bigDigits(['364','27','27'], bounce) + karaoke panel.",
+     "lines": [
+      {
+       "id": "k4_song",
+       "voice": "beste",
+       "text": "Üç yüz altmış dört! Yirmi yedi, yirmi yedi! Kaybolursan ara bizi, burası Beste'nin evi!",
+       "sub": "364 · 27 · 27! Kaybolursan ara bizi, burası Beste'nin evi!"
+      },
+      {
+       "id": "k4_song_why",
+       "voice": "beste",
+       "text": "Yirmi yedi, iki kere! Çünkü yedi benim en sevdiğim sayı. Hadi bir daha!",
+       "sub": "27, iki kere! Çünkü 7 benim en sevdiğim sayı. Hadi bir daha!"
+      },
+      {
+       "id": "k4_ask_number",
+       "voice": "beste",
+       "text": "Şimdi sen yaz bakalım. Beste'nin evinin numarası kaç?"
+      },
+      {
+       "id": "k4_num_right",
+       "voice": "beste",
+       "text": "Mükemmel! Artık kaybolsam bile beni arayabilirsin."
+      },
+      {
+       "id": "k4_num_wrong",
+       "voice": "beste",
+       "text": "Az kaldı! Üç yüz altmış dört, yirmi yedi, yirmi yedi. Bir daha dene.",
+       "sub": "Az kaldı! 364 · 27 · 27. Bir daha dene."
+      },
+      {
+       "id": "k4_num_help",
+       "voice": "beste",
+       "text": "Bak, ekrana kocaman yazdım. Üç altı dört, iki yedi, iki yedi. Unutma, olur mu?",
+       "sub": "Bak, ekrana kocaman yazdım: 364 27 27. Unutma, olur mu?"
+      }
+     ],
+     "interaction": "Typed question k4_ask_number. The digits are hidden while the player types.\n- Correct if digits(text) === '3642727' (spaces, dashes and dots ignored): k4_num_right.\n- 1st and 2nd wrong: k4_num_wrong (the digit card flashes for 1 s).\n- 3rd wrong (truth rule): k4_num_help; the digits stay huge on screen for 4 s, then the tape continues.\n- On completion st.clues.phone = true.\n- Idle: b1_idle1, b1_idle2."
+    },
+    {
+     "beat": "THE TURNED CHORUS. 'Son bir kere!' The music box plays the same tune a semitone lower and Beste's face freezes mid-smile. On the karaoke panel the lyrics REWRITE themselves letter by letter, with small glitch ticks:\n- '27 · 27' becomes '51 · 80';\n- 'burası Beste'nin evi' becomes 'burası artık senin evin';\n- verse 1's filled answer 'GELMEM' becomes 'GELİRİM'.\nThe picture slowly rolls. She sings the new chorus flat, then asks whose number it is.",
+     "scene": "Same phone set; roll 0.3; saturation 0.5; karaoke panel with letter-by-letter erase/retype; bigDigits swap one digit at a time.",
+     "lines": [
+      {
+       "id": "k4_song_last",
+       "voice": "beste",
+       "text": "Son bir kere, hep birlikte!"
+      },
+      {
+       "id": "k4_song_turn",
+       "voice": "beste_cold",
+       "text": "Üç yüz altmış dört. Elli bir. Seksen. Kaybolursan ben ararım. Burası artık senin evin.",
+       "sub": "364 · 51 · 80. Kaybolursan ben ararım. Burası artık senin evin."
+      },
+      {
+       "id": "k4_ask_whose",
+       "voice": "beste",
+       "text": "Bu numara kimin, arkadaşım?"
+      },
+      {
+       "id": "k4_whose",
+       "voice": "beste_cold",
+       "text": "Bakalım hâlâ çalışıyor mu?"
+      },
+      {
+       "id": "k4_whose_mine",
+       "voice": "beste_cold",
+       "text": "Evet. Halanın telefonu. Bakalım hâlâ çalışıyor mu?"
+      }
+     ],
+     "interaction": "Typed question k4_ask_whose (normal prompt, but the music has stopped). Any answer is accepted.\n- If it contains hala, halam, benim, bizim, ev, tavan, burasi or senin: k4_whose_mine.\n- Otherwise: k4_whose.\n- Idle: b1_idle3."
+    },
+    {
+     "beat": "SET-PIECE: THE CALL.\n1. Beste lifts the cartoon receiver and dials 7 digits (rotaryDial sfx through the TV, a whirr and click per digit, about 4 s; the secret frame flashes during the dialling).\n2. 1.5 s of silence.\n3. The REAL attic phone (black bakelite, on the cardboard box behind and left of the chair) rings: positional, loud, unfiltered. The bulb flickers once on the first ring (flickerBurst 0.3, respecting 'Yanıp sönmeyi azalt').\n4. On TV Beste holds the receiver and stares at the viewer, her eyes tracking the player's gaze; nothing else moves. Ring 2: k4_call1. Ring 4: k4_call2.\n5. A prompt opens while the phone keeps ringing behind the player.\n6. After the answer, two more rings, then the whisper (high gain, close-mic).\n7. She slowly lowers the receiver. The TV hang-up click and the real ringing stop on the same frame, mid-ring.\n8. 2.5 s of hiss only, then a snap back to cheerful: music box, smile, the existing b_laugh.\nThe camera never moves on its own; pressing F gives only the standard lock toast.",
+     "scene": "Phone set, frozen frame except Beste's mouth and eyes; Beste drawn holding the red receiver (a red rounded bar at her ear). ROOM: g.audio.sfx('phoneRing', g.room.points.phone) per ring; g.room.flickerBurst(0.3) on ring 1.",
+     "lines": [
+      {
+       "id": "k4_call1",
+       "voice": "beste",
+       "text": "Alo? Alo? Arkadaşım, telefonun çalıyor. Duymuyor musun?"
+      },
+      {
+       "id": "k4_call2",
+       "voice": "beste_cold",
+       "text": "Açsana."
+      },
+      {
+       "id": "k4_call_ask",
+       "voice": "beste_cold",
+       "text": "Neden açmıyorsun?"
+      },
+      {
+       "id": "k4_call_any",
+       "voice": "beste_cold",
+       "text": "Ben senin sesini duymak istiyorum. Yazını değil."
+      },
+      {
+       "id": "k4_call_scared",
+       "voice": "beste_cold",
+       "text": "Korkma. Ben de korkmuştum. Sonra geçti."
+      },
+      {
+       "id": "k4_call_whisper",
+       "voice": "beste_whisper",
+       "text": "Biliyorum oradasın. Nefesini duyuyorum."
+      },
+      {
+       "id": "k4_call_joke",
+       "voice": "beste",
+       "text": "Hihihi! Telefon şakası! Herkes bayılır!"
+      }
+     ],
+     "interaction": "Typed question k4_call_ask (evil prompt), asked while the real phone keeps ringing.\n- kork, korkuyorum, korktum or korkarim: k4_call_scared.\n- Everything else (including acamam, kalkamiyorum, kilitli, donemiyorum): k4_call_any.\n- No idle lines. After 15 s the prompt closes by itself (d.ask timeout) and k4_call_any plays.\nThe phone cannot be answered during the tape because of the focus lock."
+    },
+    {
+     "beat": "STAY WHERE YOU ARE. The Çamlık forest at dusk, under an orange and purple sky.\n- On a pine at the edge hangs a faded LOST-CAT poster: 'KAYIP KEDİ — TONTON', a drawing of Tonton with his old ORANGE tail, and tear-off tabs reading '364 27 27' (a second, quiet source for the number; one tab is already torn off).\n- Beste stands alone beside the big tree, not moving (neutral, no blinking). Tonton is absent.\nShe recites rule 1 as a confession, then asks the player to promise to come and find her.",
+     "scene": "S.bgForest({dark:0.5}) with a dusk tint; NEW lost-cat poster prop with tear-off tabs; Beste at x 150 next to the big tree; no silhouette.",
+     "lines": [
+      {
+       "id": "k4_poster",
+       "voice": "beste",
+       "text": "Bu afişi Tonton kaybolduğunda asmıştım. Altında bizim numaramız var. Tonton döndü ama afiş hâlâ burada."
+      },
+      {
+       "id": "k4_stay",
+       "voice": "beste_cold",
+       "text": "Birinci kural neydi? Olduğun yerde kal. Ben de kaldım. Burada. Hep burada kaldım."
+      },
+      {
+       "id": "k4_ask_find",
+       "voice": "beste",
+       "text": "Beni bulmaya gelecek misin, arkadaşım?"
+      },
+      {
+       "id": "k4_find_yes",
+       "voice": "beste",
+       "text": "Söz mü? Söz verdin! Ben burada bekliyorum."
+      },
+      {
+       "id": "k4_find_no",
+       "voice": "beste_cold",
+       "text": "Olsun. Ben seni bulurum."
+      },
+      {
+       "id": "k4_find_other",
+       "voice": "beste",
+       "text": "Hihi! Bunu evet sayıyorum!"
+      }
+     ],
+     "interaction": "Typed question k4_ask_find.\n- evet, gelecegim, gelirim, tabii, soz, bulurum or bulacagim: k4_find_yes; st.flags.promisedFind = true.\n- hayir, gelmem, gelmeyecegim, or yok (whole word): k4_find_no.\n- Anything else: k4_find_other (promisedFind = true).\n- Idle: b1_idle2."
+    },
+    {
+     "beat": "Goodbye in the bedroom at dusk; stitched Tonton echoes. End card with the existing n_outro. As the end card fades, the attic phone rings ONCE (positional) and stops. After eject (first viewing): toast 'Telefon bir kez çaldı ve sustu.'",
+     "scene": "S.bgBedroom({night:0.4}); S.endCard.",
+     "lines": [
+      {
+       "id": "k4_bye",
+       "voice": "beste",
+       "text": "Dersimiz bitti! Numarayı unutma. Belki bir gün ararsın."
+      },
+      {
+       "id": "k4_tonton_bye",
+       "voice": "tonton",
+       "text": "Belki bir gün ararsın. Ararsın. Ararsın."
+      }
+     ]
+    }
+   ],
+   "secret": "'telefon' (SECRETS label 'Arkadan çekilmiş oda'): while Beste dials the cartoon phone, a 0.25 s cut to a grainy, desaturated image of an ATTIC seen from behind a chair. It shows the back of a chair with a head silhouette, a glowing TV beyond it, and in the foreground a black rotary phone on cardboard boxes: the player's own room, filmed from behind. Text: 'AÇSANA'.\nReversed message 'ters-k4_ters' on the rule-1 static burst: 'Olduğum yerde kaldım. Kimse gelmedi. Evimi ara.'",
+   "clues": "- 364 27 27 is the Aydın home number. It is sung three times, shown on the karaoke panel and in k4_num_help, and printed on the poster tabs; the original newspaper's torn line is changed to read '364 ██ ██'. It is dialled on the attic phone to find Tape 5.\n- 364 51 80 is the attic phone's own number, printed on its dial card from the start. Dialling it gives a busy tone.\n- st.flags.promisedFind feeds the Tape 10 good ending ('Söz vermiştin. Geldin.') and the Tape 9 form ('Söz verdi.').\n- answers.stranger feeds the form ('Yabancıyla gider.').\n- 'Olduğun yerde kal... Hep burada kaldım' sets up Tape 8's empty stump ('Artık orada saklanmıyorum').\n- The reversed k4_ters 'Evimi ara' is an optional nudge toward the phone puzzle.\n- The poster's orange-tailed Tonton contradicts Tape 3's grey tail.",
+   "roomFind": "OBJECT: a blue wooden toy chest with a yellow star on the lid, the same as the cartoon's toy box. It has been under the sheet-covered furniture from the start; before Tape 3 the sheet says 'Üstü beyaz bir çarşafla örtülü bir eşya. Çarşafın altı buz gibi.' After Tape 3 (first viewing) the covered object has moved about 1 m toward the chair and the sheet has slid half off (see Tape 3 newAssets).\n- Objective: 'Arkanda bir şey yer değiştirdi.'\n- Click: 'Mavi bir oyuncak sandığı. Kapağında sarı bir yıldız var. Beste'nin odasındakinin aynısı. Kilidinde dört harf çarkı var; üstüne çocuk yazısıyla SİHİRLİ SÖZ yazılmış.'\n- PUZZLE: a 4-letter word lock typed on the keyboard (new ui.wordlock, len 4). Answer: SOBE.\n- CLUE: Tape 3 'Haftanın Sihirli Sözü' (spelled S-O-B-E on screen; the player typed it or saw Beste type it), plus the secret 'ARKANA BAKMA'.\n- Wrong answer: the dials rattle.\n- HINTS: after 2 wrong, 'Beste bu hafta bir sihirli söz öğretmişti.'; after 4, 'Saklambaçta birini bulunca bağırılan söz.'; after 6, 'S ile başlıyor, E ile bitiyor: S _ _ E.'\n- SUCCESS: 'Sandık açıldı. Eski oyuncakların arasında bir kaset, katlanmış bir mum boya resmi ve turuncu bir peluş kuyruğu var. Kaset: Beste 4 — Kaybolursan.' Opens the new doc 'resim'.\n- The orange tail is flavour ('Tonton'un gerçek kuyruğu.'). In the good ending the plush is back on the shelf with it.\n- Also visible but stuck: 'Sandığın dibinde küçük, üç harfli ikinci bir kilit var. Şimdilik kıpırdamıyor.' (Tape 9 find).\n- TAPE_NAMES[4] = \"Kaset 4 — 'Kaybolursan Ne Yaparsın?'\".",
+   "newAssets": "DRAW:\n- bgRules generalised (title, rules list, dark, extra).\n- Tiny school desk.\n- Karaoke panel: rounded box, 4 lines, syllable highlight, bouncing star, blank slot, letter-by-letter erase/retype effect.\n- Big red cartoon rotary phone, plus a 'receiver at ear' pose.\n- S.bigDigits.\n- Lost-cat poster with tear-off tabs.\n- Dusk forest tint.\n- Secret frame 'attic from behind the chair' (grainy).\nSFX:\n- phoneRing (positional, unfiltered, old double ring).\n- rotaryDial (through the TV).\n- hangup.\n- Room-side ringback, busy and phonePickup for the Tape 5 find.\nROOM: a black bakelite rotary phone on the left-back cardboard box (x -2.45, y 0.42, z 1.9) as points.phone. It is present from the start, with a dial-card texture '364 51 80' and an unplugged cord, and it rings during and after this tape.\nDOC: 'resim' (in the chest). Newspaper edit: the torn line becomes 'Ailesi, kızlarını gören ya da duyanların 364 ██ ██ numaralı telefonu aramalarını rica ediyor.'\nCODE: d.ask({timeout}) resolving null (used for the 15 s call prompt).\nVOICE: reversed file k4_ters_rev."
+  },
+  {
+   "n": 5,
+   "title": "Bugün Sen Beste'sin!",
+   "logline": "Swap day: you are Beste now, and she is you. The subtitles carry your name, the answer box says BESTE, and she interviews 'Beste' for a pretend talk show, writing every answer in a notebook. The last question is 'Soyadın ne?'. Behind her, a mirror shows a reflection that has stopped copying her, and it is writing something on the fogged glass, but only while you look at it. Then the show ends. Except it doesn't.",
+   "look": "'Cold mirror'.\n- Saturation 0.70, tint (0.90, 0.97, 1.10), noise 0.08, tracking 0.30, jitter 0.22, aberration 1.3 (a ghosting double image that suits the mirror).\n- Title decay 0.35; jingle 128/-60; music box 90/-90; a short talk-show sting.\n- At the surname question: aberration 2.0 and two frames of horizontal flip (canvas scale -1). Each look-away from Beste during that question adds a crack to the mirror glass.\n- The fake end card is deliberately bright, and the fake idle screen is a pixel-exact copy of the real one.\n- After the fake end, the 'recording under the recording' is grainier and paler: noise 0.14, saturation 0.35, no music, hiss only.\nCompared with Tape 4: cold blue instead of yellow, the first ghosting, and the first time the frame itself flips.",
+   "mechanic": "ROLE SWAP where the right move is SILENCE, gated by GAZE, then a FAKE END.\n- From k5_rules2 on, Beste's subtitle label is the player's name in capitals and the answer box is labelled 'BESTE:'.\n- Every question is an identity question. Every answer is stored (st.answers.age / color / mother / fakeSurname) for the Tape 9 talent form.\n- The last question asks for the surname. The correct play is to not answer (the box closes itself after 32 s) or to refuse. Typing 'Aydın' is cut out by Nermin's splice and remembered (st.flags.saidSurnameEarly).\nGaze gate: meanwhile the reflection writes EMELYÖS (SÖYLEME seen backwards) letter by letter, ONLY while the player's gaze dwells on the mirror zone (about 0.6 s of gaze per letter). Beste meanwhile demands 'Bana bak'. Fallback: after 20 s the letters continue on their own (1 per 1.2 s), so touch players and players who never look are not locked out.\nThen a FAKE END imitates the end of a tape exactly while the focus lock stays on. The after-show scene adds a one-time REVERSED-TYPING exchange: the real girl can read text typed backwards, the cartoon cannot.",
+   "segments": [
+    {
+     "beat": "A slightly faded title card. The narrator reads the title cheerfully.",
+     "scene": "S.titleCard({episode:'5. Bölüm', title:'Bugün Sen Beste'sin!', decay:0.35}).",
+     "lines": [
+      {
+       "id": "k5_title",
+       "voice": "narrator",
+       "text": "Beşinci bölüm. Bugün sen Beste'sin!"
+      }
+     ]
+    },
+    {
+     "beat": "Bedroom, cool daylight. New prop: an oval mirror on a small dresser where the wardrobe was. In it is a flipped, bluish copy of Beste at 70% alpha (the reflection), copying her perfectly for now. Beste explains the game.\nFrom k5_rules2 on, her subtitle label becomes the player's name in capitals (e.g. 'AHMET:') and the answer box is labelled 'BESTE:' for the rest of the tape. She demonstrates with an empty box that flashes 'BESTE:' for 2 s.",
+     "scene": "S.bgBedroom({mirror:true}) + NEW S.mirror(c, t, {reflect: Beste's state, lag:0, alpha:0.7, tint:'blue', fog:0, writing:'', cracks:0}).",
+     "lines": [
+      {
+       "id": "k5_hello",
+       "voice": "beste",
+       "text": "Merhaba arkadaşım! Bugün çok eğlenceli bir oyun oynayacağız: Yer değiştirmece!"
+      },
+      {
+       "id": "k5_rules",
+       "voice": "beste",
+       "text": "Bugün sen Beste'sin. Ben de sen olacağım. Senin adın artık benim!",
+       "sub": "Bugün sen Beste'sin. Ben de {ad} olacağım. Senin adın artık benim!"
+      },
+      {
+       "id": "k5_rules2",
+       "voice": "beste",
+       "text": "Bak, cevap kutusunda artık senin adın değil, Beste yazıyor. Ne güzel, değil mi?"
+      }
+     ]
+    },
+    {
+     "beat": "TALK-SHOW INTERVIEW. Two small chairs stand in front of a yellow star backdrop. Beste (as the player) sits on the left with a microphone. The right chair is empty, with a name card 'BESTE': 'your' chair. The mirror stands behind them and reflects ONLY Beste, not the chairs, a quiet wrongness. After each answer she scribbles in a notebook (pencil sfx).\nThe reflection drifts:\n- During Q1 it lags 0.6 s behind her.\n- During Q2 Beste waves and the reflection does not (the secret frame sits here).\n- During Q3 the reflection turns to look straight at the camera while Beste looks at the empty chair. When the mother is mentioned, the reflection's face turns 'sad'.",
+     "scene": "NEW S.talkShow set (two chairs, star backdrop, microphone, 'BESTE' name card) + S.mirror in the background (lag from a 0.6 s pose-history buffer; independent pose mode); notebook prop.",
+     "lines": [
+      {
+       "id": "k5_interview",
+       "voice": "beste",
+       "text": "Şimdi seninle röportaj yapacağım, Beste! Çünkü sen çok ünlüsün!"
+      },
+      {
+       "id": "k5_notebook",
+       "voice": "beste",
+       "text": "Cevaplarını şu deftere yazacağım. Hepsini. Tek tek."
+      },
+      {
+       "id": "k5_q_age",
+       "voice": "beste",
+       "text": "İlk soru! Kaç yaşındasın, Beste?"
+      },
+      {
+       "id": "k5_age_right",
+       "voice": "beste",
+       "text": "Yedi! Ne güzel. Hep yedi kalacaksın."
+      },
+      {
+       "id": "k5_age_wrong",
+       "voice": "beste_cold",
+       "text": "Hayır. Beste yedi yaşında. Unuttun mu? Sen artık Beste'sin."
+      },
+      {
+       "id": "k5_q_color",
+       "voice": "beste",
+       "text": "En sevdiğin renk ne, Beste?"
+      },
+      {
+       "id": "k5_color_any",
+       "voice": "beste",
+       "text": "Not aldım! Ama benimki sarıydı. Yani seninki. Karıştırdım!"
+      },
+      {
+       "id": "k5_color_yellow",
+       "voice": "beste_cold",
+       "text": "Sarı. Doğru. Sen bunu nereden biliyorsun?"
+      },
+      {
+       "id": "k5_q_mother",
+       "voice": "beste",
+       "text": "Annenin adı ne, Beste?"
+      },
+      {
+       "id": "k5_mother_any",
+       "voice": "beste_cold",
+       "text": "Not aldım. Annen seni hâlâ arıyor mu, Beste?"
+      },
+      {
+       "id": "k5_mother_unknown",
+       "voice": "beste_cold",
+       "text": "Bilmiyor musun? Ben de bilmiyorum. Unuttum. Sen de mi unuttun?"
+      }
+     ],
+     "interaction": "All three prompts are labelled 'BESTE:'.\n- Q1 k5_q_age: parseNum === 7 gives k5_age_right; anything else gives k5_age_wrong. Store st.answers.age (raw, max 16).\n- Q2 k5_q_color: has 'sari' gives k5_color_yellow; otherwise k5_color_any. Store st.answers.color (max 16).\n- Q3 k5_q_mother: bilmiyorum, bilmem, unuttum, hatirlamiyorum, or yok (whole word) gives k5_mother_unknown; any other text gives k5_mother_any. Store st.answers.mother (max 16).\n- Idle for all: b1_idle1, b1_idle2.\nAll stored text is rendered later as plain text only."
+    },
+    {
+     "beat": "THE LAST QUESTION. The music stops. A slow push-in: Beste holds the microphone toward the camera (scale 1.4, frozen grin), her face in the left half of the frame and the mirror in the right half. Behind her the reflection breathes on the glass (a fog patch grows) and writes with one finger, in mirror-writing, 'EMELYÖS' (SÖYLEME seen backwards).\nGAZE GATE:\n- A letter appears only while the player's gaze sits inside the MIRROR rect (about x 420–600, y 80–400) for 0.6 s. The gaze is g.gazeOnTv mapped to TV pixels: px = (gx+1)*320, py = (1-gy)*240.\n- Each time the gaze leaves Beste's FACE rect (about x 140–330, y 70–260) for more than 0.6 s, she reacts: k5_look1, then k5_look2, then k5_look3 with a crack in the glass and a red flash. At most three reactions.\n- Fallback: after 20 s the remaining letters write themselves (1 per 1.2 s).\nThe answer box stays open the whole time. Three paths:\n- SILENCE (no submit for 32 s): the box closes itself. Beste turns to the mirror and reads the writing aloud as nonsense, which helps the player reverse it, then accepts the silence for now.\n- 'AYDIN': a hard SPLICE (white leader, grease-pencil X, VCR counter jump), and the player hears Nermin's voice for the first time, over the cut. Then back to Beste mid-giggle with a 1 s tracking misalignment.\n- A fake surname: she 'notes' it, so the player has given away their OWN identity.",
+     "scene": "Talk-show close-up; S.mirror({fog:0..1, writing:'SÖYLEME', mirrored:true, cracks:0..3}) with Caveat-font letters drawn inside ctx.scale(-1,1); S.spliceLeader.",
+     "lines": [
+      {
+       "id": "k5_q_surname",
+       "voice": "beste",
+       "text": "Son soru, Beste. Çok kolay. Soyadın ne?"
+      },
+      {
+       "id": "k5_idle1",
+       "voice": "beste",
+       "text": "Beste? Soyadını mı unuttun?"
+      },
+      {
+       "id": "k5_idle2",
+       "voice": "beste_cold",
+       "text": "Herkesin bir soyadı vardır. Soyadı, insanın evidir."
+      },
+      {
+       "id": "k5_idle3",
+       "voice": "beste_deep",
+       "text": "Söyle."
+      },
+      {
+       "id": "k5_look1",
+       "voice": "beste",
+       "text": "Oraya değil, bana bak, Beste!"
+      },
+      {
+       "id": "k5_look2",
+       "voice": "beste_cold",
+       "text": "Aynada kimse yok. Bana bak."
+      },
+      {
+       "id": "k5_look3",
+       "voice": "beste_deep",
+       "text": "Bana bak."
+      },
+      {
+       "id": "k5_read_mirror",
+       "voice": "beste",
+       "text": "Aynada ne yazıyor? Emelyös? Hihi! Ne saçma bir kelime.",
+       "sub": "Aynada ne yazıyor? EMELYÖS? Hihi! Ne saçma bir kelime."
+      },
+      {
+       "id": "k5_silence",
+       "voice": "beste_cold",
+       "text": "Peki. Sus bakalım. Ben sabırlıyım. Çok, çok sabırlıyım."
+      },
+      {
+       "id": "k5_refuse",
+       "voice": "beste_cold",
+       "text": "Söylemiyor musun? Beste kendi soyadını saklıyor. Ne kadar ilginç."
+      },
+      {
+       "id": "k5_nermin_cut",
+       "voice": "nermin",
+       "text": "Hayır. Bu kısmı kesiyorum."
+      },
+      {
+       "id": "k5_almost",
+       "voice": "beste_digital",
+       "text": "Hihihi. Neredeyse."
+      },
+      {
+       "id": "k5_fake",
+       "voice": "beste_cold",
+       "text": "Bu Beste'nin soyadı değil. Senin soyadın mı yoksa? Olsun. Not aldım."
+      }
+     ],
+     "interaction": "Typed question k5_q_surname (prompt label 'BESTE:', not evil), asked with d.ask({timeout: 32, idle: ['k5_idle1','k5_idle2','k5_idle3'], idleGap: 9}). The look-away lines k5_look1–3 are spoken only when no other line is playing.\n- Timeout: k5_read_mirror + k5_silence; st.flags.surname5 = 'sessiz'.\n- soylemem, soylemeyecegim, hayir, yok, bilmiyorum, soyleme, gizli, sir or soylemiyorum: k5_refuse + k5_read_mirror; surname5 = 'reddetti'.\n- aydin: splice, k5_nermin_cut, k5_almost; st.flags.saidSurnameEarly = true.\n- Any other text: k5_fake; st.answers.fakeSurname = text (max 16).\nThis is one of the very few questions in the game where waiting is the best move, and the idle lines make clear the tape will move on. It is not a gate."
+    },
+    {
+     "beat": "GOODBYE and FAKE END. A normal goodbye, a bright end card, the existing n_outro and the jingle. Then d.fakeEnd() imitates the end of a tape exactly, for 7 s:\n- It draws S.blueScreen({text:'VİDEO 1', clock:true}), identical to the idle TV.\n- It plays 'vcrEject' at the VCR and sets room.vcrText to 'STOP', then the blinking '12:00'.\n- It hides the VCR hint bar and fires the real toast 'Kaset bitti ve kendiliğinden dışarı çıktı.'\nTHE FOCUS LOCK STAYS ON. F and E are swallowed silently while d.fake (no 'Kaset oynarken...' toast, which would give the trick away), and the VCR hover label reads 'Video oynatıcı'.\nIf the player presses Space during it, a '❚❚ DURAKLAT' OSD appears on the 'idle' screen, which a real idle TV would never show, and k5_fake_caught whispers (a small reward).\nThen the VCR clicks ('vcrInsert', though nothing was inserted), vcrText goes to 'PLAY', and the OSD shows '▶ OYNAT'.\nThe fake end never calls onTapeDone, never writes the stage and never saves.",
+     "scene": "Talk-show set → S.endCard → S.blueScreen idle imitation.",
+     "lines": [
+      {
+       "id": "k5_bye",
+       "voice": "beste",
+       "text": "Hoşça kal, Beste! Yarın yine buluşalım. Sen benim yerimde, ben de senin yerinde!"
+      },
+      {
+       "id": "k5_fake_caught",
+       "voice": "beste_whisper",
+       "text": "Anladın demek."
+      }
+     ]
+    },
+    {
+     "beat": "SET-PIECE: AFTER THE SHOW. The bedroom at night: empty, no music, grainy and pale. Only the mirror on the dresser.\n1. Beste is not in the room, but the reflection is there on its own (expr sad, scale 1.3).\n2. It steps closer to the glass and the REAL Beste speaks, forward and clearly (label '???').\n3. She asks for a promise in reverse writing; the fog on the glass shows the example 'EVET → TEVE' in mirror letters.\n4. Cartoon footsteps from off-screen right. The reflection snaps back into a perfect copy as cartoon Beste walks in (frozen grin, tracking eyes). If the player answered in reverse, she has noticed something.\n5. After her last question, for 1 s the reflection is smiling while Beste herself has stopped smiling (neutral).\n6. Hard cut to static.",
+     "scene": "S.bgBedroom({night:1, window:'night', mirror:true}); S.mirror({solo:true, expr:'sad', scale:1.3, fogText:'EVET → TEVE'}); base noise 0.14, saturation 0.35.",
+     "lines": [
+      {
+       "id": "k5_real1",
+       "voice": "beste_real",
+       "text": "Gitti mi? Şşş. Sadece kaset bitince konuşabiliyorum."
+      },
+      {
+       "id": "k5_real2",
+       "voice": "beste_real",
+       "text": "Benim adım Beste. Seninki değil. Onunki hiç değil."
+      },
+      {
+       "id": "k5_real_said",
+       "voice": "beste_real",
+       "text": "Ona soyadımı söyledin. Nermin abla kesti. Bir daha söyleme."
+      },
+      {
+       "id": "k5_real_ask",
+       "voice": "beste_real",
+       "text": "Bana tersten yaz. O tersini okuyamaz. Beni bulacak mısın?",
+       "sub": "Bana tersten yaz. O tersini okuyamaz. Beni bulacak mısın? (EVET → TEVE)"
+      },
+      {
+       "id": "k5_real_yes",
+       "voice": "beste_real",
+       "text": "Söz mü? O zaman unutma: sıkışırsan geri sar. Ve bırakma."
+      },
+      {
+       "id": "k5_real_no",
+       "voice": "beste_real",
+       "text": "Anlıyorum. Korkuyorsun. Ben de çok korkmuştum."
+      },
+      {
+       "id": "k5_real_again",
+       "voice": "beste_real",
+       "text": "Tersten yaz. Evet değil: teve. Yoksa o duyar.",
+       "sub": "Tersten yaz. EVET değil: TEVE. Yoksa o duyar."
+      },
+      {
+       "id": "k5_real3",
+       "voice": "beste_real",
+       "text": "Kutuların arkasında bir hediye var. Benim için. Doğum günümde açılacaktı."
+      },
+      {
+       "id": "k5_huh",
+       "voice": "beste_cold",
+       "text": "Biri bir şey mi yazdı? Ne biçim bir dil bu?"
+      },
+      {
+       "id": "k5_heard",
+       "voice": "beste_cold",
+       "text": "Kimi bulacaksın? Burada kayıp kimse yok."
+      },
+      {
+       "id": "k5_back",
+       "voice": "beste_cold",
+       "text": "Kiminle konuşuyordun, Beste?"
+      },
+      {
+       "id": "k5_who_mirror",
+       "voice": "beste_cold",
+       "text": "Aynada kimse yok. Aynada sadece ben varım."
+      },
+      {
+       "id": "k5_who_noone",
+       "voice": "beste",
+       "text": "Ben de öyle düşünmüştüm! Hihihi."
+      }
+     ],
+     "interaction": "k5_real_said plays only if st.flags.saidSurnameEarly.\nQ1 k5_real_ask (soft prompt, not evil, label '???'). Let r = reverse(norm(text)).\n- r contains evet, bulacagim, bulurum, soz, tamam or gelecegim: k5_real_yes; st.flags.mirrorFriend = true.\n- r contains hayir: k5_real_no.\n- The FORWARD text contains evet, bulacagim, bulurum, soz or tamam: k5_real_again and ONE re-ask. A second forward answer gives k5_heard (the cartoon heard it; mirrorFriend stays false).\n- Anything else: k5_real_no.\nThen k5_real3. Cartoon Beste walks in; if mirrorFriend, k5_huh plays first.\nQ2 k5_back (evil prompt):\n- ayna, aynadaki, kiz, beste, gercek, yansima, or the exact word 'o': k5_who_mirror.\n- kimse, hic, hayir, yok or kendimle: k5_who_noone.\n- Anything else: k5_who_mirror.\nIdle: b1_idle3."
+    }
+   ],
+   "secret": "'ayna' (SECRETS label 'Aynadaki kız'): during Q2 (colour), for 0.2 s, the reflection in the mirror is the grainy real girl (S.realGirl clipped to the oval) instead of the cartoon. Text: 'BEN BURADAYIM'.\nThe mirror-writing EMELYÖS is not hidden. It is this tape's 'read it backwards' puzzle in plain sight, gated by where you look.",
+   "clues": "- 'Kutuların arkasında bir hediye var... Doğum günümde açılacaktı.' leads to the gift box behind the stacked boxes (Tape 6 find). Its lock is her birthday from the school card: 03.02.1991 → 0302.\n- The stored answers (age, color, mother, fakeSurname) fill the Tape 9 talent form.\n- st.flags.saidSurnameEarly drives Tape 10's door III line k10_q3_again and the form's half-written SOYADI box.\n- st.flags.mirrorFriend drives the finale line k10_good_mirror.\n- 'Sıkışırsan geri sar. Ve bırakma.' points to the finale's hidden ending, layered with b2_real and Nermin in Tape 9.\n- 'Soyadı, insanın evidir' echoes forward to Nermin's 'Soyadı, eve dönen yoldur' (Tape 9).\n- This is the first time the player hears Nermin's voice (the splice).\n- The real Beste speaks only when the entity thinks the tape is over. Tape 8 reuses that logic: she talks while the picture is paused.",
+   "roomFind": "OBJECT: the black bakelite rotary phone on the cardboard box behind and left of the chair. It is present from the start: 'Eski bir bakalit telefon. Kablosu duvara bağlı değil. Kadranın ortasındaki kartta bu hattın numarası yazıyor: 364 51 80.'\n- Before Tape 4, lifting the receiver gives silence ('Hat yok.'). It rings during Tape 4 and once more as that tape's end card fades.\n- After Tape 4 the label becomes '<b>Telefonla ara</b>' and the receiver has an impossible dial tone. Objective: 'Telefonla birini ara.'\n- PUZZLE: a 7-digit rotary dial overlay (ui.keypad generalised: len 7, mask '___ __ __', a rotary whirr per digit). Answer: 3642727.\n- CLUE: Tape 4's phone song (sung three times, karaoke panel, k4_num_help with the digits on screen), the lost-cat poster's tear-off tabs, the newspaper's torn line '364 ██ ██', and the reversed k4_ters 'Evimi ara'.\n- SUCCESS: ringback x3, a pick-up click, a child breathing, then from the phone (room bucket, positional) k5_room_real1 (beste_real) 'Şşş. Saklanıyorum. Ses çıkarma.' and k5_room_real2 (beste_real) 'Halının altına bak. Ona söyleme.'; a click; busy tone. 2 s later the kilim's front-left corner beside the chair visibly turns up; toast 'Kilimin bir köşesi kalkmış.'\n- Clicking the corner: 'Kilimin altında gevşek bir tahta var.' Then: 'Tahtanın altında bir kaset, sarı yıldızlı küçük bir toka ve katlanmış bir gazete sayfası var. Kaset: Beste 5 — Sen Beste'sin.' Opens doc 'news2'.\n- WRONG number: toast 'Aradığınız numaraya şu anda ulaşılamıyor.'\n- OWN number 3645180: busy tone + toast 'Meşgul. Kendi numaranı aradın. Hat sanki başka bir yerde de açık.'\n- HINTS: after 2 wrong, 'Beste'nin şarkıdaki ev numarası. Yedi rakam.'; after 4, '364 ile başlıyordu. Sonra iki kere en sevdiği sayı.'; after 6, '364 27 27.'\n- TAPE_NAMES[5] = \"Kaset 5 — 'Bugün Sen Beste'sin!'\".",
+   "newAssets": "DRAW:\n- S.mirror: oval dresser mirror. The reflection is Beste flipped and clipped, with a blue tint and alpha 0.7; lag comes from a 0.6 s pose history. It supports an independent pose/expression, a solo mode, a fog patch, mirrored handwriting, 3 crack stages and fog example text.\n- S.talkShow set: two chairs, star backdrop, microphone, 'BESTE' name card.\n- Notebook with pencil scribble.\n- realGirl clipped to an oval (secret).\nUI/CODE:\n- Per-tape subtitle label override (st.name uppercased) and prompt label override ('BESTE:').\n- d.ask timeout.\n- d.gazeIn(rect) helper.\n- Reverse-text check.\n- d.fakeEnd({sec:7}): blue-screen imitation, vcrEject, vcrText STOP / 12:00 / PLAY, the real toast, F/E swallowed silently with no toast, VCR label 'Video oynatıcı', hint bar hidden, Space shows '❚❚' and triggers k5_fake_caught. It never calls onTapeDone or saves.\nSFX: pencil, talkShowSting; vcrInsert and vcrEject reused.\nSTATE: st.answers {age, color, mother, fakeSurname}; st.flags.saidSurnameEarly, mirrorFriend.\nVOICE: nermin (first line).\nROOM (for the Tape 5 find): kilim corner-lift animation + a loose floorboard mesh beside the chair; a yellow star hair clip prop; room lines k5_room_real1/2 (beste_real); doc 'news2'."
+  },
+  {
+   "n": 6,
+   "title": "İyi ki Doğdun Beste!",
+   "logline": "Beste throws herself a birthday party: 'Bugün on dört Mayıs, benim doğum günüm!' The guests are empty chairs, one with your name on it. The eighth candle will not stay lit, and you know her birthday is in February, because you just opened her present with it. Catch the lie and the thing in the cartoon tells you when it was really born. Then it asks you to blow out the candles, and the light in your attic goes out instead.",
+   "look": "'Candlelight'.\n- Saturation 0.55, warm tint (1.15, 0.92, 0.75), noise 0.09, tracking 0.32, jitter 0.25, aberration 1.4.\n- Title decay 0.5, with party hats on the orbiting stars.\n- A slow, detuned 'İyi ki doğdun' (the public-domain Happy Birthday tune) on the music box, tempo 92, detune -120.\n- When the lie is caught: the music sinks (detune sweep to -1200 in 0.6 s), the flames stop flickering and become still triangles, and the tint flashes red (1.3, 0.6, 0.55) on 'Ormanda'.\n- After the blow-out the cartoon room is dark (shade 0.85) except for radial candlelight, with tint (1.25, 0.80, 0.55) and noise 0.12; Beste is lit from below.\n- In the attic the bulb is DEAD from the blow-out until Tape 7 starts playing; moonlight and the TV glow keep the room navigable.\nCompared with Tape 5: the first tape that takes something away from the real room.",
+   "mechanic": "CATCH THE LIE WITH A DOCUMENT. The decisive question is 'Benim doğum günüm ne zaman?'.\n- It accepts the obedient answer ('bugün', '14 Mayıs').\n- A player who remembers the school card (Doğum tarihi: 03.02.1991), which they just used to open the gift box, can contradict her ('3 Şubat', '0302').\nCatching the lie stops the party and forces the entity to say what it is: 'Şubat, onun doğum günü... Ben on dört Mayıs'ta doğdum. Ormanda.' (st.flags.caughtLie).\nPlayers who play along still learn this later as a whispered 'secret', so nobody misses the reveal. The Tape 9 form records whichever birthday you gave it.\nSet-piece: 'Mumları üfle!' turns off the REAL attic light, not the candles on screen.",
+   "segments": [
+    {
+     "beat": "A party-hat title card, with a slow, detuned 'İyi ki doğdun' on the music box.",
+     "scene": "S.titleCard({episode:'6. Bölüm', title:'İyi ki Doğdun Beste!', decay:0.5, hats:true}).",
+     "lines": [
+      {
+       "id": "k6_title",
+       "voice": "narrator",
+       "text": "Altıncı bölüm. İyi ki doğdun Beste!"
+      }
+     ]
+    },
+    {
+     "beat": "THE PARTY ROOM: the bedroom with bunting and four balloons (one deflated on the floor), and a table with a pink cake and seven unlit candles. Five little chairs carry name cards:\n- 'BESTE';\n- 'TONTON' (stitched Tonton in a party hat, motionless);\n- '{AD}' (the player's name in capitals; the chair is empty and faces the camera);\n- two cards with the names scribbled out in black crayon.\nBeste wears a party hat.\nContinuity crack: for the first second of k6_hello the subtitle label still shows the player's name (left over from Tape 5), then glitches back to 'BESTE'.\nAfter the 'who' answer she adds the real-date line using the player's real weekday. Tonton's 'singing' comes from a mouth that never moves.",
+     "scene": "NEW S.bgParty (bgBedroom + bunting, balloons, cake, five chairs with name cards; one card renders st.name in caps).",
+     "lines": [
+      {
+       "id": "k6_hello",
+       "voice": "beste",
+       "text": "Arkadaşım! Hoş geldin! Bugün çok, çok özel bir gün. Bil bakalım neden?",
+       "sub": "{ad}! Hoş geldin! Bugün çok, çok özel bir gün. Bil bakalım neden?"
+      },
+      {
+       "id": "k6_ask_who",
+       "voice": "beste",
+       "text": "Bugün kimin doğum günü?"
+      },
+      {
+       "id": "k6_who_right",
+       "voice": "beste",
+       "text": "Evet! Benim! Bugün on dört Mayıs. Benim doğum günüm!",
+       "sub": "Evet! Benim! Bugün 14 Mayıs. Benim doğum günüm!"
+      },
+      {
+       "id": "k6_who_player",
+       "voice": "beste_cold",
+       "text": "Hayır. Senin doğum gününü biliyorum. Bugün değil."
+      },
+      {
+       "id": "k6_calendar",
+       "voice": "beste_cold",
+       "text": "Senin takvimini görebiliyorum. Senin orada bugün başka bir gün. Burada her gün Perşembe. Her gün on dört Mayıs.",
+       "sub": "Senin takvimini görebiliyorum. Senin orada bugün {gun}. Burada her gün Perşembe. Her gün 14 Mayıs."
+      },
+      {
+       "id": "k6_calendar_thu",
+       "voice": "beste_cold",
+       "text": "Senin orada da Perşembe. Demek ki sen de buradasın."
+      },
+      {
+       "id": "k6_guests",
+       "voice": "beste",
+       "text": "Bütün arkadaşlarımı çağırdım! Tonton geldi. Sen geldin. Diğerleri birazdan gelir."
+      },
+      {
+       "id": "k6_tonton",
+       "voice": "tonton",
+       "text": "İyi ki doğdun. İyi ki doğdun. İyi ki."
+      }
+     ],
+     "interaction": "Typed question k6_ask_who.\n- senin, sen, beste or bestenin: k6_who_right.\n- benim or ben (whole words): k6_who_player, then k6_who_right.\n- subat, yalan, degil, or digits beginning 0302 / 32 / 302: jump straight to the CATCH segment (k6_caught1 onward), then return here for k6_calendar and k6_guests.\n- Anything else: k6_who_right.\nThen k6_calendar, or k6_calendar_thu instead if the player's real weekday is Thursday. Idle: b1_idle1, b1_idle2."
+    },
+    {
+     "beat": "COUNT THE CANDLES. A close-up of the cake. She wants eight. The player can light the eighth: a match strikes, it lights, and 1 s later it goes out by itself with a tiny hiss. There is no wind, and the other seven don't even flicker. A thin grey curl of smoke rises from the eighth spot either way.",
+     "scene": "NEW S.cake close-up (7 animated flames; 8th candle with lit / out / smoke states; numbers 1–7 pop over the candles on a wrong count).",
+     "lines": [
+      {
+       "id": "k6_ask_candles",
+       "voice": "beste",
+       "text": "Pastamda kaç mum var? Say bakalım!"
+      },
+      {
+       "id": "k6_candles_right",
+       "voice": "beste",
+       "text": "Yedi! Aferin sana!"
+      },
+      {
+       "id": "k6_candles_wrong",
+       "voice": "beste",
+       "text": "Bir daha sayalım! Bir, iki, üç, dört, beş, altı, yedi. Yedi mum!"
+      },
+      {
+       "id": "k6_candles_eight",
+       "voice": "beste",
+       "text": "Ama ben bugün sekiz yaşına giriyorum. Bir mum eksik!"
+      },
+      {
+       "id": "k6_ask_light",
+       "voice": "beste",
+       "text": "Sekizinci mumu sen yakar mısın? Lütfen, lütfen!"
+      },
+      {
+       "id": "k6_light_yes",
+       "voice": "beste_cold",
+       "text": "Söndü. Hep söner. Sekizinci mum hiç yanmaz."
+      },
+      {
+       "id": "k6_light_no",
+       "voice": "beste_cold",
+       "text": "Yakmıyor musun? Olsun. Zaten yanmazdı."
+      }
+     ],
+     "interaction": "Q1 k6_ask_candles:\n- parseNum === 7: k6_candles_right.\n- Anything else: k6_candles_wrong (numbers pop over the candles).\n- Then always k6_candles_eight.\nQ2 k6_ask_light:\n- evet, olur, yakarim, tamam or yak: 'match' sfx, the 8th candle lights and goes out, then k6_light_yes.\n- hayir, yakmam or istemem: k6_light_no.\n- Anything else: k6_light_yes.\nIdle: b1_idle2."
+    },
+    {
+     "beat": "BIRTHDAY QUIZ, the key question. A star-shaped 'SORU 1' card spins in with a game-show sting. Just before the question comes a 2 s static burst: the flipped grainy real girl and the reversed whisper k6_ters_rev (frames tagged rev 'k6_ters'). Then back to the quiz card as if nothing happened. The obedient answer gets warm praise.",
+     "scene": "NEW S.quizCard over S.bgParty; S.realGirl({flip:true}) + staticNoise for the burst.",
+     "lines": [
+      {
+       "id": "k6_quiz",
+       "voice": "beste",
+       "text": "Şimdi doğum günü bilgi yarışması! Sen beni çok iyi tanırsın, değil mi?"
+      },
+      {
+       "id": "k6_ters",
+       "voice": "beste_real",
+       "text": "Benim doğum günüm şubatta. Annem pasta yapmıştı. O bunu bilmiyor."
+      },
+      {
+       "id": "k6_ask_date",
+       "voice": "beste",
+       "text": "Benim doğum günüm ne zaman?"
+      },
+      {
+       "id": "k6_date_today",
+       "voice": "beste",
+       "text": "Doğru! Bugün! Sen beni ne kadar iyi tanıyorsun."
+      }
+     ],
+     "interaction": "Typed question k6_ask_date.\n- CATCH if it has 'subat', or if the digits start with 0302 / 302 / 32 (e.g. 0302, 03021991, 3.2.1991): go to the CATCH segment.\n- bugun, 14, mayis, 1405 or simdi: k6_date_today (caughtLie stays false).\n- 1st unrecognised: the existing b_unknown, and re-ask.\n- 2nd unrecognised: k6_date_today.\nIdle: b1_idle2, b1_idle3."
+    },
+    {
+     "beat": "CATCH (only if contradicted). The music sinks and dies. Every party element freezes and the flames become still triangles. Beste's expression goes 'frozen', eyes on the viewer. Two seconds of hiss.\nShe asks how you know (evil prompt). Then the reveal: the tint snaps red for 0.4 s on 'Ormanda', with a glitch.\nThen an audible click as her smile comes back (frozen → happy), and she carries on as if nothing happened.",
+     "scene": "S.bgParty frozen; tint flash; S.corrupt 0.3 for 0.5 s.",
+     "lines": [
+      {
+       "id": "k6_caught1",
+       "voice": "beste_cold",
+       "text": "Şubat mı?"
+      },
+      {
+       "id": "k6_caught2",
+       "voice": "beste_cold",
+       "text": "Sen bunu nereden biliyorsun?"
+      },
+      {
+       "id": "k6_caught_card",
+       "voice": "beste_deep",
+       "text": "O kartı yakmalıydım. Hepsini yakmalıydım."
+      },
+      {
+       "id": "k6_caught_any",
+       "voice": "beste_deep",
+       "text": "Yalan söyleme bana."
+      },
+      {
+       "id": "k6_reveal",
+       "voice": "beste_cold",
+       "text": "Şubat, onun doğum günü. Benimki bugün. Ben on dört Mayıs'ta doğdum. Ormanda.",
+       "sub": "3 Şubat, onun doğum günü. Benimki bugün. Ben 14 Mayıs'ta doğdum. Ormanda."
+      }
+     ],
+     "interaction": "Typed question k6_caught2 (evil prompt).\n- kart, okul, kimlik, kutu, nermin, hala, hediye, etiket, yazi or kagit: k6_caught_card.\n- Any other text: k6_caught_any.\nThen k6_reveal; st.flags.caughtLie = true.\nNo idle lines (the silence is the point). After 20 s without input the box closes (timeout) and k6_caught_any plays."
+    },
+    {
+     "beat": "THE WISH. The player types a wish, and it appears on the cake in pink icing, in capitals (plain text, max 18 characters). She comments on it. Players who did NOT catch the lie now hear the origin as a whispered 'secret', so everyone learns it.",
+     "scene": "S.cake with icing text (st.answers.wish, uppercased).",
+     "lines": [
+      {
+       "id": "k6_wish",
+       "voice": "beste",
+       "text": "Dilek zamanı! Benim yerime sen bir dilek tut. Yaz bakalım!"
+      },
+      {
+       "id": "k6_wish_any",
+       "voice": "beste_cold",
+       "text": "Ne güzel bir dilek. Ama söylenen dilek gerçekleşmez. Benimki gerçekleşecek."
+      },
+      {
+       "id": "k6_wish_save",
+       "voice": "beste_deep",
+       "text": "Onu kurtarmak mı? Kimse kurtarılmaz. Sadece bulunur."
+      },
+      {
+       "id": "k6_wish_gone",
+       "voice": "beste_cold",
+       "text": "Ben bir yere gitmem. Burası benim evim."
+      },
+      {
+       "id": "k6_reveal_soft",
+       "voice": "beste_whisper",
+       "text": "Sana bir sır vereyim mi? Ben gerçekten bugün doğdum. On dört Mayıs'ta. Ormanda.",
+       "sub": "Sana bir sır vereyim mi? Ben gerçekten bugün doğdum. 14 Mayıs'ta. Ormanda."
+      }
+     ],
+     "interaction": "Typed question k6_wish (free text, maxLen 24, stored as st.answers.wish, max 18 shown).\n- Contains (beste OR kiz OR onu) AND (kurtul, kurtar, eve, don, bulun, kac or ozgur): k6_wish_save.\n- Contains olsun, gitsin, defol, yok ol, yan, or git (whole word): k6_wish_gone.\n- Anything else: k6_wish_any.\nThen, if !st.flags.caughtLie, k6_reveal_soft. Idle: b1_idle1, b1_idle2."
+    },
+    {
+     "beat": "SET-PIECE: BLOW OUT THE CANDLES. 'Üç deyince... üfle!' The options bar shows ÜFLE.\n- On submit, a soft breath sfx plays BEHIND the player (positional, behind the chair), not from the TV.\n- The attic bulb pops and dies (room.setBulb(0, 0.05), 'pop' at the bulb, moon intensity halved, flicker off). The attic is dark except for the TV glow.\n- On the TV all seven candles are STILL BURNING. The party room has gone dark except for the candlelight, and Beste is lit from below.\n- Two seconds of silence, then her line and the existing b_laugh_cold.",
+     "scene": "S.bgParty with shade 0.85 + radial candle glow; Beste lit from below (a dark gradient over her upper half).",
+     "lines": [
+      {
+       "id": "k6_blow",
+       "voice": "beste",
+       "text": "Hadi mumları üfle! Üç deyince! Bir, iki, üç, üfle!"
+      },
+      {
+       "id": "k6_wrong_candles",
+       "voice": "beste_cold",
+       "text": "Hihihi. Yanlış mumları söndürdün."
+      },
+      {
+       "id": "k6_dark",
+       "voice": "beste_whisper",
+       "text": "Karanlıkta parti daha güzel. Değil mi?"
+      }
+     ],
+     "interaction": "Typed question k6_blow, options bar ['ÜFLE']. Any non-empty text is accepted (uf, ufff, ufle, anything).\nOn submit:\n- g.audio.sfx('blow', pointBehindChair);\n- g.room.setBulb(0, 0.05);\n- 'pop' at the bulb;\n- setFlicker(false);\n- room state st.room.bulbDead = true (first viewing).\nIdle: b1_idle1. After 25 s with no input, she blows 'for you' with the same result."
+    },
+    {
+     "beat": "THE LAST GUEST.\n1. The candle glow slowly widens. The grey man is standing behind the chair with the player's name card, his long fingers resting on its backrest and his head above the top of the frame.\n2. Two heartbeats, then her line.\n3. The secret frame: the man SITTING in the player's chair.\n4. Beste leans in and blows (cartoon whoosh) and the candles go out. The picture is nearly black: only two white glints of void eyes and the cake outline.\n5. She whispers where the next present is.\n6. A decayed end card with the existing n_outro2.\nAfter eject the attic stays dark.",
+     "scene": "S.bgParty dark + drawSilhouette (h 420, behind the {AD} chair) with hands drawn over the chair back; secret variant with the silhouette seated; near-black frame with eye glints; S.endCard({decay:true}).",
+     "lines": [
+      {
+       "id": "k6_last_guest",
+       "voice": "beste_cold",
+       "text": "İşte son misafirim de geldi. O, her doğum günüme gelir."
+      },
+      {
+       "id": "k6_self_blow",
+       "voice": "beste_cold",
+       "text": "Ben söndüreyim."
+      },
+      {
+       "id": "k6_gift",
+       "voice": "beste_whisper",
+       "text": "Sana da bir hediyem var. Oturduğun yerin altında."
+      }
+     ]
+    }
+   ],
+   "secret": "'misafir' (SECRETS label 'Senin sandalyen'): 0.3 s after the last-guest reveal, the man is shown SITTING in the chair whose name card shows the player's name. Text: 'SENİN YERİN'.\nReversed message 'ters-k6_ters' on the pre-quiz static burst: 'Benim doğum günüm şubatta. Annem pasta yapmıştı. O bunu bilmiyor.'",
+   "clues": "- The entity was 'born' on 14 May 1998 in the forest. Tape 10 door I gets a new reply, k10_right1 ('Benim doğduğum gün'), so 1405 now means both the day the girl vanished and the day the thing was born. The tree remembers the date, not a time.\n- Seven candles, and the eighth never stays lit: door II's reply k10_right2.\n- st.flags.caughtLie: the Tape 9 form shows the birth date as 03.02.1991 if caught, or '14.05.1998' in red crayon if not; it also unlocks the finale's k10_good_bday.\n- st.answers.wish is printed on the form.\n- 'Oturduğun yerin altında' leads to Tape 7, taped to the player's chair.\n- The dead bulb turns the 6-to-7 search into a search in the dark.\n- '{gun} / Burada her gün Perşembe' plants that 14 May 1998 was a Thursday (the 'PER' stamp in Tape 9).",
+   "roomFind": "EVENT after Tape 5 (first viewing): a thud. The top cardboard box of the right-hand stack (x 2.3, z 1.92) has tumbled to the floor. Behind the stack is a gift box wrapped in faded pink paper with a ribbon and a 4-digit date lock (display GG/AA). Its tag reads 'Beste'ye. Sekizinci yaş gününde açılsın. — Nermin Abla.'\n- Objective: 'Kutuların arkasına bak.'\n- PUZZLE: a 4-digit keypad. Answer: 0302.\n- CLUE: Tape 5's after-show (k5_real3 'Kutuların arkasında bir hediye var... Doğum günümde açılacaktı.'), the tag, and the school card in the green metal box ('Doğum tarihi: 03.02.1991').\n- Entering 0203: 'Neredeyse. Önce gün, sonra ay.'\n- HINTS: after 2 wrong, 'Etikete göre doğum gününde açılacak. Beste'nin doğum günü bir yerde yazıyordu.'; after 4, 'Metal kutudaki okul kartına bak.'; after 6, 'Gün ve ay: 03 02.'\n- SUCCESS: 'Kutu açıldı. İçinde bir kaset ve hiç gönderilmemiş bir doğum günü kartı var. Kaset: Beste 6 — İyi ki Doğdun.' Opens doc 'dogumgunu'.\nBecause the player has just typed 0302, they are armed to catch Beste's lie in Tape 6.\nTAPE_NAMES[6] = \"Kaset 6 — 'İyi ki Doğdun Beste!'\".",
+   "newAssets": "DRAW:\n- S.bgParty: bunting, balloons, a deflated balloon, five chairs with name cards (one dynamic from st.name).\n- S.cake: animated flames, 8th-candle states, smoke curl, plain-text icing renderer.\n- S.quizCard.\n- Candlelight darkness overlay, with Beste lit from below.\n- Silhouette with hands on a chair back, and a seated-silhouette variant.\n- Near-black frame with eye glints.\n- Party-hat decoration for the title card.\nAUDIO: a 'birthday' melody mode for the music synth (public-domain Happy Birthday notes). SFX: match, blow (positional, behind the chair), whoosh.\nCODE: {gun} token; ask timeout reused.\nROOM:\n- Bulb death persists (st.room.bulbDead) until Tape 7 starts playing; the moon is dimmed but the room stays navigable.\n- Stacked-box topple animation.\n- Gift box with ribbon and a 4-digit lock (reuses ui.keypad with a GG/AA display).\n- Doc 'dogumgunu'.\nVOICE: reversed file k6_ters_rev."
+  },
+  {
+   "n": 7,
+   "title": "Bir Daha!",
+   "logline": "The tape taped to your chair is labelled 'Beste 1 — Tanışalım' in a child's handwriting, and it starts exactly like the first episode. But it is a copy of a copy. It loops, every pass changes one thing, and the picture gets worse. When the copy is too worn to show anything, Beste can only listen, and she asks how many times someone just knocked on YOUR door. On the last, pristine pass she greets you with her back turned, and when she turns round she has no face.",
+   "look": "Generation loss.\n- Opening and loop 1 look like Tape 1 but are already a copy: saturation 0.90, noise 0.07, tracking 0.25.\n- Loop 2: saturation 0.60, noise 0.11, tracking 0.45, roll 0.15, aberration 1.6; reused voices at rate 0.94, detune -60.\n- Loop 3: saturation 0.30 (almost black and white), noise 0.16, tracking 0.70, aberration 2.4, pixel 0.15; voices at rate 0.88, detune -150, heavy warble.\n- Knock interlude: the picture gives up completely (snow at 0.9 over a barely visible bedroom outline).\n- Final pass: unnaturally PRISTINE (saturation 1.05, noise 0.02, tracking 0, jitter 0, aberration 0.2), cleaner than anything since Tape 1, which is wrong in itself.\n- Jingle per loop: 152, then 128/-80, then 100/-200, then 152 crisp. In the stuck loop the jingle drags down to tempo 30.\n- Each loop ends with a fake 'auto-rewind' drawn by the tape itself (rewind streaks, '◀◀' OSD, 'rewind' sfx) that the player does not control.",
+   "mechanic": "LOOP + SPOT THE DIFFERENCE AGAINST YOUR OWN MEMORY OF TAPE 1.\n- Each pass replays a condensed Tape 1, reusing Tape 1's voice files with falling rate and detune (no new recordings), then asks 'Ne değişti?'.\n- A correct answer moves on. A wrong answer replays the 12 s fragment containing the difference. Hint after 2 wrong, the answer after 3, so it is never a hard wall.\nTwist: between loop 3 and the final pass the copy is too worn to show a picture, and the questions move into the REAL attic. Beste counts knocks on the player's own door: 3, then 7, then the handle turns with no knock.\nHidden escape: in the stuck last loop, holding rewind for 1.5 s un-sticks the tape and the real Beste praises the player, a soft rehearsal for the finale's secret. If the player doesn't rewind, the tape snaps after 25 s.",
+   "segments": [
+    {
+     "beat": "Exactly Tape 1's opening, reusing its audio and art: blue screen, the ORIGINAL warning card, the existing n_show, the title card '1. Bölüm — Beste ile Tanışalım!', and the existing n_t1_title. Only the VCR counter on the OSD (Tape 7's tape offset) shows this is not Tape 1.\nROOM: the dead bulb flickers back to life as the jingle starts (setBulb(1, 0.4) with three flicker bursts, respecting 'Yanıp sönmeyi azalt'), as if the show turned your light on for you; st.room.bulbDead = false.",
+     "scene": "S.blueScreen, S.warning (original), S.titleCard({episode:'1. Bölüm', title:'Beste ile Tanışalım!'}).",
+     "lines": []
+    },
+    {
+     "beat": "LOOP 1. The bedroom with the ORIGINAL Tonton: orange tail, unstitched, as he was. Reused audio: b1_hello, b1_tonton_intro, t1_hello.\n- Instead of asking the name, Beste plays b1_name_known, but its subtitle is overridden to 'Seni hatırlıyorum, Nermin! Sen benim arkadaşımsın. Seni hiç unutmadım.' This copy was last watched by the aunt.\n- Then the garden: the tree has EIGHT apples. Beste plays b1_count_intro and then b1_count_help ('...yedi! Yedi tane!') while numbers 1–8 pop over the apples.\n- Auto-rewind streaks, then the question.",
+     "scene": "S.bgBedroom with Tonton default; S.bgGarden({apples:8}) (one extra coordinate in APPLES).",
+     "lines": [
+      {
+       "id": "k7_ask_change1",
+       "voice": "beste",
+       "text": "Hihi! Bu bölümü daha önce izlemiştik, değil mi? Peki, ne değişti?"
+      },
+      {
+       "id": "k7_right_apple",
+       "voice": "beste",
+       "text": "Evet! Sekiz elma vardı. Ama ben yedi dedim. Ben hep yedi derim."
+      },
+      {
+       "id": "k7_right_name",
+       "voice": "beste_cold",
+       "text": "Fark ettin demek. Bu kaseti senden önce Nermin izledi. Her gece izledi."
+      },
+      {
+       "id": "k7_wrong",
+       "voice": "beste",
+       "text": "Hayır! Bir daha bak!"
+      },
+      {
+       "id": "k7_hint1",
+       "voice": "beste",
+       "text": "Elmaları saydın mı?"
+      },
+      {
+       "id": "k7_giveup",
+       "voice": "beste_cold",
+       "text": "Peki. Ben söyleyeyim."
+      }
+     ],
+     "interaction": "Typed question k7_ask_change1.\n- elma, sekiz, 8, fazla or agac: k7_right_apple.\n- isim, ad, adim, nermin, hala or halam: k7_right_name.\n- 1st wrong: k7_wrong + a 12 s replay of the 8-apple garden.\n- 2nd wrong: k7_hint1.\n- 3rd wrong (truth rule): k7_giveup, then k7_right_apple.\nIdle: b1_idle1, b1_idle2."
+    },
+    {
+     "beat": "LOOP 2. 'Bir daha!'\n- A 1 s flash of the warning card (a time skip), then the title card at 128/-80, then the bedroom WITHOUT Tonton.\n- Beste says b1_tonton_intro (slowed) while pointing at empty floor; t1_hello plays from the empty spot (panned). Then b1_picnic.\n- The secret frame 'pamuk' flashes here.\n- Auto-rewind streaks; under them, at low gain, the reversed whisper k7_ters_rev (these streak frames are tagged rev 'k7_ters').\n- Then the question.",
+     "scene": "S.bgBedroom without Tonton; S.bgPicnic. Loop 2 fx; reused voices at rate 0.94, detune -60.",
+     "lines": [
+      {
+       "id": "k7_again",
+       "voice": "beste",
+       "text": "Bir daha!"
+      },
+      {
+       "id": "k7_ters",
+       "voice": "beste_real",
+       "text": "Her seferinde biraz daha unutuyorum. Kopyanın kopyası gibi. Beni unutmadan bul."
+      },
+      {
+       "id": "k7_ask_change2",
+       "voice": "beste",
+       "text": "Ne değişti?"
+      },
+      {
+       "id": "k7_right_tonton",
+       "voice": "beste_cold",
+       "text": "Evet. Tonton yoktu. Ama sesi hâlâ burada. Sesler hiç gitmez."
+      },
+      {
+       "id": "k7_hint2",
+       "voice": "beste",
+       "text": "Birini unutmuyor muyuz?"
+      }
+     ],
+     "interaction": "Typed question k7_ask_change2.\n- tonton, kedi, yok, eksik, kayip, arkadas or kedisi: k7_right_tonton.\n- 1st wrong: k7_wrong + a 12 s replay.\n- 2nd wrong: k7_hint2.\n- 3rd wrong: k7_giveup, then k7_right_tonton.\nIdle: b1_idle2."
+    },
+    {
+     "beat": "LOOP 3. 'Bir daha.' (cold). The title card at 100/-200.\n- The forest, with reused voices at rate 0.88: n_forest, b1_forest, t1_forest (voice only; Tonton is absent), b1_forest_noone, b1_forest_noone2.\n- This time the grey man stands in the OPEN between the trees and does not vanish; he stays there the whole scene at full opacity.\n- The secret frame 'yil' flashes on the carving.\n- Auto-rewind streaks, then the question.",
+     "scene": "S.bgForest({silhouette:1, silX:470}) with a static silhouette; carving variant S.treeCarving({line2:'HÂLÂ BURADA '+year}) for the secret. Loop 3 fx.",
+     "lines": [
+      {
+       "id": "k7_again2",
+       "voice": "beste_cold",
+       "text": "Bir daha."
+      },
+      {
+       "id": "k7_ask_change3",
+       "voice": "beste_cold",
+       "text": "Ne değişti?"
+      },
+      {
+       "id": "k7_right_man",
+       "voice": "beste_cold",
+       "text": "Evet. Bu sefer saklanmadı. Artık saklanmasına gerek yok."
+      },
+      {
+       "id": "k7_hint3",
+       "voice": "beste_cold",
+       "text": "Ağaçların arasına bak."
+      }
+     ],
+     "interaction": "Typed question k7_ask_change3.\n- adam, amca, siluet, golge, biri, gri, saklanmadi, kaybolmadi, kalmis, agac, or the exact word 'o': k7_right_man.\n- 1st wrong: k7_wrong + a 12 s replay.\n- 2nd wrong: k7_hint3.\n- 3rd wrong: k7_giveup, then k7_right_man.\nIdle: b1_idle3."
+    },
+    {
+     "beat": "SET-PIECE: KNOCKS. The auto-rewind stalls halfway and the copy gives up: snow over a barely visible bedroom outline, the hiss loud. Only Beste's voice remains.\nROOM HOOKS, all positional at g.room.points.door (behind and left of the player); the camera never moves:\n1. 3 knocks.\n2. 7 slow knocks with a 0.9 s gap.\n3. 4 s of silence, then the door HANDLE rattles (new 'handle' sfx) with no knock, while the bulb dims to 0.7.\nWith subtitles on, each knock series shows a caption '[kapı çalınıyor]' without the count; no question here is a gate. If the player pauses during this segment, onResume plays nothing (silence is scarier).",
+     "scene": "NEW S.wornCopy (staticNoise 0.9 over a faint bedroom outline, tracking 1.0).",
+     "lines": [
+      {
+       "id": "k7_snow",
+       "voice": "beste_cold",
+       "text": "Kopya çok bozuldu. Artık seni göremiyorum. Ama duyabiliyorum."
+      },
+      {
+       "id": "k7_knock1",
+       "voice": "beste_cold",
+       "text": "Kapın çaldı. Kaç kere çaldı?"
+      },
+      {
+       "id": "k7_k1_ok",
+       "voice": "beste_cold",
+       "text": "Üç. Doğru. Kim olabilir bu saatte?"
+      },
+      {
+       "id": "k7_k1_no",
+       "voice": "beste_cold",
+       "text": "Hayır. Üç kere çaldı. Dikkatli dinle."
+      },
+      {
+       "id": "k7_knock2",
+       "voice": "beste_cold",
+       "text": "Şimdi kaç kere?"
+      },
+      {
+       "id": "k7_k2_ok",
+       "voice": "beste_cold",
+       "text": "Yedi. Benim yaşım kadar."
+      },
+      {
+       "id": "k7_k2_no",
+       "voice": "beste_cold",
+       "text": "Yedi kere. Benim yaşım kadar. Saymayı unuttun mu?"
+      },
+      {
+       "id": "k7_knock3",
+       "voice": "beste_whisper",
+       "text": "Ya şimdi?"
+      },
+      {
+       "id": "k7_k3_ok",
+       "voice": "beste_whisper",
+       "text": "Hiç. Çünkü artık çalmasına gerek yok."
+      },
+      {
+       "id": "k7_k3_no",
+       "voice": "beste_whisper",
+       "text": "Çalmadı. Kapının kolu döndü. Artık çalmasına gerek yok."
+      },
+      {
+       "id": "k7_dontopen",
+       "voice": "beste_cold",
+       "text": "Kapıyı açma. O kapıyı ben açacağım. Zamanı gelince."
+      }
+     ],
+     "interaction": "k7_snow plays first.\n1. sfx('knock', door, 3), then question k7_knock1: parseNum === 3 gives k7_k1_ok; anything else gives k7_k1_no.\n2. sfx('knock', door, 7, gap 0.9), then question k7_knock2: parseNum === 7 gives k7_k2_ok; anything else gives k7_k2_no.\n3. 4 s of silence + 'handle' at the door + setBulb(0.7, 1), then question k7_knock3: parseNum === 0, or hic, sifir, calmadi, yok, kol, kapi kolu or dondu, gives k7_k3_ok; anything else gives k7_k3_no.\nThen k7_dontopen. Idle on all three: b1_idle3."
+    },
+    {
+     "beat": "THE PRISTINE PASS. 'Bir daha.' (deep). No warning card and no title: straight into the bedroom, perfectly clean, with the music box at Tape 1 tempo. It looks better than it ever has.\n1. Beste stands centre with her BACK to the camera (hair, bows and dress, no face visible). Tonton is absent.\n2. The existing b1_hello plays at normal speed while she faces the wall.\n3. Four seconds of silence. She asks without turning.\n4. After the answer she turns round in three stepped frames. Her face is BLANK, a smooth skin oval with no eyes and no mouth, like the man's.\n5. The deep voice comes out of the blank face. Sting.\nThis is only a foreshadow; the explanation is Tape 9's mask.",
+     "scene": "S.bgBedroom pristine; NEW drawBeste({back:true}) and NEW expression 'blank'; pristine fx preset.",
+     "lines": [
+      {
+       "id": "k7_again3",
+       "voice": "beste_deep",
+       "text": "Bir daha."
+      },
+      {
+       "id": "k7_ask_final",
+       "voice": "beste_cold",
+       "text": "Ne değişti?"
+      },
+      {
+       "id": "k7_final_you",
+       "voice": "beste_cold",
+       "text": "Evet. Sen değiştin. İlk izlediğinde bana gülümsüyordun."
+      },
+      {
+       "id": "k7_hint4",
+       "voice": "beste_cold",
+       "text": "Yüzüme bak. Bakabiliyor musun?"
+      },
+      {
+       "id": "k7_final_right",
+       "voice": "beste_deep",
+       "text": "Yüzümü mü arıyorsun? Onu ormanda bıraktım."
+      }
+     ],
+     "interaction": "Typed question k7_ask_final (evil prompt).\n- arka, arkasi, arkasini, donmus, dondu, yuz, yuzu, ters, bakmiyor or sirti: the turn, then k7_final_right.\n- ben, sen, biz or degistim (whole words): k7_final_you, then the turn, then k7_final_right.\n- hicbir, hic, yok, ayni or bilmiyorum: k7_hint4 and one re-ask, then the turn regardless.\nNever a gate. No idle lines (silence while she faces away)."
+    },
+    {
+     "beat": "STUCK, with an optional escape. Hard cut to the warning card again; the digital voice repeats 'Bir daha' three times over it. The card jitters, then a title card fades up reading '7. Bölüm — Bir Daha!', with the jingle dragging down to tempo 30.\nESCAPE: d.onRewindHold(held) returns true once the left arrow has been PHYSICALLY held for 1.5 s (check g.input.rewindHeld). The tape stops rewinding, the real Beste speaks forward, softly, and the screen cuts clean to black.\nNO ESCAPE: if the player does not rewind within 25 s, the 'tapeSnap' sfx plays (a sharp tick and the reels spinning down) and the picture tears downwards (roll + static).\nEither way, the hot/cold line then plays over static, and after eject the TV STAYS ON with static (for the Tape 8 find).",
+     "scene": "S.warning, S.titleCard({episode:'7. Bölüm', title:'Bir Daha!', decay:0.8}); S.staticNoise.",
+     "lines": [
+      {
+       "id": "k7_loop5",
+       "voice": "beste_digital",
+       "text": "Bir daha. Bir daha. Bir daha."
+      },
+      {
+       "id": "k7_rewound",
+       "voice": "beste_real",
+       "text": "Aferin. Takılırsan geri sar. Unutma."
+      },
+      {
+       "id": "k7_hc_intro",
+       "voice": "beste_cold",
+       "text": "Bir sonraki kaseti sakladım. Sıcak soğuk oynayalım. Etrafına bak, ben söylerim."
+      }
+     ]
+    }
+   ],
+   "secret": "1) 'yil' (SECRETS label 'Ağaçtaki yıl'): in loop 3, for 0.3 s, the tree carving shows a second line 'HÂLÂ BURADA {yil}' (the system's current year). Text: 'HÂLÂ BURADAYIM'.\n2) 'pamuk' (SECRETS label 'Tonton'un yeri'): in loop 2, for 0.25 s, a small pile of white stuffing and one button where Tonton should be. Text: 'KUYRUĞUM NEREDE?'.\nReversed message 'ters-k7_ters' on the loop-2 rewind streaks.\nBonus (not counted): the rewind escape plays k7_rewound.",
+   "clues": "- Nermin watched this copy before the player did (the 'Nermin!' subtitle, k7_right_name). This sets up her Tape 9 confession and 'Ben hep ileri sardım'.\n- The faceless Beste links the cartoon to the faceless man, setting up Tape 9's mask.\n- The knock counts (3 / 7 / 'artık çalmasına gerek yok') and 'O kapıyı ben açacağım. Zamanı gelince.' set up the Tape 10 find (three soft knocks, the tape slid under the locked door) and the bad ending's open door.\n- Rewinding un-sticks a looping tape, and k7_rewound says 'Takılırsan geri sar': a soft tutorial for the Tape 10 hidden ending.\n- 'Sıcak soğuk oynayalım' starts the room game that finds Tape 8.",
+   "roomFind": "STATE: the attic is dark. The bulb died in Tape 6 and stays off until Tape 7 starts playing; moonlight and the TV's blue idle glow keep the room navigable.\n- OBJECT: the tape is taped to the FRONT leg of the player's own chair, half on the floor (x 0.05, y 0.03, z 0.42). It has a large invisible hitbox (0.6 x 0.3 x 0.4), so looking down between the knees finds it.\n- CLUE: Tape 6's last line, k6_gift 'Sana da bir hediyem var. Oturduğun yerin altında.'\n- HINTS: at 20 s, a faint tape-hiss loop plays positionally at the spot, with the toast 'Karanlıkta bant hışırtısı. Çok yakından geliyor.'; at 45 s, 'Ses aşağıdan geliyor. Oturduğun yerden.'; at 75 s, the objective 'Sandalyenin altına bak.'\n- Hover label: 'Sandalyenin ayağında bir şey var'.\n- Click: 'Sandalyenin ön ayağına bantla tutturulmuş bir kaset. Etiketinde çocuk yazısıyla: Beste 1 — Tanışalım. Ama birinci kaset dolabın üstünde duruyor.'\n- On pickup the bulb buzzes but stays off until the tape plays.\n- Objective while unfound: 'Karanlıkta bant hışırtısının kaynağını bul.'\n- TAPE_NAMES[7] = \"Kaset 7 — 'Beste ile Tanışalım! (?)'\".",
+   "newAssets": "DRAW:\n- bgGarden apples param (8th apple).\n- Bedroom without Tonton.\n- Stuffing-and-button pile (secret).\n- Static (non-vanishing) silhouette in the forest.\n- treeCarving line2 param with {yil}.\n- S.wornCopy.\n- drawBeste back view (back:true) and the 'blank' face expression.\n- Pristine fx preset.\n- Fake auto-rewind transition drawn by the tape (streaks + '◀◀' OSD).\nAUDIO:\n- Tape 1 voice files replayed with per-loop rate/detune, and a subtitle override on b1_name_known.\n- SFX tapeSnap, and handle (a door-handle rattle at points.door).\n- Knock patterns of 3 and 7 with a gap parameter.\n- Jingle tempo ramp.\nCODE:\n- d.onRewindHold escape gated on g.input.rewindHeld.\n- TV stays on with static after the tape.\n- '[kapı çalınıyor]' room captions.\nROOM:\n- The bulb returns at the jingle.\n- The tape sits on the chair's front leg (points.chairLeg) with a big hitbox and positional hiss.\n- After this tape, the hot/cold system starts (Tape 8 find).\nVOICE: reversed file k7_ters_rev; most of the tape reuses Tape 1 lines."
+  },
+  {
+   "n": 8,
+   "title": "Ebe Sensin!",
+   "logline": "Night in Çamlık. Beste teaches the real rules of hide-and-seek and a riddle that names the man between the trees: Ebe. Tonight you are the ebe, and to close your eyes you pause the tape. While the picture is frozen, something in your attic counts to ten as it walks from the door to your chair. You never find her. Someone finds you.",
+   "look": "'Night'.\n- Saturation 0.40, tint (0.72, 0.85, 1.25), noise 0.12, tracking 0.45, jitter 0.35, aberration 1.6.\n- A flashlight cone sweeps a dark forest and twice swings into the lens (a bloom flash).\n- No jingle: a frozen night title card.\n- ROOM: the bulb dims to 0.5 at the start and to 0.3 during the count. During the paused count the attic is silent apart from the scripted sounds.\n- After the count the forest is darker (shade 0.5); the extreme close-up uses aberration 3.0.\n- The man's 'Sobe' is followed by a hard cut to a too-bright morning bedroom (saturation 1.15, noise 0.06, music box 96): the cheerful whiplash of Tape 3, now obscene.\n- Music: none during the count; 'creepy' at tempo 50 for the search.\nCompared with Tape 7: the picture is cleaner again, but the horror has moved into the room for good.",
+   "mechanic": "PAUSE = CLOSING YOUR EYES. The show tells the player to press Space to close their eyes and to keep the tape paused until ten. In Tape 2 pausing was disobedience; now it is the game.\n- While paused, director time is frozen, but a real-time room script plays on g.clock timers, through the room voice bucket that pause does not mute.\n- A voice counts from the attic door, a floorboard creaks closer, the toy chest lid creaks open, and the count continues right behind the chair. Finally the exact Tape 1 file 'Sekiz. Dokuz. On.' is breathed at the listener's ear.\n- Unpausing early is 'peeking': the count restarts once, and the second time sets st.flags.peeked.\n- Staying paused much longer is rewarded: the real Beste whispers while the entity cannot see.\n- If the player never pauses, the tape pauses itself after 44 s.\nThe paused frame itself is alive (drawn from g.clock): Beste on the frozen board slowly turns her head to the camera, and a fifth rule fades in.\nThe camera never turns on its own; 'Arkana bak' is audio only.",
+   "segments": [
+    {
+     "beat": "A frozen night title card: dark blue, the stars not orbiting, a grey rainbow. The slowed narrator reads it. ROOM: g.room.setBulb(0.5, 3).",
+     "scene": "S.titleCard({episode:'8. Bölüm', title:'Ebe Sensin!', decay:1, night:true}) with t frozen.",
+     "lines": [
+      {
+       "id": "k8_title",
+       "voice": "narrator_slow",
+       "text": "Sekizinci bölüm. Ebe sensin."
+      }
+     ]
+    },
+    {
+     "beat": "Night forest. Beste holds a yellow flashlight whose cone sweeps the scene. Stitched Tonton lies face-down at the edge of the clearing like a dropped toy and never moves. She recalls Tape 1's promise; players who found her in Tape 1 never heard it, hence the reminder.",
+     "scene": "S.bgForest({dark:0.75}) + moon + NEW flashlight cone overlay; stitched Tonton face-down prop.",
+     "lines": [
+      {
+       "id": "k8_hello",
+       "voice": "beste_cold",
+       "text": "Merhaba arkadaşım. Gece oldu. Saklambaç gece daha güzel oynanır.",
+       "sub": "Merhaba {ad}. Gece oldu. Saklambaç gece daha güzel oynanır."
+      },
+      {
+       "id": "k8_ask_promise",
+       "voice": "beste_cold",
+       "text": "Hatırlıyor musun? İlk gün sana bir söz vermiştim. Neydi?"
+      },
+      {
+       "id": "k8_promise_right",
+       "voice": "beste_cold",
+       "text": "Evet. Sen saklanacaktın, ben de seni bulacaktım. Bu gece sözümü tutacağım."
+      },
+      {
+       "id": "k8_promise_remind",
+       "voice": "beste_cold",
+       "text": "Unuttun mu? Bir dahaki sefere sen saklanırsın, ben de seni bulurum demiştim."
+      },
+      {
+       "id": "k8_rules_intro",
+       "voice": "beste",
+       "text": "Ama önce kurallar! Saklambacın gerçek kuralları. Bunları sana kimse öğretmedi, değil mi?"
+      }
+     ],
+     "interaction": "Typed question k8_ask_promise.\n- saklan, sakla, bul, bulur, saklambac, sobe or sira: k8_promise_right.\n- Anything else: k8_promise_remind.\nThen k8_rules_intro. Idle: b1_idle3."
+    },
+    {
+     "beat": "A chalkboard in the dark headed 'SAKLAMBAÇ KURALLARI'. Four rules appear as she reads, an echo of Tape 2's rules board with different rules. Quiz on rule 3. Then the riddle that names the man. If the answer is right, 'EBE' is chalked under a tiny drawing of a tall faceless figure.",
+     "scene": "S.bgRules {title:'SAKLAMBAÇ KURALLARI', rules:['1. Ebe ona kadar sayar.','2. Sayarken gözünü açan yanar.','3. İlk sobelenen ebe olur.','4. Oyun, herkes bulununca biter.'], dark:0.6}; a chalk stick figure in the corner that gets the label EBE.",
+     "lines": [
+      {
+       "id": "k8_rules_a",
+       "voice": "beste_cold",
+       "text": "Bir. Ebe ona kadar sayar. İki. Sayarken gözünü açan yanar."
+      },
+      {
+       "id": "k8_rules_b",
+       "voice": "beste_cold",
+       "text": "Üç. İlk sobelenen ebe olur. Dört. Oyun, herkes bulununca biter."
+      },
+      {
+       "id": "k8_rules_ask",
+       "voice": "beste",
+       "text": "Hadi bakalım! Üçüncü kural neydi?"
+      },
+      {
+       "id": "k8_rules_right",
+       "voice": "beste_cold",
+       "text": "Aferin. İlk sobelenen ebe olur. Bunu sakın unutma."
+      },
+      {
+       "id": "k8_rules_wrong",
+       "voice": "beste_cold",
+       "text": "Hayır. Üçüncü kural: ilk sobelenen ebe olur. Dikkatli dinle."
+      },
+      {
+       "id": "k8_ebe_riddle",
+       "voice": "beste",
+       "text": "Şimdi bir bilmece! Ağaçların arasındaki amcanın bir adı var. Herkes ona mesleğiyle seslenir."
+      },
+      {
+       "id": "k8_ask_ebe",
+       "voice": "beste",
+       "text": "Bebekleri dünyaya getirir, saklambaçta da saklananları bulur. Bu kim?"
+      },
+      {
+       "id": "k8_ebe_hint1",
+       "voice": "beste",
+       "text": "Saklambaçta gözünü kapatıp sayan kişiye ne denir?"
+      },
+      {
+       "id": "k8_ebe_hint2",
+       "voice": "beste",
+       "text": "Üç harf. E ile başlar, E ile biter."
+      },
+      {
+       "id": "k8_ebe_truth",
+       "voice": "beste_cold",
+       "text": "Peki, söylüyorum. Ebe. Onun adı Ebe. Şimdi sen yaz.",
+       "sub": "Peki, söylüyorum. EBE. Onun adı Ebe. Şimdi sen yaz."
+      },
+      {
+       "id": "k8_ebe_right",
+       "voice": "beste_cold",
+       "text": "Evet. Ebe. Saklananları bulur, sonra onları başka bir dünyaya götürür."
+      },
+      {
+       "id": "k8_ebe_world",
+       "voice": "beste",
+       "text": "Mesela buraya! Sihirli Dünya'ya! Hihihi!"
+      }
+     ],
+     "interaction": "Q1 k8_rules_ask:\n- sobelenen, ebe olur, ilk or sobe: k8_rules_right.\n- Anything else: k8_rules_wrong.\nQ2 k8_ask_ebe:\n- 'ebe' (whole word): k8_ebe_right + k8_ebe_world; st.clues.ebe = true.\n- 1st wrong: k8_ebe_hint1.\n- 2nd wrong: k8_ebe_hint2.\n- 3rd wrong (truth rule): k8_ebe_truth, and EBE appears in chalk. The next answer containing ebe is accepted; after 2 more misses the tape continues with k8_ebe_right anyway.\nIdle: b1_idle2, b1_idle3."
+    },
+    {
+     "beat": "SET-PIECE + MECHANIC: CLOSE YOUR EYES. Beste explains, then waits on the rules board, smiling at the camera. The nags escalate; at 44 s the tape pauses ITSELF (d.forcePause(): the OSD '❚❚ DURAKLAT' appears with no input, click sfx).\nThe secret 'kural5' is registered in d.onPause (g.foundSecret('kural5', 'EBE HİÇ ÖLMEZ')) rather than with d.tag, because paused frames are never recorded and a tag on the waiting frames would leak the text when rewinding.\nWHILE PAUSED (real-time timers on g.clock, voices in the room bucket, all cancelled on resume, abort and quit):\n- +0.8 s: dead silence.\n- +2.0 s: k8_count_a from the attic DOOR (positional, gain 0.5, label '???').\n- +6.5 s: a floorboard creak halfway between the door and the chair.\n- +7.0 s: the toy chest's lid creaks open (positional at the chest, right of the seat).\n- +8.0 s: k8_count_b, about 1.5 m behind the chair.\n- +10.0 s: a slow breath right behind the listener's head.\n- +10.5 s: the existing n_count_end ('Sekiz. Dokuz. On.', the exact Tape 1 file) at the listener's ear, label '???'.\nThen nothing; it waits for the player to unpause.\nOn the paused frame (drawn from g.clock, since tape time is frozen), Beste slowly turns her head to the camera and her eyes go void, and a fifth rule fades in red under the four: '5. Ebe hiç ölmez.'\nOutcomes:\n- Unpausing before the count ends: every room sound cuts instantly. On resume, k8_peek with a glitch, and the count restarts once. A second early unpause gives k8_peek2, st.flags.peeked = true, and the tape proceeds.\n- Staying paused 20 s or more: k8_real_wait from the shelf side (positional). 26 s or more: k8_real_now.\n- Resuming after the full count: the pause-truth lines, then the forest. Beste is gone; her flashlight lies on the ground pointing at the camera.",
+     "scene": "Rules board (paused-only layer: Beste's head turn + the red 5th rule via bgRules extra) → forest dark 0.85 with the flashlight on the ground. ROOM: bulb at 0.3 during the count; positional voices at points.door → behind the chair → listener; sfx creak, chestLid, breath.",
+     "lines": [
+      {
+       "id": "k8_you_ebe",
+       "voice": "beste",
+       "text": "Ama bu gece ebe sensin! Hihi! Gözlerini kapat ve ona kadar say!"
+      },
+      {
+       "id": "k8_how",
+       "voice": "beste",
+       "text": "Gözlerini kapatmak için kaseti durdur. Boşluk tuşuna bas. Ona kadar sakın açma!",
+       "sub": "Gözlerini kapatmak için kaseti durdur: BOŞLUK tuşuna bas. Ona kadar sakın açma!"
+      },
+      {
+       "id": "k8_allowed",
+       "voice": "beste_cold",
+       "text": "Evet, bu sefer durdurabilirsin. Ben izin veriyorum."
+      },
+      {
+       "id": "k8_idle_p1",
+       "voice": "beste",
+       "text": "Hadi! Kapat gözlerini!"
+      },
+      {
+       "id": "k8_idle_p2",
+       "voice": "beste_cold",
+       "text": "Kapat şu gözlerini."
+      },
+      {
+       "id": "k8_idle_p3",
+       "voice": "beste_deep",
+       "text": "Kapat."
+      },
+      {
+       "id": "k8_count_a",
+       "voice": "narrator_slow",
+       "text": "Bir. İki. Üç. Dört. Beş."
+      },
+      {
+       "id": "k8_count_b",
+       "voice": "narrator_slow",
+       "text": "Altı. Yedi."
+      },
+      {
+       "id": "k8_peek",
+       "voice": "beste_cold",
+       "text": "Gözünü açtın! Hile! Sayarken gözünü açan yanar. Baştan!"
+      },
+      {
+       "id": "k8_peek2",
+       "voice": "beste_deep",
+       "text": "Yandın."
+      },
+      {
+       "id": "k8_real_wait",
+       "voice": "beste_real",
+       "text": "Açma. Daha açma. O hâlâ arkanda."
+      },
+      {
+       "id": "k8_real_now",
+       "voice": "beste_real",
+       "text": "Şimdi aç."
+      },
+      {
+       "id": "k8_pause_truth1",
+       "voice": "beste_cold",
+       "text": "Gördün mü? Sen durdurunca, o yürür."
+      },
+      {
+       "id": "k8_pause_truth2",
+       "voice": "beste_cold",
+       "text": "Bu yüzden kaseti asla durdurmayacaktın. Kural buydu."
+      }
+     ],
+     "interaction": "No typing and no answer box, so Space is live. The input is Space (pause) and the time spent paused, measured on g.clock between d.onPause and d.onResume.\n- Nags while waiting for the pause: k8_idle_p1 at 12 s, k8_idle_p2 at 24 s, k8_idle_p3 at 36 s; at 44 s, d.forcePause().\n- Unpaused before +13.5 s (the end of n_count_end): the 1st time, k8_peek and wait for a new pause; the 2nd time, k8_peek2, flags.peeked = true, and continue.\n- Paused 20 s or more: k8_real_wait. 26 s or more: k8_real_now.\n- After a completed count: k8_pause_truth1 + k8_pause_truth2."
+    },
+    {
+     "beat": "SEEK. Beste's voice (no body) calls from the dark. Up to three typed picks; each makes the flashlight beam zoom into the spot, and each spot holds something the forest kept:\n- Bush: a small GREY shoe, the one from under the bush in Tape 1 (the cartoon's shoes are red).\n- Basket: Tape 1's picnic basket, old and wet, with a coiled rope inside. The line depends on whether the player put the rope in the basket in Tape 1.\n- Tree: the carving 'B.A. 1405', with the player's name freshly cut beneath it.\n- Stump: an empty hollow.\nThe secret frame 'oyuncu' flashes between pick 1 and pick 2.",
+     "scene": "Forest night with the flashlight beam. Close-ups: grey child's shoe; S.drawBasket(['ip']) wet and dark; S.treeCarving({line2: st.name uppercased, fresh:true}); empty hollow stump. 'creepy' music at tempo 50.",
+     "lines": [
+      {
+       "id": "k8_hidden",
+       "voice": "beste",
+       "text": "Saklandım! Hadi ebe, bul beni! Hihi!"
+      },
+      {
+       "id": "k8_seek_ask",
+       "voice": "beste",
+       "text": "Neredeyim? Ağaç mı, çalı mı, kütük mü, yoksa sepet mi?"
+      },
+      {
+       "id": "k8_seek_unknown",
+       "voice": "beste",
+       "text": "Orada değilim! Ağaç mı, çalı mı, kütük mü, sepet mi?"
+      },
+      {
+       "id": "k8_bush",
+       "voice": "beste_cold",
+       "text": "Çalıda değilim. Ama bak, bir ayakkabı. Gri. Benimkiler kırmızı. Bu kimin?"
+      },
+      {
+       "id": "k8_basket_rope",
+       "voice": "beste_cold",
+       "text": "Sepette değilim. Sepette sadece ip var. İpi sen koymuştun, hatırladın mı?"
+      },
+      {
+       "id": "k8_basket_norope",
+       "voice": "beste_cold",
+       "text": "Sepette değilim. Ama biri ip koymuş. Sen koymadın. Biliyorum."
+      },
+      {
+       "id": "k8_tree",
+       "voice": "beste_cold",
+       "text": "Ağaçta değilim. Ama bak, senin adını da kazımışlar. Daha taze.",
+       "sub": "Ağaçta değilim. Ama bak, {ad} yazıyor. Daha taze."
+      },
+      {
+       "id": "k8_stump",
+       "voice": "beste_cold",
+       "text": "Kütükte değilim. Artık orada saklanmıyorum. Orayı herkes biliyor."
+      }
+     ],
+     "interaction": "Up to 3 picks via d.choose, options bar ['AĞAÇ','ÇALI','KÜTÜK','SEPET'].\n- agac: tree (k8_tree).\n- cali or calilik: bush (k8_bush).\n- kutuk: stump (k8_stump).\n- sepet, piknik, or the exact word 'ip': basket. k8_basket_rope if st.flags.rope, else k8_basket_norope.\n- Unknown, or a repeated pick: k8_seek_unknown.\nAfter 3 picks, go to the next segment. Idle: b1_idle2."
+    },
+    {
+     "beat": "BEHIND YOU (audio only). After the picks she whispers that she is very close, then 'Arkana bak.' The camera does NOT move. Instead:\n1. A floor creak right behind the chair and a slow breath at the listener (positional); the bulb flickers once. If the player presses F, only the standard lock toast appears.\n2. 2.5 s pass.\n3. The TV fills with an extreme close-up of Beste's face, void eyes and frozen grin, as if pressed against the glass from inside. Sting.\n4. She asks the player to say 'sobe'.\n5. Whatever the answer, 1.5 s of silence, then ONE word in the slowed Narrator's voice, positional just behind the player's right ear (label '???'). The TV cuts to black on the same frame.\n6. 3 s of black.",
+     "scene": "Extreme close-up: d.beste at scale 3.0, expr 'void', aberration 3; black frame.",
+     "lines": [
+      {
+       "id": "k8_where",
+       "voice": "beste_whisper",
+       "text": "Daha bulamadın mı? Çok yakınım. Çok, çok yakınım."
+      },
+      {
+       "id": "k8_behind",
+       "voice": "beste_whisper",
+       "text": "Arkana bak."
+      },
+      {
+       "id": "k8_here",
+       "voice": "beste_digital",
+       "text": "Buradayım. Hep buradaydım. Ama sen beni bulamadın."
+      },
+      {
+       "id": "k8_ask_sobe",
+       "voice": "beste_cold",
+       "text": "Hadi. Sobe de. Beni bulduğunu söyle."
+      },
+      {
+       "id": "k8_sobe_yes",
+       "voice": "beste_digital",
+       "text": "Sobe! Ama yanlış kişiyi buldun. Oyun bitmedi."
+      },
+      {
+       "id": "k8_sobe_no",
+       "voice": "beste_cold",
+       "text": "Söylemiyor musun? Peki. O söyler."
+      },
+      {
+       "id": "k8_ebe_sobe",
+       "voice": "narrator_slow",
+       "text": "Sobe."
+      }
+     ],
+     "interaction": "Typed question k8_ask_sobe (evil prompt).\n- sobe: k8_sobe_yes.\n- Any other text: k8_sobe_no.\n- After 20 s without input the box closes (timeout) and k8_sobe_no plays.\nBoth paths continue to k8_ebe_sobe (room bucket, positional at the listener's right ear, gain 1.3)."
+    },
+    {
+     "beat": "MORNING.\n1. After the black, a 3 s static burst carries the reversed whisper k8_ters_rev (flipped grainy girl + '◀◀'; frames tagged rev 'k8_ters').\n2. Hard cut to the bedroom in too-bright daylight; music box at 96. Beste waves, happy, as if last night was a sleepover. Then her face freezes for the second line.\n3. A SPLICE (white leader with an X), then black. Over a faint editing-deck hum, Nermin's voice: the first time she refers to the raw footage.\n4. Static. No end card: the show did not finish.\nROOM after eject (first viewing): the toy chest's lid stands open and its floor is lifted at one edge (for the Tape 9 find).",
+     "scene": "S.realGirl({flip:true}) + staticNoise → S.bgBedroom bright (saturation 1.15) → S.spliceLeader → black frame with deck hum.",
+     "lines": [
+      {
+       "id": "k8_ters",
+       "voice": "beste_real",
+       "text": "Ben ebe değilim. Hâlâ saklanıyorum. O bulmadan, sen bul beni."
+      },
+      {
+       "id": "k8_morning",
+       "voice": "beste",
+       "text": "Günaydın! Dün gece çok eğlendik, değil mi? Artık ebe sensin. Kurallar böyle!"
+      },
+      {
+       "id": "k8_bye",
+       "voice": "beste_cold",
+       "text": "Ebe, herkesi bulana kadar arar. Bir kişi kaldı. Onu da sen bulacaksın."
+      },
+      {
+       "id": "k8_nermin",
+       "voice": "nermin",
+       "text": "Bunu da kestim. Ama ham kaydı saklıyorum. Onun adını öğrenen bulur."
+      }
+     ]
+    }
+   ],
+   "secret": "1) 'oyuncu' (SECRETS label 'Kütüğün arkasındaki adam'): during the search, between pick 1 and pick 2, for 0.25 s the man is crouched behind the stump with his head turned to the camera. Text: 'BEN DE OYNUYORUM'.\n2) 'kural5' (SECRETS label 'Beşinci kural'): the paused frame of the rules board shows a red fifth rule, '5. Ebe hiç ölmez.' It is registered in d.onPause the moment the player pauses there (not via d.tag, so rewinding cannot reveal it). Text: 'EBE HİÇ ÖLMEZ'.\nReversed message 'ters-k8_ters' on the pre-morning static burst.",
+   "clues": "- The man's name is EBE (riddle, chalk label, truth after 3 wrong). It opens the 3-letter lock on the toy chest's false bottom (Tape 9 find), and Nermin's 'Onun adını öğrenen bulur' points to it.\n- Rule 3 'İlk sobelenen ebe olur' plus the man's 'Sobe' at your ear set up the Tape 10 bad ending ('Şimdi ebe sensin').\n- Rule 4 'Oyun, herkes bulununca biter', 'Bir kişi kaldı' and the reversed k8_ters set up the good ending's typed 'Sobe'.\n- The count reuses Tape 1's n_count_end, which links to Tape 9 clip 2 and Nermin's 'O ses sonra bütün kasetlerin anlatıcısı oldu'.\n- The real Beste speaking during the pause reinforces that she can be reached when the tape isn't running forwards (the rewind idea).\n- The grey shoe sets up the good-ending newspaper line.\n- The chest lid creaking open during the count explains why the false bottom is exposed afterwards.\n- Flags: peeked (Tape 9 form, optional finale line) and rope (from Tape 1).",
+   "roomFind": "After Tape 7 the TV stays on with static and plays SICAK-SOĞUK (hot/cold) from its speaker. Lines go through the room bucket, throttled to one per 2.5 s, or immediately when the band changes. The angle between the camera's forward vector and the direction to points.window (front wall, right of the TV) picks the line:\n- above 100 degrees: k8_room_ice (beste_cold) 'Buz gibi.'\n- 60–100: k8_room_cold (beste_cold) 'Soğuk.'\n- 30–60: k8_room_warm (beste_cold) 'Ilık.'\n- 12–30: k8_room_hot (beste) 'Sıcak!'\n- under 12 degrees for 1 s: k8_room_burn (beste) 'Yandın!'\nAt 'Yandın!' the window shows a cassette on the OUTSIDE sill, pressed against the glass among the small handprints (visible since stage 2), and the window label becomes '<b>Pencereyi aç</b>'. Before this stage the window says 'Pencere sıkışmış.'\n- CLUE: Tape 7's last line, k7_hc_intro 'Bir sonraki kaseti sakladım. Sıcak soğuk oynayalım. Etrafına bak, ben söylerim.'\n- Objective: 'Televizyonun sıcak-soğuk ipuçlarını izle.'\n- HINTS: the game itself is the hint; at 60 s, toast 'Televizyon, baktığın yere göre konuşuyor.'; at 120 s, 'Sıcak... pencereye doğru.'\n- Click: 'Mandalı açtın. Soğuk hava doldu. Kaset dış pervazda, küçük el izlerinin arasında duruyor. Çiyden ıslanmış. Etiket: Beste 8 — Ebe Sensin.'\n- The hot/cold voice stops as soon as the tape is taken.\n- TAPE_NAMES[8] = \"Kaset 8 — 'Ebe Sensin!'\".",
+   "newAssets": "DRAW:\n- Flashlight cone overlay (sweep + lens bloom).\n- Stitched Tonton face-down.\n- bgRules paused-only red 5th rule (the scene checks d.paused) + chalk EBE figure.\n- Beste head-turn on the paused frame, driven by g.clock.\n- Grey child's shoe close-up.\n- Wet basket with rope (drawBasket variant).\n- Carving with the player's name.\n- Empty hollow stump.\n- Crouched silhouette behind the stump (secret).\n- Extreme close-up of Beste.\nCODE:\n- d.onPause hook in togglePause.\n- d.forcePause().\n- Real-time pause-phase scheduler on g.clock, cancelled on resume/abort/quit.\n- Paused-duration measurement.\n- Room voice bucket that pauseVoices() and FF do not touch.\nSFX: footCreak (positional), chestLid (positional), breath (at the listener), deckHum.\nROOM:\n- Bulb at 0.5, then 0.3 during the count, restored at the end.\n- After the tape, the chest lid stands open with a raised false bottom.\n- The hot/cold game and the window-sill tape (Tape 8 find; room lines k8_room_ice/cold/warm/hot/burn).\nVOICE: nermin; narrator_slow for the count and 'Sobe' (label '???'); the existing n_count_end reused; reversed file k8_ters_rev."
+  },
+  {
+   "n": 9,
+   "title": "HAM KAYIT — Çamlık 14.05.98",
+   "logline": "Not an episode. Nermin's raw master from the editing room, which you browse by typing clip numbers. It holds:\n- the voice session where the cartoon's first line was recorded and the surname was cut out with scissors;\n- the Çamlık afternoon of 14 May, where Nermin counted to seven and someone between the trees finished the count;\n- the talent form, filled in with everything you told the show, with one box left empty;\n- Nermin's own recording, made in this attic and interrupted.\nThen the cartoon finds the edit suite, and the man steps out of the trees wearing Beste's face.",
+   "look": "The format changes completely.\n- The suite: near-monochrome monitor green (saturation 0.12, tint (0.85, 1.05, 0.90), noise 0.05, tracking 0.10, jitter 0.08, aberration 0.4), a professional leader countdown and burned-in deck timecode. It is CLEANER than the show, with an uncanny documentary clarity.\n- Clip 1: black, with a microphone drawing and a live waveform.\n- Clip 2: naturalistic camcorder footage with no outlines (saturation 0.6, tint (1.08, 1.00, 0.85), noise 0.12, handheld jitter 0.3) and dappled light. A burned-in stamp 'PER 14.05.1998 13:41:05' runs until the disappearance, then FREEZES at 13:59:12 for the rest of the clip while the birds stop.\n- Clip 3: warm yellow paper (saturation 0.5).\n- Clip 4: a black frame with a red REC dot (noise 0.10).\n- Hijack: red, exactly Tape 10's base (tint 1.25/0.55/0.50, glitch 0.04, aberration 2.2), so the finale feels like a continuation.\n- No music anywhere: deck motor hum, tape clunks, the slate clap, birds, wind.\nThe most 'real' tape is the scariest.",
+   "mechanic": "NON-LINEAR EDIT SUITE.\n- The tape opens on Nermin's edit-suite menu with a 'KLİP NO:' prompt.\n- The player types clip numbers (or keywords) to play clips in any order and returns to the menu after each. Watched clips get a check mark, so the player may see the search before its cause.\n- The talent-form clip is generated from the player's own saved answers across Tapes 1–8 (st.answers, st.flags), in plain text only.\n- A hidden clip 7, not listed, opens for players who read Nermin's note in the memo.\n- Once clips 1–4 have been watched, in any order, the cartoon takes over the suite.",
+   "segments": [
+    {
+     "beat": "A leader countdown (white circle sweep 5, 4, 3, 2, with a beep on 2), then a typed slate card: 'YILDIZ ÇOCUK YAPIM — HAM KAYITLAR — KURGU: N. — YAYINLANMAZ'. Nermin's voice introduces it. Deck timecode starts at 01:00:00:00.",
+     "scene": "NEW S.leader and S.slateCard; timecode overlay.",
+     "lines": [
+      {
+       "id": "k9_intro",
+       "voice": "nermin",
+       "text": "Ham kayıtlar. Yıldız Çocuk Yapım, kurgu odası. Bunları kimse görmesin."
+      },
+      {
+       "id": "k9_intro2",
+       "voice": "nermin",
+       "text": "Rıza Bey jandarmaya kayıt arızalı dedi. Arızalı değil. Sadece kimse bakmaya dayanamadı."
+      }
+     ]
+    },
+    {
+     "beat": "THE MENU. A dark console with:\n- a small preview monitor showing static;\n- a clip list: '1  SES KAYDI — 02.05.98', '2  ÇAMLIK DIŞ ÇEKİM — 14.05.98', '3  OYUNCU BİLGİ FORMU', '4  N. — KİŞİSEL';\n- a jog wheel, VU meters, and an OSD prompt 'KLİP NO:'.\nA deck clunk and a tape-search squeal play on each selection. After 20 s idle comes a whisper that should not be in Nermin's archive: the first sign that the cartoon is in the edit suite too. Once clip 4 has been watched it is listed as 'SİLİNDİ'.",
+     "scene": "NEW S.editSuite({watched:[...], monitor:'static'|'red', list}).",
+     "lines": [
+      {
+       "id": "k9_menu_idle",
+       "voice": "beste_whisper",
+       "text": "Hangisini açacaksın?"
+      }
+     ],
+     "interaction": "Repeated typed prompt 'KLİP NO:' (deck-styled, not evil) until clips 1–4 are all watched.\n- 1, ses, kayit or studyo: clip 1.\n- 2, camlik, cekim, dis or orman: clip 2.\n- 3, form or bilgi: clip 3.\n- 4, nermin, kisisel or n: clip 4.\n- 7, yedi or yedinci: hidden clip 7 (once).\n- Unknown: beep + OSD 'KLİP YOK'.\nIdle: [k9_menu_idle], idleGap 20. Clips can be re-watched. The hijack starts automatically right after the fourth distinct clip."
+    },
+    {
+     "beat": "CLIP 1: THE VOICE SESSION (02.05.98). A black screen with a studio microphone drawing and a waveform that moves with the voices; label 'SES KAYDI — 02.05.1998 — STÜDYO 2'. Talkback clicks and beeps; the producer's voice comes through the control-room speaker (riza, label KONTROL ODASI, band-passed).\n- Take 1 is the EXACT first line of the whole game (the existing b1_hello file): the cartoon was built from this session.\n- Take 2 comes out cold.\n- Take 3 is the real, unprocessed child (beste_kiz), tired. Exhaustion and retakes only.\nThe camera then pans to a sheet taped on the booth wall: 'KABİN KURALLARI — 1. Gülümse, sesinden belli olur. 2. Ne sorulursa cevap ver. 3. Kayıt durmaz. 4. Kabinden dışarı çıkılmaz. — R. YILDIZ'. These are the producer's booth rules that became Tape 2's Rules.\nAsked for her full name, she says 'Ben Beste Ay—' and the waveform flatlines mid-word (splice). Then a candid moment the cartoon was never supposed to keep. Nermin's later voice-over closes the clip.",
+     "scene": "NEW S.voiceSession (mic + live waveform from audio.voiceLevel(), label, talkback lamp); booth-wall rules sheet; S.spliceLeader mid-clip.",
+     "lines": [
+      {
+       "id": "k9_c1_r1",
+       "voice": "riza",
+       "text": "Beste, kayıttayız. Merhaba arkadaşım de bakalım. Kocaman gülümse!"
+      },
+      {
+       "id": "k9_c1_r2",
+       "voice": "riza",
+       "text": "Olmadı. Bir daha. Daha neşeli."
+      },
+      {
+       "id": "k9_c1_take2",
+       "voice": "beste_cold",
+       "text": "Merhaba arkadaşım. Ben Beste."
+      },
+      {
+       "id": "k9_c1_r3",
+       "voice": "riza",
+       "text": "Gülümse. Sesinden belli oluyor. Bir daha."
+      },
+      {
+       "id": "k9_c1_take3",
+       "voice": "beste_kiz",
+       "text": "Merhaba arkadaşım... Ben Beste... Rıza amca, çok yoruldum. Annem ne zaman gelecek?"
+      },
+      {
+       "id": "k9_c1_r4",
+       "voice": "riza",
+       "text": "Kayıt durmaz. Bir daha."
+      },
+      {
+       "id": "k9_c1_r5",
+       "voice": "riza",
+       "text": "Şimdi bir de tam adınla söyle. Arşiv için."
+      },
+      {
+       "id": "k9_c1_full",
+       "voice": "beste_kiz",
+       "text": "Ben Beste Ay",
+       "sub": "Ben Beste Ay—"
+      },
+      {
+       "id": "k9_c1_kiz1",
+       "voice": "beste_kiz",
+       "text": "Nermin abla, çizgi filmdeki kız neden bana bakıyor?"
+      },
+      {
+       "id": "k9_c1_n1",
+       "voice": "nermin",
+       "text": "Sana bakmıyor canım. O sadece bir çizim."
+      },
+      {
+       "id": "k9_c1_kiz2",
+       "voice": "beste_kiz",
+       "text": "Ama ben kıpırdayınca o da kıpırdıyor."
+      },
+      {
+       "id": "k9_c1_n2",
+       "voice": "nermin",
+       "text": "Soyadını bütün kayıtlardan sildim. Hepsinden. Tek tek."
+      }
+     ]
+    },
+    {
+     "beat": "CLIP 2: ÇAMLIK, 14.05.98. A clapperboard: 'ÇAMLIK — DIŞ ÇEKİM — SAHNE 7 — ÇEKİM 3 — 14.05.98 — YÖN: R. YILDIZ — KAMERA: KÂMİL', clap sfx (the secret 'klaket' sits on this frame). Then naturalistic camcorder footage with the stamp 'PER 14.05.1998'.\n13:41 ÖĞLE ARASI: a wide, static tripod shot of the clearing. A red-checked blanket and a wicker basket; Rıza far off with a clipboard and megaphone; Nermin in a beige cardigan; a tiny girl in a yellow dress and grey shoes jumping rope with RED handles. An orange plush cat sits on the blanket. Birds, wind, distant traffic.\n13:58 SAKLAMBAÇ (a jump cut; the deck OSD shows '▶▶ 13:58'):\n1. The big pine stands in the centre with SMOOTH bark. Nermin, back to the camera, covers her eyes against the trunk.\n2. The girl drops the jump rope at the foot of the tree beside the basket and runs off between the trees, plush under her arm.\n3. Far back, a small yellow shape peeks out from behind a trunk. Further back still, out of focus, a tall grey faceless figure stands between the trees.\n4. Nermin counts to seven and stops. From between the trees, the existing n_count_end file ('Sekiz. Dokuz. On.', the slowed Narrator's voice) finishes the count.\n5. The small yellow shape waves at the figure and starts walking toward it while k9_c2_kiz4 plays faintly (gain 0.35, distant).\n6. Before she reaches it, the tape DROPS OUT (horizontal tear + 1 s of snow). When the picture returns, the trees are empty, the stamp is frozen at 13:59:12, and the birds have stopped.\n7. Four seconds of nothing. Nermin, eyes still shut, is confused (k9_c2_n4), then calls the game (k9_c2_n5).\n14:12 ARAMA (jump cut; the stamp stays frozen): same framing. People cross the frame calling; the jump rope and the basket lie at the foot of the tree. On Rıza's line a hand grabs the camera and the frame jolts, but the recording does not stop.\n14:31 AĞAÇ (jump cut): a close shot of the pine's bark. Search voices far away; nobody near. Six seconds of nothing. Then, between two frames (deck timecode 01:51:07 → 01:51:08), 'B.A. 1405' is suddenly carved there, with no sound and no one in shot. Rewinding shows the jump. Far away, a faint whistle of the show's jingle. Nermin's later voice-over ends the clip.\nContent: the girl is only ever a tiny, blurred figure. There is no contact and nothing happens on screen; the disappearance is the dropout.",
+     "scene": "NEW S.slate (clapperboard with overridable text); NEW S.rawPicnic, S.rawTree, S.rawSearch, S.rawBark (naturalistic, no outlines: blurred flat shapes + grain overlay, dappled light); grainy out-of-focus drawSilhouette; NEW camcorder stamp overlay with freeze; dropout tear.",
+     "lines": [
+      {
+       "id": "k9_c2_riza",
+       "voice": "riza",
+       "text": "Öğle arası! Yarım saat! Kâmil, kamera açık kalsın, ışığı kaçırmayalım."
+      },
+      {
+       "id": "k9_c2_kiz1",
+       "voice": "beste_kiz",
+       "text": "Nermin abla, bak! Yirmi kere atladım, hiç takılmadım!"
+      },
+      {
+       "id": "k9_c2_n1",
+       "voice": "nermin",
+       "text": "Aferin sana! Gel, bir şey ye önce."
+      },
+      {
+       "id": "k9_c2_kiz2",
+       "voice": "beste_kiz",
+       "text": "Gri Amca da gelsin mi? O hiç yemek yemiyor ama."
+      },
+      {
+       "id": "k9_c2_n2",
+       "voice": "nermin",
+       "text": "Hayali arkadaşlar yemek yemez zaten. Hadi gel, otur."
+      },
+      {
+       "id": "k9_c2_kiz3",
+       "voice": "beste_kiz",
+       "text": "Ebe sensin, Nermin abla! Gözlerini açmak yok ama! Ona kadar sayacaksın!"
+      },
+      {
+       "id": "k9_c2_n3",
+       "voice": "nermin",
+       "text": "Tamam, tamam. Kurallara uyacağım. Bir... iki... üç... dört... beş... altı... yedi..."
+      },
+      {
+       "id": "k9_c2_kiz4",
+       "voice": "beste_kiz",
+       "text": "Gri Amca! Sen de mi oynuyorsun? Daha iyi bir saklanma yeri mi? Tamam!"
+      },
+      {
+       "id": "k9_c2_n4",
+       "voice": "nermin",
+       "text": "Kâmil, sen mi saydın?"
+      },
+      {
+       "id": "k9_c2_n5",
+       "voice": "nermin",
+       "text": "Önüm arkam sağım solum, sobe! Geliyorum Beste!"
+      },
+      {
+       "id": "k9_c2_n6",
+       "voice": "nermin",
+       "text": "Beste! Beste, çık artık! Oyun bitti! Sobe! Sobe diyorum!"
+      },
+      {
+       "id": "k9_c2_riza2",
+       "voice": "riza",
+       "text": "Kâmil, kapat şu kamerayı! Kapat dedim!"
+      },
+      {
+       "id": "k9_c2_n7",
+       "voice": "nermin",
+       "text": "Kapatma! Kayıt sürsün. Belki bir şey yakalamıştır."
+      },
+      {
+       "id": "k9_c2_tree",
+       "voice": "nermin",
+       "text": "Kimse kazımadı. Bir kare önce yoktu, bir kare sonra vardı. Ağaç hatırlıyor."
+      }
+     ]
+    },
+    {
+     "beat": "CLIP 3: THE TALENT FORM, the set-piece. A typed form on yellowed paper, titled 'YILDIZ ÇOCUK YAPIM — OYUNCU BİLGİ FORMU'. Labels are typewritten; values are in a child's crayon handwriting and appear one by one with a typewriter clack as the camera slowly pans down. The values are the PLAYER'S OWN ANSWERS:\n- Adı: BESTE.\n- Soyadı: [empty box, blinking cursor].\n- Yaşı: answers.age, or 7.\n- Doğum tarihi: '03.02.1991' if caughtLie, otherwise '14.05.1998' in red crayon.\n- En sevdiği renk: answers.color, or SARI.\n- Annesinin adı: answers.mother, or '?'.\n- Ev telefonu: 364 27 27.\n- Arkadaşı: {AD}, plus answers.fakeSurname if given.\n- Dileği: answers.wish, or '—'.\n- Notlar: 'Kıpırdamadı.' or 'Kıpırdadı.' (still); 'Tonton'un kuyruğu: turuncu.' or 'gri.' (tail); 'Sepete ip koydu.' (rope); 'Yabancıyla gider.' (answers.stranger); 'Söz verdi.' (promisedFind); 'Sayarken gözünü açtı.' (peeked).\nIf saidSurnameEarly, the Soyadı box already holds 'AY' in crayon, unfinished. Then the cartoon's digital voice. An optional prompt opens inside the Soyadı box; waiting is safe.",
+     "scene": "NEW S.talentForm(fields), using a typewriter monospace font for labels and the Caveat handwriting font for values (plain text, each value capped at 16 characters); cursor in the Soyadı box.",
+     "lines": [
+      {
+       "id": "k9_c3_b1",
+       "voice": "beste_digital",
+       "text": "Bu benim formum. Hepsini sen doldurdun. Teşekkürler."
+      },
+      {
+       "id": "k9_c3_b2",
+       "voice": "beste_digital",
+       "text": "Bir tek kutu boş kaldı."
+      },
+      {
+       "id": "k9_c3_wait",
+       "voice": "beste_cold",
+       "text": "Acele etme. Son kasette yazarsın."
+      },
+      {
+       "id": "k9_c3_typed",
+       "voice": "beste_digital",
+       "text": "Hihihi. Mürekkep tutmadı. Kasette söylemen lazım. Son kasette."
+      },
+      {
+       "id": "k9_c3_other",
+       "voice": "beste_cold",
+       "text": "Bu onun soyadı değil. Ama not aldım."
+      }
+     ],
+     "interaction": "Optional typed prompt inside the form (evil, label 'SOYADI:', maxLen 16), via d.ask({timeout: 15}).\n- Timeout: k9_c3_wait.\n- aydin: the word is written into the box, then the ink runs and disappears (glitch); k9_c3_typed; st.flags.saidSurnameEarly = true.\n- Any other text: written, then crossed out; k9_c3_other."
+    },
+    {
+     "beat": "CLIP 4: N. — KİŞİSEL. A black frame with a small red REC dot top left, a timestamp '--.--.---- --:--' (the camcorder's clock long dead), and a barely visible grain shape that might be an attic beam. It is Nermin, years later, recording in THIS attic (played at rate 0.95, no reverb).\n- During her first line a soft creak plays behind the player in the REAL attic (positional): the same room.\n- Her confession gives the finale's key.\n- Then the cartoon's deep voice cuts in over her recording, and she asks who is there.\n- The REC dot goes out. Three seconds of black, a deck clunk, back to the menu.",
+     "scene": "NEW S.recBlack (REC dot, dead timestamp, faint beam shape). ROOM: sfx 'footCreak' behind the chair during k9_c4_n1.",
+     "lines": [
+      {
+       "id": "k9_c4_n1",
+       "voice": "nermin",
+       "text": "Ben Nermin. Bu kaseti tavan arasında kaydediyorum. Yanımda kimse yok. Sanırım."
+      },
+      {
+       "id": "k9_c4_n2",
+       "voice": "nermin",
+       "text": "O gün ebe bendim. Yediye kadar saydım. Sekizden sonrasını ben saymadım."
+      },
+      {
+       "id": "k9_c4_n3",
+       "voice": "nermin",
+       "text": "Ağaçların arasından biri saydı. O ses sonra bütün kasetlerin anlatıcısı oldu."
+      },
+      {
+       "id": "k9_c4_n4",
+       "voice": "nermin",
+       "text": "Beste kaybolunca çizgi film kendi kendine konuşmaya başladı. Onun sesiyle."
+      },
+      {
+       "id": "k9_c4_n5",
+       "voice": "nermin",
+       "text": "Sesini aldı, yaşını aldı, adını aldı. Bir tek soyadını alamadı. Soyadı, eve dönen yoldur."
+      },
+      {
+       "id": "k9_c4_n6",
+       "voice": "nermin",
+       "text": "Bandı geri sararken onu duydum. Gerçek Beste'yi. Hâlâ saklanıyor. Kimse ona sobe demedi."
+      },
+      {
+       "id": "k9_c4_n7",
+       "voice": "nermin",
+       "text": "Son kaseti yaktım. Geri gelecek. Gelirse, kapılarda geri sar. Bırakma. Ben hep ileri sardım."
+      },
+      {
+       "id": "k9_c4_b",
+       "voice": "beste_deep",
+       "text": "Nermin abla. Arkana bak."
+      },
+      {
+       "id": "k9_c4_n8",
+       "voice": "nermin",
+       "text": "Kim var orada?"
+      }
+     ]
+    },
+    {
+     "beat": "HIDDEN CLIP 7 (typed '7'; the clue is Nermin's handwritten note on the memo found with this tape). A point of view from between two dark trunks: the man's view.\n- Far away and small, a woman leans on the big pine with her eyes covered, counting (k9_c2_n3 replayed at gain 0.2, distant).\n- Nearer, a small yellow-dress shape crouches behind a trunk, giggling.\n- The POV sways one step forward.\n- Cut to black after 6 s, before anything happens.\nNo contact; nothing else is shown.",
+     "scene": "NEW S.povTrees (dark trunk edges framing, grainy distant woman at the pine, small yellow figure behind a near trunk).",
+     "lines": [
+      {
+       "id": "k9_c7_giggle",
+       "voice": "beste_kiz",
+       "text": "Hihi! Bulamazsın beni!"
+      }
+     ]
+    },
+    {
+     "beat": "HIJACK. Right after the fourth distinct clip, the menu's monitor turns red, and the clip list letters scramble into '1405 · 7 · ?' (the finale's three answers, with the third missing).\n1. The deck plays, by itself, 'the nine seconds Nermin never marked': the empty Çamlık trees at the frozen stamp 13:59:12.\n2. From behind the big pine the grey man steps out ALONE. Where his face should be is a flat, perfectly cartoon Beste face (the show's drawing, outlines and all), worn like a paper mask. With eyeMode 'track', its drawn eyes follow the player's gaze.\n3. He walks toward the camera until the mask fills the screen, and the existing b1_hello plays ('Merhaba arkadaşım! Ben Beste! Seni gördüğüme çok sevindim!') with the mask's mouth moving.\n4. Hard cut, one red frame.\n5. The red void: Beste's face (void eyes, S.corrupt) fills the screen, and the base fx switch to Tape 10's red. She tells the player what happens next and asks if they are ready (a callback to Tape 3's 'Hazır olmasan da').\n6. A 3 s static burst carries the reversed whisper k9_ters_rev (frames tagged rev 'k9_ters').\n7. Static; end. No end card, no narrator.",
+     "scene": "S.editSuite({monitor:'red', list:['1405','7','?']}) → NEW S.maskFinal (naturalistic trees + the faceless man with a flat cartoon Beste mask, eye tracking) → S.bgVoid + S.corrupt(d.beste) as in Tape 10 → S.realGirl({flip:true}) + staticNoise.",
+     "lines": [
+      {
+       "id": "k9_hijack1",
+       "voice": "beste_digital",
+       "text": "Bunları izlememen gerekiyordu."
+      },
+      {
+       "id": "k9_hijack2",
+       "voice": "beste_digital",
+       "text": "Ama olsun. Artık her şeyi biliyorsun. Ben de senin hakkında her şeyi biliyorum."
+      },
+      {
+       "id": "k9_ask_ready",
+       "voice": "beste_digital",
+       "text": "Son kaseti bu gece ben getireceğim. Hazır mısın?"
+      },
+      {
+       "id": "k9_ready_any",
+       "voice": "beste_cold",
+       "text": "Hazır olmasan da."
+      },
+      {
+       "id": "k9_light",
+       "voice": "beste_digital",
+       "text": "Işığını söndür. Karanlıkta daha kolay yürüyorum."
+      },
+      {
+       "id": "k9_ters",
+       "voice": "beste_real",
+       "text": "Kaseti al ama kapıyı açma. Sakın kapıyı açma."
+      }
+     ],
+     "interaction": "Typed question k9_ask_ready (evil prompt). Any answer, or 15 s of silence (timeout), gives k9_ready_any, then k9_light, then the reversed burst. No idle lines."
+    }
+   ],
+   "secret": "1) 'klaket' (SECRETS label 'Klaketteki isim'): in clip 2, for one frame (0.15 s), the clapperboard reads 'ÇEKİM 4 — {yil} — {AD}' (the current year and the player's name). Text: 'SIRADAKİ ÇEKİM'.\n2) 'yedinci' (SECRETS label 'Yedinci klip'): opening hidden clip 7 from the menu counts as a found secret. Text: 'BEN DE BURADAYDIM'.\nReversed message 'ters-k9_ters' on the hijack's last static burst.",
+   "clues": "- Nermin's 'Gelirse, kapılarda geri sar. Bırakma. Ben hep ileri sardım.' is the clearest pointer to the Tape 10 hidden ending (hold rewind at the doors). It is layered on b2_real, k5_real_yes and k7_rewound.\n- 'Soyadı, eve dönen yoldur' gives door III its weight.\n- The form's only empty field is SOYADI, so the player enters Tape 10 knowing exactly what is being collected.\n- 'Sekiz. Dokuz. On.' from between the trees, in the exact Tape 1 file, plus 'O ses sonra bütün kasetlerin anlatıcısı oldu', explains after the fact Tape 1, the slowed titles, Tape 3's ANLATICI label and Tape 8's count.\n- The KABİN KURALLARI sheet signed R. YILDIZ is Tape 2's Rules.\n- The red-handled jump rope at the tree reframes Tape 1's rope.\n- b1_hello is reused twice: the cartoon was built from her session, and the man wears the result.\n- 'Kimse ona sobe demedi' sets up the good ending's typed 'Sobe'.\n- 'Işığını söndür' and the reversed 'Kaseti al ama kapıyı açma' set up the Tape 10 find.\n- The carving that appears between frames sets up door I's 'Ormandaki ağaç neyi hatırlıyor?' (the date).",
+   "roomFind": "After Tape 8 (first viewing) the toy chest's lid stands open (it creaked during the paused count) and its floor is lifted at one edge: a false bottom with a 3-letter dial lock. A strip of masking tape inside the lid, in Nermin's hand, reads: 'Ham kayıt burada. Kilidi, onun adını öğrenen açsın. — N.'\n- Objective: 'Oyuncak sandığına bak.'\n- PUZZLE: a 3-letter word lock (ui.wordlock len 3). Answer: EBE.\n- CLUE: Tape 8's riddle (k8_ebe_right, or k8_ebe_truth after 3 wrong), the chalk 'EBE', and Nermin's k8_nermin 'Onun adını öğrenen bulur'.\n- HINTS: after 2 wrong, 'Nermin onun adı diyor: ağaçların arasındaki adamın adı.'; after 4, 'Saklambaçta sayan, arayan kişi.'; after 6, 'Üç harf. E ile başlar, E ile biter.'\n- SUCCESS: 'Sandığın gizli dibinde profesyonel bir kaset kutusu: HAM KAYIT — ÇAMLIK 14.05.98 — YAYINLANMAZ — KURGU: N. Üstünde VHS kopyası etiketi var. Yanında iki kâğıt.' Opens docs 'memo' and 'ifade', in that order.\n- TAPE_NAMES[9] = \"Kaset 9 — 'HAM KAYIT 14.05.98'\".",
+   "newAssets": "DRAW:\n- S.leader, S.slateCard, deck timecode overlay.\n- S.editSuite: console, clip list with check marks and SİLİNDİ, monitor states, VU meters, jog wheel, scramble to '1405 · 7 · ?'.\n- S.voiceSession (mic + live waveform + talkback lamp) and the booth-wall rules sheet.\n- S.slate (clapperboard with overridable text).\n- Naturalistic S.rawPicnic / S.rawTree / S.rawSearch / S.rawBark (blurred flat shapes + grain; the carving appears between two frames).\n- Camcorder stamp overlay that can freeze, and a dropout tear.\n- S.talentForm: dynamic plain-text fields from st.answers / st.flags; typewriter + Caveat fonts.\n- S.recBlack.\n- S.povTrees.\n- S.maskFinal: the faceless man with a flat cartoon Beste mask, eye tracking, mouth synced to b1_hello.\nSFX: clap, deckClunk, deckHum, tapeSearch, typewriter, leaderBeep, birds loop (cut at the dropout), wind, distant traffic, whistle (the jingle whistled far away).\nCODE: menu loop with a watched set; form builder; ask timeout; talkback filter for riza.\nROOM: a creak behind the chair during clip 4. After this tape the bulb gets a pull chain (Tape 10 find).\nVOICES: nermin, riza and beste_kiz (first uses); the existing b1_hello and n_count_end reused; reversed file k9_ters_rev."
+  }
+ ],
+ "roomChain": "| Tape | Unlocked after | Where it is found | Puzzle / input | Clue and its source | Help after failures |\n|---|---|---|---|---|---|\n| 3 | Tape 2 | Tonton plush, fallen from the shelf to the floor behind the player, belly torn (existing) | Click the plush | Thud behind the player 2.5 s after Tape 2 ejects | Existing objective 'Arkandan gelen sesin kaynağına bak.'; 40 s: 'Raftaki peluş yerinde değil.' Label 'Beste 3 — Tonton Döndü'. |\n| 4 | Tape 3 | Toy chest under the sheet-covered furniture, which has moved about 1 m toward the chair (Heykel in the room); sheet half off | 4-letter word lock: SOBE | Tape 3 'Haftanın Sihirli Sözü' (spelled S-O-B-E, typed by the player); secret 'ARKANA BAKMA' | 2: 'Beste bu hafta bir sihirli söz öğretmişti.' 4: 'Saklambaçta birini bulunca bağırılan söz.' 6: 'S _ _ E.' Inside: Tape 4, doc 'resim', the orange plush tail; a stuck 3-letter false bottom is visible. |\n| 5 | Tape 4 | Black bakelite phone on the left-back box (rings during and after Tape 4), then the kilim corner, then a loose floorboard beside the chair | 7-digit rotary dial: 364 27 27 | Tape 4 phone song (three times, karaoke, digits on screen), poster tabs, newspaper '364 ██ ██', reversed k4_ters 'Evimi ara' | Wrong: 'Aradığınız numaraya şu anda ulaşılamıyor.' Own number 364 51 80: busy + 'Hat sanki başka bir yerde de açık.' 2: 'Beste'nin şarkıdaki ev numarası. Yedi rakam.' 4: '364 ile başlıyordu. Sonra iki kere en sevdiği sayı.' 6: '364 27 27.' On success the real Beste whispers k5_room_real1/2; the kilim corner lifts; under the board: Tape 5, a star hair clip, doc 'news2'. |\n| 6 | Tape 5 | A box from the right-hand stack topples; behind it a gift box with the tag 'Beste'ye. Sekizinci yaş gününde açılsın. — Nermin Abla' | 4-digit date lock (GG/AA): 0302 | Tape 5 after-show k5_real3 'Kutuların arkasında bir hediye var... Doğum günümde açılacaktı.' + school card 'Doğum tarihi: 03.02.1991' | 0203: 'Neredeyse. Önce gün, sonra ay.' 2: 'Etikete göre doğum gününde açılacak...' 4: 'Metal kutudaki okul kartına bak.' 6: 'Gün ve ay: 03 02.' Inside: Tape 6 + doc 'dogumgunu'. This also arms the player for Tape 6's catch-the-lie. |\n| 7 | Tape 6 | The attic is DARK (the bulb died in Tape 6). The tape is taped to the front leg of the player's own chair | Look down, click (large hitbox) | Tape 6 last line k6_gift 'Oturduğun yerin altında.' | 20 s: positional tape hiss + 'Karanlıkta bant hışırtısı. Çok yakından geliyor.' 45 s: 'Ses aşağıdan geliyor. Oturduğun yerden.' 75 s: objective 'Sandalyenin altına bak.' Label 'Beste 1 — Tanışalım'; chooser 'Kaset 7 — Beste ile Tanışalım! (?)'. |\n| 8 | Tape 7 | Window: a cassette on the OUTSIDE sill among the small handprints | Hot/cold: the static TV says Buz gibi / Soğuk / Ilık / Sıcak / Yandın! by the angle between the view and the window; at 'Yandın!' open the latch | Tape 7 closing line k7_hc_intro 'Sıcak soğuk oynayalım. Etrafına bak, ben söylerim.' | The game is the hint. 60 s: 'Televizyon, baktığın yere göre konuşuyor.' 120 s: 'Sıcak... pencereye doğru.' Before this stage: 'Pencere sıkışmış.' |\n| 9 | Tape 8 | Toy chest: the lid stands open (it creaked during the paused count); the false bottom is raised; masking tape: 'Ham kayıt burada. Kilidi, onun adını öğrenen açsın. — N.' | 3-letter word lock: EBE | Tape 8 riddle 'Bebekleri dünyaya getirir, saklambaçta da saklananları bulur' (truth after 3 wrong), chalk EBE, Nermin's 'Onun adını öğrenen bulur' | 2: 'Nermin onun adı diyor: ağaçların arasındaki adamın adı.' 4: 'Saklambaçta sayan, arayan kişi.' 6: 'Üç harf. E ile başlar, E ile biter.' Inside: 'HAM KAYIT — ÇAMLIK 14.05.98' (VHS copy) + docs 'memo' and 'ifade'. |\n| 10 | Tape 9 | Slid UNDER the locked attic door | The bulb now has a pull chain ('<b>Zinciri çek</b>'). Turn the light off and wait in the dark | Tape 9 hijack k9_light 'Işığını söndür. Karanlıkta daha kolay yürüyorum.' + reversed k9_ters 'Kaseti al ama kapıyı açma.' + Tape 7 'O kapıyı ben açacağım. Zamanı gelince.' | 60 s: 'Ampul vızıldıyor. Karanlık olmadan kimse gelmeyecek.' 120 s: objective 'Ampulü söndür.' |\n\nTAPE 10 RITUAL\n1. The player pulls the chain. The bulb goes off; only moonlight remains and the TV is dark.\n2. 8 s of silence. If the light is switched back on, the ritual resets.\n3. Slow footsteps climb the stairs (creaks at the door).\n4. 3 soft knocks.\n5. The gap under the door glows (doorGlow 0.3), and the existing 'feet' shadow flicker shows someone standing there.\n6. A scrape: a tape slides in under the door.\n7. k10_room_door (beste_whisper, room bucket at the door): 'Getirdim.'\n8. The shadow leaves. The bulb flickers back on by itself (respecting 'Yanıp sönmeyi azalt').\nThe door stays locked: 'Kilitli. Kapının öbür yanında biri nefes alıyor.'\nToast: 'Kapının altından bir kaset kaydı. Kenarları erimiş, hâlâ sıcak. Etiketinden geriye tek kelime kalmış: SON.' The burned tape has come back, as the letter warned.\n\nNEW DOCS (ui.js DOCS, all plain HTML in the existing styles)\n- 'resim' (Tape 4 chest), a crayon drawing: 'Mum boya bir resim. Uzun yeşil ağaçlar. Ağaçların arasında çok uzun kollu, gri, yüzü olmayan bir amca. Büyük bir çamın önünde gözlerini kapatmış, saçı topuz bir kadın. Kadının yanına rakamlar yazılmış: 1 2 3 4 5 6 7. Sonra rakamlar griye dönüyor: 8 9 10. Bir ağacın arkasında sarı elbiseli küçük bir kız amcaya el sallıyor. Altında çocuk yazısıyla: AĞAÇLARIN ARASINDAKİ AMCA BENİMLE SAKLAMBAÇ OYNUYOR. HİÇ SOBELENMİYOR. Köşede: BESTE, 1-B. Arkasında: 13 MAYIS. YARIN ÇAMLIK'A GİDİYORUZ.' It is a premonition; only Tape 9 explains the grey 8 9 10.\n- 'news2' (Tape 5 floorboard): EGE POSTASI · 14 MAYIS 1999 · CUMA. Headline: 'Çamlık'ta bir yıl: Küçük Beste hâlâ kayıp'. The body says:\n  - a year has passed, and the Aydın family moved out of Karşıyaka last month;\n  - nobody knows who carved 'B.A. 1405' on an old pine in the picnic area, and people who walk there every day say the carving was not there a year ago;\n  - the gendarmerie says the crew's camera footage 'teknik bir arıza nedeniyle incelenemedi';\n  - producer R. Yıldız told the paper 'Konuşacak bir şeyim yok.';\n  - her mother says they never disconnected the old home phone.\n- 'dogumgunu' (Tape 6 gift box): 'Canım Beste, bugün 3 Şubat 1999. Sekiz yaşına girdin. Bu hediyeyi sana kendi elimle vermek isterdim. Herkes seni ormanda aradı. Ben hâlâ kasetlerde arıyorum. Bazen geceleri bandı geri sarınca sesini duyuyorum. — Nermin Abla'.\n- 'memo' (Tape 9 false bottom): 'YILDIZ ÇOCUK YAPIM — İÇ YAZIŞMA — 20.05.1998. Kimden: R. Yıldız. Kime: Nermin Hn. (Kurgu). 1. Kalan bölümler elimizdeki ses kayıtlarıyla tamamlanacak. 2. Kanal pilotu cuma istiyor. 3. Çamlık kaydı (Kamera 1, 14.05) jandarmaya verilmeyecek; kayıt arızalı sayılacak. 4. İş bitince bütün kasetler imha edilecek. 5. Bu konu dışarıda konuşulmayacak.' Handwritten underneath: 'Pilot asla bitmeyecek. Kaseti ben saklıyorum. Listede benim işaretlemediğim bir klip var: 7. —N.' This note is the clue for hidden clip 7.\n- 'ifade' (Tape 9 false bottom): 'JANDARMA İFADE TUTANAĞI — 15.05.1998. İfade veren: Nermin Ş., 34, kurgucu (Yıldız Çocuk Yapım). Öğle arasında Beste saklambaç oynamak istedi. Ebe bendim. Büyük çamın önünde gözlerimi kapatıp saymaya başladım. Yediye geldiğimde biri benim yerime saydı. Gözümü açmadım, çünkü kural öyleydi. Gözümü açtığımda Beste yoktu. Piknik sepeti ve atlama ipi ağacın dibindeydi. Kameraman Kâmil kamerayı kapatmamıştı. Kayıtta her şey vardır.' The 'ip' in the newspaper was her jump rope.\n- Edit to the existing 'news': the torn last line becomes 'Ailesi, kızlarını gören ya da duyanların 364 ██ ██ numaralı telefonu aramalarını rica ediyor.'\n\nROOM VOICE LINES (room bucket, positional; ids follow the tape whose find they belong to)\n- k5_room_real1 (beste_real): 'Şşş. Saklanıyorum. Ses çıkarma.'\n- k5_room_real2 (beste_real): 'Halının altına bak. Ona söyleme.'\n- k8_room_ice (beste_cold): 'Buz gibi.'\n- k8_room_cold (beste_cold): 'Soğuk.'\n- k8_room_warm (beste_cold): 'Ilık.'\n- k8_room_hot (beste): 'Sıcak!'\n- k8_room_burn (beste): 'Yandın!'\n- k10_room_door (beste_whisper): 'Getirdim.'\n\nOBJECTIVES (main.objectiveText by stage, shown only while the next tape is unfound)\n- 3: 'Arkanda bir şey yer değiştirdi.'\n- 4: 'Telefonla birini ara.'\n- 5: 'Kutuların arkasına bak.'\n- 6: 'Karanlıkta bant hışırtısının kaynağını bul.'\n- 7: 'Televizyonun sıcak-soğuk ipuçlarını izle.'\n- 8: 'Oyuncak sandığına bak.'\n- 9: 'Beste ışığı söndürmeni istedi.' (after 120 s: 'Ampulü söndür.')\n\nTAPE_NAMES\n1 'Beste ile Tanışalım!', 2 'Tonton Kedi'nin Kuyruğu', 3 'Tonton Kedi Geri Döndü!', 4 'Kaybolursan Ne Yaparsın?', 5 'Bugün Sen Beste'sin!', 6 'İyi ki Doğdun Beste!', 7 'Beste ile Tanışalım! (?)', 8 'Ebe Sensin!', 9 'HAM KAYIT 14.05.98', 10 'SON'.\n\nNEW OBJECTS\nAll exist from the start so they can be noticed early. Each is gated with a flavour toast until its stage:\n- Toy chest under the sheet: 'Çarşafın altı buz gibi.'\n- Black rotary phone with the '364 51 80' dial card: 'Kablosu duvara bağlı değil.'\n- Kilim corner and floorboard: flat until stage 4.\n- Gift box behind the right stack: hidden until the topple.\n- Chair front leg: hitbox active only at stage 6.\n- Window: 'Pencere sıkışmış.' until stage 7.\n- Chest false bottom: 'Şimdilik kıpırdamıyor.' until stage 8.\n- Bulb chain: appears after stage 9.\nPlush continuity: from stage 5 the plush reads 'Peluşun karnındaki yırtık siyah iple dikilmiş. Sen dikmedin.' In the good ending it is back on the shelf with its orange tail.\n\nUI\n- Generalise ui.keypad(check, {len, mask, title}). The phone uses len 7, mask '___ __ __', a rotary whirr per digit and title 'Çevir'. The gift box uses len 4 with a 'GG/AA' display.\n- Add ui.wordlock(check, {len}) for the chest (4) and the false bottom (3). It is typed on the keyboard; ENTER submits and ESC closes.\n- Each lock counts wrong tries for its 2/4/6 hint toasts and stays dead until its stage.\n\nRULES\n- Room events happen only on a tape's FIRST viewing: furniture move, phone ring, kilim lift, box topple, bulb death, hot/cold, chest open, bulb chain.\n- Story flags are written only on first viewing. Replays read the flags and play the matching variant.\n- The F focus lock stays on for every tape; only the Tape 5 fake end swallows F/E silently.\n- No tape turns the camera on its own. Positional audio behind the player is used instead.\n- All room flickers respect 'Yanıp sönmeyi azalt'.\n- Difficulty curve: event → told word → memorised number → document date → search in the dark → audio-guided search → riddle word → ritual.",
+ "finale": "Tape 10 is the current tape3.js, renamed tape10.js. These things do not change:\n- both endings;\n- the door I wording 'Ormandaki ağaç neyi hatırlıyor?', exactly as it is;\n- the rule the user asked for: three wrong answers on a door and Beste tells the truth (b3_truth1/2/3), with the answer written on the door.\nThe tweaks below are small and concrete.\n\n1. Wiring\n- TAPES 1..10, FINAL = 10, TAPE_NAMES[10] = \"Kaset 10 — 'SON'\".\n- Title card '10. Bölüm' / 'Zamanın Sonu'.\n- New line k10_title (narrator_slow) 'Onuncu bölüm. Zamanın sonu.' replaces n_t3_title.\n\n2. Opening\n- After b3_open, add a Tape 9 payoff: k10_form (beste_digital) 'Formumu birlikte doldurduk. Bir tek kutu kaldı. Bu gece onu da dolduracağız.'\n\n3. Door I\n- A correct answer plays k10_right1 (beste_digital) instead of b3_right. Text: 'Doğru. On dört Mayıs. Benim doğduğum gün.' Subtitle: 'Doğru. 14 Mayıs. Benim doğduğum gün.' This pays off the Tape 6 reveal.\n- One accepted form is ADDED: 'on dört mayıs' spelled out (has 'on dort' and 'mayis').\n- The question, the 3-wrong b3_truth1 and the written '1405' are unchanged.\n\n4. Door II\n- A correct answer plays k10_right2 (beste_digital). Text: 'Yedi. Pastamda hep yedi mum olacak.' Subtitle: '7. Pastamda hep 7 mum olacak.' This pays off the Tape 6 candles.\n\n5. Door III\n- If st.flags.saidSurnameEarly (set in Tape 5 or on the Tape 9 form), ask k10_q3_again (beste_digital) instead of b3_q3: 'Üçüncü kapı. Bir kere söylemeye başlamıştın. Yarım kaldı. Şimdi tamamla.'\n- Also draw a small form strip under door III reading 'SOYADI: AY____'.\n- b3_truth3 is unchanged.\n\n6. Teaching the rewind hold inside the finale, without giving it away\na. The door-phase frames are tagged rev 'k10_ters'. Once, as door I appears, its reversed file k10_ters_rev plays faintly under the scene. k10_ters (beste_real): 'Bırakma. Geri sar. Bırakma.'\nb. The first time the left arrow is held for more than 0.6 s during the doors, play k10_real_hold (beste_real, FORWARD, room bucket): 'Bırakma. Basılı tut.'\nc. From 1.4 s of holding, play k10_countback (nermin, room bucket, rate 1.6, with rewind warble): 'On. Dokuz. Sekiz. Yedi. Altı. Beş. Dört. Üç. İki. Bir.' Subtitle: '10. 9. 8. 7. 6. 5. 4. 3. 2. 1.' Nermin's count, and the trees' count, run backwards.\nd. Raise the good-ending hold threshold from 3.2 s to 4.5 s, so the countback finishes as the ending triggers.\ne. IMPORTANT: count hold time in onRewindHold only while g.input.rewindHeld is true. Otherwise the auto-rewind that plays a reversed message could trigger the good ending by itself.\n- The existing b3_rewind_no 'Geri saramazsın.' still plays on early release, so two voices pull in opposite directions.\n\n7. Optional\n- If st.flags.peeked, play k10_peeked (beste_cold) as the door phase starts: 'Sayarken gözünü açmıştın. Bu sefer açma.'\n\n8. Good ending = rule 4, 'Oyun, herkes bulununca biter'\n- After the real girl fades in, conditional lines play (beste_real):\n  - k10_good_bday 'Doğum günümü bile hatırladın.' if caughtLie;\n  - k10_good_promise 'Söz vermiştin. Geldin.' if promisedFind;\n  - k10_good_mirror 'Aynada tersten yazdığını okudum. Teşekkür ederim.' if mirrorFriend.\n- Then a soft (non-evil) typed prompt: k10_good_ask (beste_real) 'Beni buldun. Şimdi ne demen gerekiyor?'\n  - 'sobe': k10_good_sobe (beste_kiz) 'Sobe! Oyun bitti. Artık eve gidebilirim.'\n  - 1st and 2nd wrong: k10_good_hint (beste_real) 'Saklambaçta biri bulununca ne denir?'\n  - 3rd wrong (truth rule): k10_good_truth (beste_real), text 'Sobe de. Sadece sobe de.', subtitle 'SOBE de. Sadece SOBE de.'. After that, any answer is accepted.\n- Then the existing b3_good_real, dawn, and the door. At dawn the Tonton plush is back on the shelf with its orange tail.\n- New ending text: 'Geri sardın ve gerçek Beste'yi buldun. Oyun, herkes bulununca biter: Sobe. Sabah kasetleri bahçede yaktın. Bu sefer geri dönmediler. Ertesi gün gazeteler, Çamlık'taki büyük çamın dibinde küçük, gri bir çocuk ayakkabısı bulunduğunu yazdı.'\n\n9. Bad ending = rule 3, 'İlk sobelenen ebe olur'\n- If the player types 'sobe' at the ÇIKIŞ prompt, play k10_sobe_bad (beste_deep) 'O kelimeyi ancak bulan söyler. Sen beni bulmadın. Ben seni buldum.' The prompt then repeats; the route does not change.\n- After b3_final_name, play k10_bad_ebe (beste_whisper), text 'Şimdi ebe sensin. Ona kadar say.', subtitle 'Şimdi ebe sensin, {ad}. Ona kadar say.'\n- Then, from the corridor, the new 'whistle' sfx: the show's jingle whistled slowly.\n- New ending text: 'Ona istediği her şeyi verdin: tarihini, yaşını ve adını. Kaset kapandı ama kapı açık kaldı. İlk sobelenen ebe olur. Artık ebe sensin.'\n- Footer hint: 'Başka bir son daha var. Kapılarda geri sar ve bırakma.'\n\n10. Secrets\n- SECRETS grows from 7 to 18: the 7 existing ones plus arkana, oduydu, telefon, ayna, misafir, yil, pamuk, kural5, oyuncu, klaket, yedinci.\n- Reversed messages get their own counter, 'Ters mesajlar x / 8': b2_real, k3_ters, k4_ters, k6_ters, k7_ters, k8_ters, k9_ters, k10_ters.\n- The director passes meta.rev's id to foundSecret ('ters-' + id) instead of the hard-coded 'ters-mesaj'. An old 'ters-mesaj' entry migrates to 'ters-b2_real'.\n\n11. Engine summary for the new tapes (small changes, local to director.js, main.js, room.js, ui.js and audio.js)\n- d.ask({timeout}): resolves null, with endTyping called inside the director.\n- d.onKey: forwarded from main.onKey while no answer box is open.\n- d.onPause, d.forcePause, d.pausedFor.\n- A room voice bucket that pause and FF do not touch, with g.clock timers cancelled on resume, abort and quit.\n- d.gazeIn(rect).\n- d.fakeEnd: keeps the focus lock, swallows F/E silently, overrides the VCR label, and never calls onTapeDone.\n- Per-tape and per-line subtitle labels.\n- Tokens {cevap}, {gun}, {yil}.\n- Stamp and freeze overlays.\n- ui.keypad(len, mask) and ui.wordlock.\n- DOCS resim, news2, dogumgunu, memo, ifade.\n- applyStage and stackTapes for tapes 1..10.\n\n12. Save migration\n- A save at the old stage 3 (a finished game) maps to stage 10, keeping its ending.\n- An old tape 3 in st.tapes maps to tape 10.\n- tape3Taken now means the new Tape 3 from the plush.\n- New saves start with st.answers = {} and st.room = {}.\n\n13. Playtime\n- About 10 tapes x 4 minutes plus puzzles: 60–75 minutes for a first run.\n- A second run is rewarded by the flags (rope, still, tail, promisedFind, saidSurnameEarly, caughtLie, mirrorFriend, peeked), the 18 secret frames and the 8 reversed messages."
+}

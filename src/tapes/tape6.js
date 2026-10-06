@@ -192,7 +192,7 @@ export async function tape6(d) {
       besteLight: v.dark > 0 ? { x: B.x, y: B.y, scale: B.scale } : null,
       countdown: v.countdown,
     });
-    if (v.quiz > 0) K.quizCard(c, tt, { p: v.quiz, banner: 'DOĞUM GÜNÜ YARIŞMASI' });
+    if (v.quiz > 0) K.quizCard(c, tt, { p: v.quiz, banner: 'DOĞUM GÜNÜ YARIŞMASI', x: 132, y: 122, s: 0.76 });
     if (v.confettiT != null && !v.still) K.confetti(c, d.time, v.confettiT);
     if (v.red > 0) K.redEdge(c, v.red);
   };
@@ -227,7 +227,10 @@ export async function tape6(d) {
   {
     let done = false;
     const hello = d.say('k6_hello', { label: NAME });
-    quiet(hello).finally(() => (done = true));
+    hello.then(
+      () => (done = true),
+      () => (done = true),
+    );
     await d.wait(1.0);
     if (!done) {
       const l = g.lines.k6_hello;
@@ -509,10 +512,9 @@ export async function tape6(d) {
   g.room.setFlicker(false);
   g.room.setBulb(0, 0.05);
   d.sfx('pop', P.bulb);
-  tvNoise(0.05, { type: 'highpass', freq: 2500, gain: 0.0 });
   if (g.room.moon) g.room.tweens.add(g.room.moon, 'intensity', 0.3, 0.3);
   bulbKilled = true;
-  if (first) st.room.bulbDead = true;
+  if (first) (st.room = st.room || {}).bulbDead = true;
   // ekrandaki yedi mum hâlâ yanıyor; parti odası karanlık, Beste alttan aydınlanıyor
   v.dark = 1;
   v.glow = 150;
@@ -574,9 +576,9 @@ export async function tape6(d) {
   g.ambience?.setDrone?.(0, 3);
   await d.wait(1.4);
   // tekrar izlemede (7. kasetten sonra) ampul geri gelir; ilk izlemede tavan arası karanlık kalır
-  if (bulbKilled && !st.room.bulbDead) {
+  if (bulbKilled && !st.room?.bulbDead) {
     g.room.flickerBurst(0.8);
-    g.room.setBulb(st.room.lightOff ? 0 : 1, 0.6);
+    g.room.setBulb(st.room?.lightOff ? 0 : 1, 0.6);
     if (g.room.moon && moon0 != null) g.room.tweens.add(g.room.moon, 'intensity', moon0, 1);
   }
   return ejectTries;

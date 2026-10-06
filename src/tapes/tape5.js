@@ -18,6 +18,7 @@ const MIRROR = [420, 80, 180, 320];
 const WIDE = { x: 320, y: 240, z: 1 };
 const CLOSE = { x: 203, y: 287, z: 1.6 };
 const MIRROR_SHOT = { x: 322, y: 282, z: 2.3 };
+const NIGHT_CLOSE = { x: 236, y: 250, z: 1.6 };
 const WORD = 'SÖYLEME';
 const IDLE = ['b1_idle1', 'b1_idle2'];
 
@@ -67,9 +68,9 @@ export async function tape5(d) {
     note: { entries: [], focus: null },
   };
   // gösteri sonrası (gece, şifonyer yakın planı)
-  const A = { solo: true, rs: 0.72, talk: false, lookX: 0, tilt: 0, fog: 0, ev: 0, writing: false, palm: 0, bx: 760, walk: false, stepT0: -9, stepDur: 0.34 };
+  const A = { solo: true, rs: 0.72, talk: false, lookX: 0, tilt: 0, fog: 0, ev: 0, writing: false, palm: 0, bx: 760, walk: false, stepT0: -9, stepDur: 0.34, cam: { ...WIDE } };
   // örnek, oyuncunun okuyabileceği yönde yazılır: gerçek kız, çizgi filmin aksine, bizim için tersten yazmayı bilir
-  const EV = { text: 'EVET → TEVE', shown: 0, x: NM.cx, y: 318, size: 34, mirrored: false };
+  const EV = { text: 'EVET → TEVE', shown: 0, x: NM.cx, y: 292, size: 32, mirrored: false };
   const loops = new Set();
   let saidNow = false;
   let caught = false;
@@ -263,19 +264,21 @@ export async function tape5(d) {
   const night = (c, t) => {
     record();
     EV.shown = A.ev;
-    K.dresserCloseup(c, t, {
-      mirror: {
-        figure: refNight,
-        fog: A.fog,
-        fogX: NM.cx,
-        fogY: 312,
-        fogRX: 108,
-        fogRY: 46,
-        writings: [EV],
-        palm: A.palm > 0 ? { x: NM.cx - 66, y: 236, s: 1.25 * A.palm } : null,
-      },
+    K.camera(c, A.cam, () => {
+      K.dresserCloseup(c, t, {
+        mirror: {
+          figure: refNight,
+          fog: A.fog,
+          fogX: NM.cx,
+          fogY: 290,
+          fogRX: 108,
+          fogRY: 46,
+          writings: [EV],
+          palm: A.palm > 0 ? { x: NM.cx - 66, y: 236, s: 1.25 * A.palm } : null,
+        },
+      });
+      if (A.walk || !A.solo) d.beste(c, { x: A.bx, y: 478 - bob(), scale: 1.05 });
     });
-    if (A.walk || !A.solo) d.beste(c, { x: A.bx, y: 478 - bob(), scale: 1.05 });
   };
 
   // ---------------------------------------------------------------- yardımcılar
@@ -824,9 +827,11 @@ export async function tape5(d) {
       B.expr = 'happy';
       await d.say('k5_who_noone');
     } else await d.say('k5_who_mirror');
-    // bir saniye: yansıma gülümser, Beste gülümsemez
-    v.ref.over = { expr: 'happy' };
+    // bir saniye: yansıma gülümser, Beste gülümsemez (ikisi de görünsün diye sert bir yakın plan)
+    Object.assign(A.cam, NIGHT_CLOSE);
+    v.ref.over = { expr: 'happy', look: { x: 0, y: 0 } };
     B.expr = 'neutral';
+    B.lookTarget = { x: 0, y: 0 };
     await d.wait(1.0);
 
     // ---- sert kesme: karlanma... ve karın içinden sırıtan yansıma (ani korkutma 2)

@@ -1215,7 +1215,8 @@ export function quizCard(ctx, t, o = {}) {
   const p = clamp(o.p ?? 1, 0, 1);
   if (p <= 0) return;
   const x = o.x ?? 170, y = o.y ?? 168;
-  const sc = easeOutBack(p);
+  const k = o.s ?? 1;
+  const sc = easeOutBack(p) * k;
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate((1 - p) * -Math.PI * 2.2 + Math.sin(t * 2) * 0.04);
@@ -1256,7 +1257,8 @@ export function quizCard(ctx, t, o = {}) {
     const a = clamp((p - 0.7) / 0.3, 0, 1);
     ctx.save();
     ctx.globalAlpha = a;
-    ctx.translate(x, y + 128);
+    ctx.translate(x, y + 128 * k);
+    ctx.scale(k, k);
     ctx.rotate(-0.04);
     ctx.font = `800 19px ${FONT_CARTOON}`;
     const w = ctx.measureText(o.banner).width + 40;

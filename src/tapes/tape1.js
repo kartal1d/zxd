@@ -228,6 +228,18 @@ export async function tape1(d) {
   d.music('box', { gain: 0.1, tempo: 88 });
   await d.say('b1_hide_where');
 
+  // ağaçtaki oyma (kutunun şifresi): ileri sarma durur, görüntü sakinleşir, uzun süre ekranda kalır
+  const showCarving = async (line, sec) => {
+    const prev = d.sceneFn;
+    d.stopFF();
+    d.fx({ noise: 0.015, tracking: 0, jitter: 0.02, aberration: 0.15 }, 0.2);
+    d.scene((c, t) => S.treeCarving(c, t));
+    if (line) await d.say(line);
+    await d.wait(sec);
+    d.fx(d.baseFx, 0.4);
+    d.scene(prev);
+    st.clues.tarih = true;
+  };
   let sawTree = false;
   let wrong = 0;
   for (;;) {
@@ -248,12 +260,7 @@ export async function tape1(d) {
     wrong++;
     if (r.key === 'tree') {
       sawTree = true;
-      st.clues.tarih = true;
-      const prev = d.sceneFn;
-      d.scene((c, t) => S.treeCarving(c, t));
-      await d.say('b1_hide_tree');
-      await d.wait(1.5);
-      d.scene(prev);
+      await showCarving('b1_hide_tree', 3.5);
     } else {
       // GİZLİ: çalının altında gri bir ayakkabı
       const line = d.say('b1_hide_bush');
@@ -281,14 +288,10 @@ export async function tape1(d) {
   if (!sawTree) {
     // ağaç seçilmediyse oyma bir an araya girer (ipucu kaybolmasın)
     await d.wait(0.6);
-    const prev = d.sceneFn;
     d.sfx('glitch', 0.3);
-    d.scene((c, t) => S.treeCarving(c, t));
-    d.tag({ secret: { id: 'oyma', text: '14.5.98' } });
-    await d.wait(0.5);
+    d.tag({ secret: { id: 'oyma', text: '1405' } });
+    await showCarving(null, 3.5);
     d.tag(null);
-    d.scene(prev);
-    st.clues.tarih = true;
   }
 
   // ---- kapanış

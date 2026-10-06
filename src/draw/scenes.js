@@ -846,11 +846,15 @@ function bigTree(ctx, x, t, carving) {
     ctx.save();
     ctx.globalAlpha = carving;
     ctx.translate(x, 292);
-    ctx.fillStyle = '#d8a46a';
-    ctx.font = `10px ${FONT_OSD}`;
     ctx.textAlign = 'center';
-    ctx.fillText('B.A.', 0, -6);
-    ctx.fillText('14.5.98', 0, 6);
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    ctx.font = `800 17px ${FONT_CARTOON}`;
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#3a1d0a';
+    ctx.strokeText('1405', 0, 4);
+    ctx.fillStyle = '#ffe2b8';
+    ctx.fillText('1405', 0, 4);
     ctx.restore();
   }
 }
@@ -867,24 +871,29 @@ export function treeCarving(ctx, t) {
     ctx.bezierCurveTo(hash(i + 1) * W, 160, hash(i + 2) * W, 320, hash(i + 3) * W, H);
     ctx.stroke();
   }
+  // ekranda rahat okunsun: kalın, açık renkli, koyu kenarlı büyük rakamlar
   ctx.save();
   ctx.translate(W / 2, H / 2);
-  ctx.rotate(-0.05);
+  ctx.rotate(-0.04);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `800 92px ${FONT_HAND}`;
-  ctx.fillStyle = '#3a1d0a';
-  ctx.fillText('B.A.', 3, -64);
-  ctx.fillText('14.5.98', 3, 46);
-  ctx.fillStyle = '#e8b47a';
-  ctx.fillText('B.A.', 0, -68);
-  ctx.fillText('14.5.98', 0, 42);
+  ctx.lineJoin = 'round';
+  ctx.font = `800 54px ${FONT_CARTOON}`;
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = '#2a1206';
+  ctx.strokeText('B.A.', 0, -112);
+  ctx.fillStyle = '#ffe2b8';
+  ctx.fillText('B.A.', 0, -112);
+  ctx.font = `800 170px ${FONT_CARTOON}`;
+  ctx.lineWidth = 16;
+  ctx.strokeText('1405', 0, 30);
+  ctx.fillText('1405', 0, 30);
   ctx.restore();
   // kalp yerine çizik bir daire
-  ctx.strokeStyle = '#e8b47a';
-  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#ffe2b8';
+  ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.arc(W / 2, H / 2 - 10, 170, 0.2, Math.PI * 1.85);
+  ctx.ellipse(W / 2, H / 2 - 10, 270, 190, 0, 0.2, Math.PI * 1.85);
   ctx.stroke();
 }
 
@@ -939,7 +948,7 @@ export function bgVoid(ctx, t, o = {}) {
     ctx.lineTo(x, H);
     ctx.stroke();
   }
-  const words = o.words || ['YARDIM', 'ÇIKIŞ', 'KAPI', 'BESTE', '14.5.98'];
+  const words = o.words || ['YARDIM', 'ÇIKIŞ', 'KAPI', 'BESTE', '1405'];
   ctx.font = `28px ${FONT_OSD}`;
   ctx.textAlign = 'center';
   for (let i = 0; i < 9; i++) {

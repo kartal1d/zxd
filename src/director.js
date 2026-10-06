@@ -56,6 +56,9 @@ export class Director {
     this.pauseCount = 0;
     this.onResume = null;
     this.onRewindHold = null;
+    this.onRewindEnd = null;
+    this.noFF = false;
+    this.ffSkipped = null;
     this.ejectPolicy = 'allow';
     this.baseFx = { ...SCREEN_DEFAULT };
     this.chars = {
@@ -257,6 +260,7 @@ export class Director {
     this.speaker = who;
     // ileri sarılırken (ve test kancasında) replik çalınmaz, kısa bir an altyazı görünür
     const skip = this.ff || this.g.debug?.fast;
+    this.ffSkipped = this.ff ? { id, o } : null;
     const h = skip ? { promise: this.wait(this.ff ? 0.6 : 0.2), pause() {}, resume() {}, stop() {} } : this.audio.playVoice(o.file || id, { rate: o.rate, gain: o.gain, detune: o.detune, dest: o.dest });
     this.voice = h;
     if (this.paused || this.rewinding) h.pause();
@@ -316,8 +320,13 @@ export class Director {
   // ---------------------------------------------------------------- klavye cevapları
   ask(o = {}) {
     this.check();
-    // soru gelince ileri sarma durur, cevap beklenir
-    if (this.ff) this.stopFF();
+    // soru gelince ileri sarma durur; atlanan soru repliği cevap kutusu açıkken tekrar okunur
+    let replay = null;
+    if (this.ff) {
+      this.stopFF();
+      replay = this.ffSkipped;
+    }
+    this.ffSkipped = null;
     this.input = {
       text: '',
       options: o.options,
@@ -329,7 +338,9 @@ export class Director {
       maxLen: o.maxLen || 24,
     };
     this.g.ui.beginTyping();
-    return this.race(new Promise((resolve) => (this.input.resolve = resolve)));
+    const p = this.race(new Promise((resolve) => (this.input.resolve = resolve)));
+    if (replay) this.sayAsync(replay.id, replay.o);
+    return p;
   }
 
   typed(text) {
@@ -408,7 +419,7 @@ export class Director {
 
   /** Sağ ok basılıyken: bant hızlanır, replikler atlanır. Soru gelince kendiliğinden durur. */
   startFF() {
-    if (!this.active || this.rewinding || this.paused || this.input || this.ff) return;
+    if (!this.active || this.noFF || this.rewinding || this.paused || this.input || this.ff) return;
     this.ff = true;
     this.voice?.stop();
     this.audio.pauseVoices();

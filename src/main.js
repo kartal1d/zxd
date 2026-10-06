@@ -62,7 +62,9 @@ class Game {
     this.audio = new AudioEngine();
     this.tv = new TVScreen();
     this.settings = { volume: 0.9, sens: 1, subs: true, flash: false, quality: 'high', ...storage.get(SETTINGS_KEY, {}) };
-    this.state = migrate({ ...defaultState(), ...storage.get(SAVE_KEY, {}) });
+    // varsayılan boş liste eski kaydın üstüne yazılmasın: tapes yoksa migrate() yeniden kursun
+    const raw = storage.get(SAVE_KEY, {}) || {};
+    this.state = migrate({ ...defaultState(), ...raw, tapes: raw.tapes });
     this.mode = 'title';
     this.overlay = null;
     this.clock = 0;
@@ -209,6 +211,10 @@ class Game {
     $('reader').onclick = () => this.ui.closeReader?.();
     document.querySelectorAll('.keypad-grid button').forEach((b) => (b.onclick = () => this.ui.keypadKey?.(b.dataset.k || b.textContent)));
     $('mobile-type').onclick = () => $('answer').focus();
+    $('btn-tapes-cancel').onclick = () => this.ui.closeTapes?.(null);
+    $('tapes').onclick = (e) => {
+      if (e.target === $('tapes')) this.ui.closeTapes?.(null);
+    };
     $('answer').addEventListener('input', (e) => this.director.typed(e.target.value));
   }
 
@@ -295,6 +301,7 @@ class Game {
     this.director.abort();
     this.playingTape = null;
     this.loadingTape = false;
+    this.loadSeq = (this.loadSeq || 0) + 1;
     this.ui.closeTapes?.(null);
     this.save();
     this.show('pause', false);
@@ -376,6 +383,13 @@ class Game {
     });
 
     window.addEventListener('keydown', (e) => this.onKey(e));
+    // tuş başka pencerede bırakılırsa keyup gelmez: odak gidince sarmayı bırak
+    window.addEventListener('blur', () => {
+      this.input.ffHeld = false;
+      this.input.rewindHeld = false;
+      this.director.stopFF();
+      this.director.stopRewind();
+    });
     window.addEventListener('keyup', (e) => {
       if (e.key === 'ArrowLeft') {
         this.input.rewindHeld = false;
@@ -678,6 +692,7 @@ class Game {
   async playTape(n) {
     if (this.loadingTape || this.director.active) return;
     const st = this.state;
+    const tok = (this.loadSeq = (this.loadSeq || 0) + 1);
     this.loadingTape = true;
     this.playingTape = n;
     this.refreshInventory();
@@ -687,6 +702,8 @@ class Game {
     this.room.setFocus(true);
     this.updateObjective();
     await sleep(1300);
+    // bu arada menüye dönülüp yeni bir kaset takıldıysa eski yükleme hiçbir şey yapmaz
+    if (tok !== this.loadSeq) return;
     this.loadingTape = false;
     // yüklenirken ana menüye dönüldüyse oynatma
     if (this.playingTape !== n || this.mode === 'title') return;
@@ -716,7 +733,8 @@ class Game {
     st.stage = Math.max(st.stage, n);
     this.save();
     this.refreshInventory();
-    r.applyStage(st);
+    // ilk izlemede odadaki değişim (ışık, peluş) ses işaretiyle birlikte gelir
+    if (!first) r.applyStage(st, this.playingTape);
     if (n < 3) {
       this.audio.sfx('vcrEject', r.points.vcr);
       this.ui.toast(first ? 'Kaset bitti ve kendiliğinden dışarı çıktı.' : 'Kaset bitti. Dolabın üstüne, diğer kasetlerin yanına koydun.');
@@ -729,13 +747,13 @@ class Game {
     if (n === 1) {
       await sleep(2500);
       this.audio.sfx('boxClick', r.points.metalbox);
-      r.applyStage(st);
+      r.applyStage(st, this.playingTape);
       this.ui.toast("Sehpadaki kilitli kutudan bir 'tık' sesi geldi. Tuş takımının ışığı yandı.", 5);
       await sleep(5500);
       if (this.mode === 'play' && !this.playingTape) this.ui.toast('İzlediğin kasetler dolabın üstünde. Video oynatıcıdan istediğini tekrar izleyebilirsin.', 6);
     } else if (n === 2) {
       await sleep(2500);
-      r.applyStage(st);
+      r.applyStage(st, this.playingTape);
       this.audio.sfx('thud', new THREE.Vector3(-0.45, 0.2, 2.05));
       this.ui.toast('Arkanda bir şey yere düştü.', 4);
     } else if (n === 3) {
@@ -805,7 +823,7 @@ class Game {
       S.titleCard(c, this.clock * 0.6, { decay: 0.15 });
       return;
     }
-    S.blueScreen(c, this.clock, { text: 'VİDEO 1', sub: this.newTape() ? 'KASET BEKLENİYOR' : '', clock: true });
+    S.blueScreen(c, this.clock, { text: 'VİDEO 1', sub: this.newTape() && !this.playingTape ? 'KASET BEKLENİYOR' : '', clock: true });
   }
 }
 

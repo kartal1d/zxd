@@ -177,7 +177,9 @@ async function badEnding(d, v) {
   d.setBase({ saturation: 1, tintR: 1, tintG: 1, tintB: 1, glitch: 0, noise: 0.05, tracking: 0.2, aberration: 0.8 }, 0.05);
   await d.race(g.waitAnyKey(9));
 
-  // ekran kapanır, ışıklar söner
+  // ekran kapanır, ışıklar söner; bundan sonra ileri sarılamaz (oda sahnesi gerçek zamanlı)
+  d.noFF = true;
+  d.stopFF();
   g.audio.setHiss(false);
   d.sfx('tvOff');
   d.tweens.add(d.tv.p, 'power', 0, 0.45);
@@ -233,6 +235,8 @@ async function goodEnding(d, v) {
   await d.wait(2.0);
   await d.say('b3_good_real');
   await d.wait(1.5);
+  d.noFF = true;
+  d.stopFF();
   g.audio.setHiss(false);
   d.sfx('tvOff');
   d.tweens.add(d.tv.p, 'power', 0, 0.6);

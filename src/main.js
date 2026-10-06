@@ -12,18 +12,20 @@ import { Director } from './director.js';
 import { Finds } from './finds.js';
 import { UI, SECRETS, REVERSED, secretCounts } from './ui.js';
 import * as S from './draw/scenes.js';
-import { tape1 } from './tapes/tape1.js';
-import { tape2 } from './tapes/tape2.js';
-import { tape10 } from './tapes/tape10.js';
 import { storage, clamp } from './util.js';
 
 const $ = (id) => document.getElementById(id);
 const SAVE_KEY = 'beste-kayit-v1';
 const SETTINGS_KEY = 'beste-ayarlar-v1';
-// geçiş dönemi: final kaseti (tape10.js) şimdilik 3. sırada; yeni kasetler eklenince 10'a taşınır
-const TAPES = { 1: tape1, 2: tape2, 3: tape10 };
 /** Son kaset: bitince oyun sona erer. */
-const FINAL = 3;
+const FINAL = 10;
+/** Kaset senaryoları gerektiğinde yüklenir; açılış hafif kalır. */
+const tapeCache = {};
+function loadTape(n) {
+  tapeCache[n] ||= import(`./tapes/tape${n}.js`).then((m) => m['tape' + n]);
+  tapeCache[n].catch(() => delete tapeCache[n]);
+  return tapeCache[n];
+}
 const TAPE_NAMES = {
   1: "Kaset 1 — 'Beste ile Tanışalım!'",
   2: "Kaset 2 — 'Tonton Kedi'nin Kuyruğu'",
@@ -310,6 +312,7 @@ class Game {
     this.room.applyStage(this.state);
     this.finds.applyLight();
     this.updateObjective();
+    for (const n of this.state.tapes) if (n > this.state.stage) loadTape(n).catch(() => {});
     this.ui.toast('Etrafa bakmak için ekrana tıkla.', 4);
     this.lockPointer();
   }
@@ -711,6 +714,7 @@ class Game {
     const st = this.state;
     if (!st.tapes.includes(n)) st.tapes.push(n);
     st.tapes.sort((a, b) => a - b);
+    loadTape(n).catch(() => {}); // takılmadan önce hazır olsun
     this.refreshInventory();
     this.room.applyStage(st, this.playingTape);
     this.save();
@@ -783,16 +787,28 @@ class Game {
     this.room.vcrText = 'LOAD';
     this.room.setFocus(true);
     this.updateObjective();
+    const tapeP = loadTape(n).catch((e) => (console.error(e), null));
     await sleep(1300);
+    const tapeFn = await tapeP;
     // bu arada menüye dönülüp yeni bir kaset takıldıysa eski yükleme hiçbir şey yapmaz
     if (tok !== this.loadSeq) return;
     this.loadingTape = false;
     // yüklenirken ana menüye dönüldüyse oynatma
     if (this.playingTape !== n || this.mode === 'title') return;
+    if (!tapeFn) {
+      this.playingTape = null;
+      this.room.vcrText = '12:00';
+      this.audio.sfx('vcrEject', this.room.points.vcr);
+      this.ui.toast('Kaset okunamadı. Bir daha tak.', 3);
+      this.refreshInventory();
+      this.room.applyStage(st);
+      this.updateObjective();
+      return;
+    }
     this.room.vcrText = 'PLAY';
     this.audio.sfx('tvOn');
     this.ui.show('vcr-hint', true);
-    const res = await this.director.play(TAPES[n], 't' + n, { firstViewing: n > st.stage });
+    const res = await this.director.play(tapeFn, 't' + n, { firstViewing: n > st.stage });
     this.ui.show('vcr-hint', false);
     this.audio.setHiss(false);
     this.audio.setTapeFx('off', 0.5);

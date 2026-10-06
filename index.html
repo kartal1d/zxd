@@ -111,7 +111,7 @@
 
   <section id="keypad" class="screen" hidden>
     <div class="keypad-box">
-      <p class="keypad-title">KİLİTLİ KUTU</p>
+      <p class="keypad-title" id="keypad-title">KİLİTLİ KUTU</p>
       <div id="keypad-display">----</div>
       <div class="keypad-grid">
         <button type="button">1</button><button type="button">2</button><button type="button">3</button>
@@ -119,7 +119,17 @@
         <button type="button">7</button><button type="button">8</button><button type="button">9</button>
         <button type="button" data-k="clear">C</button><button type="button">0</button><button type="button" data-k="close">✕</button>
       </div>
-      <p class="keypad-help">Rakamları klavyeden de girebilirsin · Esc: kapat</p>
+      <p class="keypad-help" id="keypad-help">Rakamları klavyeden de girebilirsin · Esc: kapat</p>
+    </div>
+  </section>
+
+  <section id="wordlock" class="screen" hidden>
+    <div class="keypad-box wordlock-box">
+      <p class="keypad-title" id="wordlock-title">HARF KİLİDİ</p>
+      <div id="wordlock-slots">_ _ _ _</div>
+      <input id="wordlock-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="4" aria-label="Kilit kelimesi">
+      <p class="keypad-help" id="wordlock-help">Harfleri yaz · ENTER: dene · Esc: kapat</p>
+      <button id="btn-wordlock-close" class="back" type="button">◀ KAPAT</button>
     </div>
   </section>
 

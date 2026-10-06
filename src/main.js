@@ -9,6 +9,7 @@ import { AudioEngine, Ambience } from './audio.js';
 import { TVScreen } from './tv.js';
 import { Room } from './room.js';
 import { Director } from './director.js';
+import { Finds } from './finds.js';
 import { UI, SECRETS } from './ui.js';
 import * as S from './draw/scenes.js';
 import { tape1 } from './tapes/tape1.js';
@@ -42,7 +43,7 @@ const GrainShader = {
 };
 
 function defaultState() {
-  return { stage: 0, tapes: [], name: '', boxOpen: false, tape2Taken: false, tape3Taken: false, flags: { pauses: 0 }, clues: {}, secrets: [], ending: null, endings: [] };
+  return { stage: 0, tapes: [], name: '', boxOpen: false, tape2Taken: false, tape3Taken: false, flags: { pauses: 0 }, clues: {}, answers: {}, room: {}, secrets: [], ending: null, endings: [] };
 }
 
 /** Eski kayıtlarda elde tutulan tek kaset (inv) vardı; artık sahip olunan kasetlerin listesi tutuluyor. */
@@ -55,6 +56,10 @@ function migrate(st) {
   }
   delete st.inv;
   st.flags = { pauses: 0, ...st.flags };
+  st.answers = st.answers || {};
+  st.room = st.room || {};
+  // eski tek "ters mesaj" gizli karesi artık mesaj başına sayılıyor
+  st.secrets = (st.secrets || []).map((s) => (s === 'ters-mesaj' ? 'ters-b2_real' : s));
   return st;
 }
 
@@ -85,6 +90,7 @@ class Game {
     this.setupRenderer();
     this.room = new Room(this);
     this.director = new Director(this);
+    this.finds = new Finds(this);
     this.room.applyStage(this.state);
     this.ambience = new Ambience(this.audio);
     this.audio.setTvPosition(this.room.points.tv.x, this.room.points.tv.y, this.room.points.tv.z);
@@ -215,6 +221,10 @@ class Game {
     document.querySelectorAll('.keypad-grid button').forEach((b) => (b.onclick = () => this.ui.keypadKey?.(b.dataset.k || b.textContent)));
     $('mobile-type').onclick = () => $('answer').focus();
     $('btn-tapes-cancel').onclick = () => this.ui.closeTapes?.(null);
+    $('btn-wordlock-close').onclick = () => {
+      this.ui.wordlockKey?.('close');
+      this.lockPointer();
+    };
     $('tapes').onclick = (e) => {
       if (e.target === $('tapes')) this.ui.closeTapes?.(null);
     };
@@ -278,6 +288,7 @@ class Game {
     this.show('hud', true);
     this.refreshInventory();
     this.room.applyStage(this.state);
+    this.finds.applyLight();
     this.updateObjective();
     this.ui.toast('Etrafa bakmak için ekrana tıkla.', 4);
     this.lockPointer();
@@ -306,6 +317,7 @@ class Game {
     this.loadingTape = false;
     this.loadSeq = (this.loadSeq || 0) + 1;
     this.ui.closeTapes?.(null);
+    this.finds.reset();
     this.save();
     this.show('pause', false);
     this.show('ending', false);
@@ -422,6 +434,18 @@ class Game {
       }
       return;
     }
+    if (this.overlay === 'wordlock') {
+      // harfler kilidin kendi kutusuna gider; yalnızca ENTER ve Esc burada
+      if (k === 'Enter') {
+        e.preventDefault();
+        this.ui.wordlockKey?.('Enter');
+      } else if (k === 'Escape') {
+        e.preventDefault();
+        this.ui.wordlockKey?.('close');
+        this.lockPointer();
+      }
+      return;
+    }
     if (this.overlay === 'tapes') {
       e.preventDefault();
       if (k === 'Escape') {
@@ -516,6 +540,8 @@ class Game {
   label(id) {
     const st = this.state;
     const playing = this.director.active;
+    const fl = this.finds.label(id);
+    if (fl != null) return fl;
     switch (id) {
       case 'tapebox':
         return !st.tapes.includes(1) ? 'Kaseti al' : 'Eski kaset kutuları';
@@ -553,6 +579,10 @@ class Game {
     const st = this.state;
     const ui = this.ui;
     const au = this.audio;
+    if (await this.finds.interact(id)) {
+      this.updateObjective(true);
+      return;
+    }
     switch (id) {
       case 'tapebox':
         if (!st.tapes.includes(1)) {
@@ -621,15 +651,16 @@ class Game {
           au.sfx('pickup');
           ui.toast('Peluşun karnı yırtılmış. İçinden üçüncü kaset düştü. Etiketinde tek kelime var: SON.', 6);
           this.updateObjective();
-        } else if (st.stage >= 2) ui.toast('Tonton peluşu. Kuyruğu yok. Kesik yerinden pamuk taşıyor.');
+        } else if (st.stage >= 5) ui.toast('Peluşun karnındaki yırtık siyah iple dikilmiş. Sen dikmedin.');
+        else if (st.stage >= 2) ui.toast('Tonton peluşu. Kuyruğu yok. Kesik yerinden pamuk taşıyor.');
         else ui.toast("Eski bir Tonton Kedi peluşu. Etiketinde 'Yıldız Çocuk Yapım 1998' yazıyor. Bir gözü kopmuş.", 5);
         break;
       case 'door':
         au.sfx('vcrStuck', this.room.points.door);
-        ui.toast(st.stage >= 2 ? 'Kapı hâlâ kilitli. Anahtar deliğinden soğuk bir hava geliyor.' : 'Kapı kilitli. Kol yerinden oynamıyor, anahtar da ortada yok.');
+        ui.toast(st.stage >= 9 ? 'Kapı hâlâ kilitli. Altındaki aralıktan soğuk bir hava geliyor.' : st.stage >= 2 ? 'Kapı hâlâ kilitli. Anahtar deliğinden soğuk bir hava geliyor.' : 'Kapı kilitli. Kol yerinden oynamıyor, anahtar da ortada yok.');
         break;
       case 'window':
-        ui.toast(st.stage >= 2 ? 'Camda küçük el izleri var. İçeride değil, dışarıda.' : 'Dışarısı zifiri karanlık. Sokak lambaları bile yanmıyor.');
+        ui.toast(st.stage >= 2 ? 'Camda küçük el izleri var. İçeride değil, dışarıda. Pencere sıkışmış.' : 'Dışarısı zifiri karanlık. Sokak lambaları bile yanmıyor. Pencere sıkışmış.');
         break;
       case 'bulb':
         ui.toast('Çıplak bir ampul. Hafifçe vızıldıyor.');
@@ -652,13 +683,13 @@ class Game {
   /** Bulunmuş ama henüz izlenmemiş kaset (oyunda aynı anda en fazla bir tane olur). */
   newTape() {
     const st = this.state;
-    return st.tapes.filter((n) => n > st.stage).sort()[0] ?? null;
+    return st.tapes.filter((n) => n > st.stage).sort((a, b) => a - b)[0] ?? null;
   }
 
   addTape(n) {
     const st = this.state;
     if (!st.tapes.includes(n)) st.tapes.push(n);
-    st.tapes.sort();
+    st.tapes.sort((a, b) => a - b);
     this.refreshInventory();
     this.room.applyStage(st, this.playingTape);
     this.save();
@@ -706,7 +737,8 @@ class Game {
     if (st.stage === 0) return 'Karton kutudaki kaseti bul.';
     if (st.stage === 1 && !st.boxOpen) return 'Sehpadaki kilitli kutunun 4 haneli şifresini bul.';
     if (st.stage === 1) return 'Kilitli kutudaki kaseti al.';
-    if (st.stage === 2 && !st.tape3Taken) return 'Arkandan gelen sesin kaynağına bak.';
+    const fo = this.finds.objective();
+    if (fo) return fo;
     return 'Buradan çık.';
   }
 
@@ -723,6 +755,7 @@ class Game {
     const tok = (this.loadSeq = (this.loadSeq || 0) + 1);
     this.loadingTape = true;
     this.playingTape = n;
+    this.finds.onTapeStart(n);
     this.refreshInventory();
     this.room.applyStage(st, n);
     this.audio.sfx('vcrInsert', this.room.points.vcr);
@@ -784,6 +817,9 @@ class Game {
       r.applyStage(st, this.playingTape);
       this.audio.sfx('thud', new THREE.Vector3(-0.45, 0.2, 2.05));
       this.ui.toast('Arkanda bir şey yere düştü.', 4);
+    } else if (n > 2 && n < FINAL) {
+      await this.finds.afterFirst(n);
+      return;
     } else if (n === FINAL) {
       st.endings = [...new Set([...(st.endings || []), st.ending])];
       this.save();
@@ -854,6 +890,7 @@ class Game {
     else this.ui.hover('');
 
     if (!this.director.update(dt * (this.debug?.speed || 1))) this.drawIdleTv();
+    this.finds.update(dt);
     this.tv.update(dt, this.clock);
     this.ambience.update(this.clock, r.bulbLevel);
     const l = r.listener();
@@ -865,6 +902,7 @@ class Game {
 
   drawIdleTv() {
     const c = this.tv.ctx;
+    if (this.mode !== 'title' && this.finds.drawTv(c, this.clock)) return;
     if (this.mode === 'title') {
       S.titleCard(c, this.clock * 0.6, { decay: 0.15 });
       return;

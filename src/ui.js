@@ -28,7 +28,54 @@ export const DOCS = {
 <h3>Çamlık'ta kayıp çocuk alarmı</h3>
 <p>Karşıyaka'da yerel bir kanal için çekilen çocuk programının dış çekimleri sırasında, programa sesini veren <b>7 yaşındaki B.A.</b> <b>iki gündür</b> kayıp.</p>
 <p>Jandarma ve gönüllüler Çamlık mesire alanını gece boyunca aradı. Çekim ekibinden bir kişi, küçük kızın son olarak "ağaçların arasındaki adamla saklambaç oynadığını" söyledi. Olay yerinde yalnızca bir piknik sepeti ve bir parça ip bulundu.</p>
-<p>Yapımcı Yıldız Çocuk Yapım, programın yayınını süresiz durdurduğunu açıkladı. Ailesi, kızlarını gören ya da <span class="torn">█████ ███████ ██ ████ ███ ██████</span></p>`,
+<p>Yapımcı Yıldız Çocuk Yapım, programın yayınını süresiz durdurduğunu açıkladı. Ailesi, kızlarını gören ya da duyanların <b>364 <span class="torn">██ ██</span></b> numaralı telefonu aramalarını rica ediyor.</p>`,
+  },
+  resim: {
+    cls: 'drawing',
+    html: `<p class="doc-kind">Mum boya bir resim</p>
+<p>Uzun yeşil ağaçlar. Ağaçların arasında çok uzun kollu, gri, yüzü olmayan bir amca.</p>
+<p>Büyük bir çamın önünde gözlerini kapatmış, saçı topuz bir kadın. Kadının yanına rakamlar yazılmış: <b>1 2 3 4 5 6 7</b>. Sonra rakamlar griye dönüyor: <span class="grey">8 9 10</span>.</p>
+<p>Bir ağacın arkasında sarı elbiseli küçük bir kız amcaya el sallıyor.</p>
+<p class="crayon">AĞAÇLARIN ARASINDAKİ AMCA BENİMLE SAKLAMBAÇ OYNUYOR. HİÇ SOBELENMİYOR.</p>
+<p class="small">Köşede: BESTE, 1-B · Arkasında: 13 MAYIS. YARIN ÇAMLIK'A GİDİYORUZ.</p>`,
+  },
+  news2: {
+    cls: 'news',
+    html: `<p class="paper-name"><span>EGE POSTASI</span><span>14 MAYIS 1999 · CUMA</span></p>
+<h3>Çamlık'ta bir yıl: Küçük Beste hâlâ kayıp</h3>
+<p>Karşıyaka'da çocuk programı çekimleri sırasında kaybolan 7 yaşındaki Beste Aydın'dan bir yıldır haber alınamıyor. Aydın ailesi geçen ay Karşıyaka'dan taşındı.</p>
+<p>Mesire alanındaki yaşlı bir çama kazınmış "B.A. 1405" yazısını kimin kazıdığı bilinmiyor. Her gün orada yürüyenler, yazının bir yıl önce orada olmadığını söylüyor.</p>
+<p>Jandarma, çekim ekibinin kamera kayıtlarının "teknik bir arıza nedeniyle incelenemediğini" açıkladı. Yapımcı R. Yıldız gazetemize yalnızca "Konuşacak bir şeyim yok." dedi.</p>
+<p>Annesi, evin eski telefonunu hiç kapatmadıklarını söylüyor.</p>`,
+  },
+  dogumgunu: {
+    cls: 'letter',
+    html: `<p>Canım Beste,</p>
+<p>Bugün 3 Şubat 1999. Sekiz yaşına girdin.</p>
+<p>Bu hediyeyi sana kendi elimle vermek isterdim. Herkes seni ormanda aradı. Ben hâlâ kasetlerde arıyorum.</p>
+<p>Bazen geceleri bandı geri sarınca sesini duyuyorum.</p>
+<p style="text-align:right">— Nermin Abla</p>`,
+  },
+  memo: {
+    cls: 'memo',
+    html: `<p class="paper-name"><span>YILDIZ ÇOCUK YAPIM</span><span>İÇ YAZIŞMA · 20.05.1998</span></p>
+<p>Kimden: R. Yıldız<br>Kime: Nermin Hn. (Kurgu)</p>
+<ol>
+<li>Kalan bölümler elimizdeki ses kayıtlarıyla tamamlanacak.</li>
+<li>Kanal pilotu cuma istiyor.</li>
+<li>Çamlık kaydı (Kamera 1, 14.05) jandarmaya verilmeyecek; kayıt arızalı sayılacak.</li>
+<li>İş bitince bütün kasetler imha edilecek.</li>
+<li>Bu konu dışarıda konuşulmayacak.</li>
+</ol>
+<p class="hand">Pilot asla bitmeyecek. Kaseti ben saklıyorum. Listede benim işaretlemediğim bir klip var: 7. —N.</p>`,
+  },
+  ifade: {
+    cls: 'memo',
+    html: `<p class="paper-name"><span>JANDARMA İFADE TUTANAĞI</span><span>15.05.1998</span></p>
+<p>İfade veren: Nermin Ş., 34, kurgucu (Yıldız Çocuk Yapım)</p>
+<p>Öğle arasında Beste saklambaç oynamak istedi. Ebe bendim. Büyük çamın önünde gözlerimi kapatıp saymaya başladım. Yediye geldiğimde biri benim yerime saydı. Gözümü açmadım, çünkü kural öyleydi.</p>
+<p>Gözümü açtığımda Beste yoktu. Piknik sepeti ve atlama ipi ağacın dibindeydi.</p>
+<p>Kameraman Kâmil kamerayı kapatmamıştı. Kayıtta her şey vardır.</p>`,
   },
   card: {
     cls: 'card',
@@ -146,11 +193,23 @@ export class UI {
     }));
   }
 
-  /** Dört haneli şifre ekranı. check(code) true dönerse kapanır. */
-  keypad(check) {
+  /**
+   * Rakamlı şifre ekranı. check(code) -> true (doğru) | false | 'mesaj' (yanlış, mesaj gösterilir).
+   * o.len hane sayısı, o.mask görünüm ('____', '___ __ __', '__/__'), o.title başlık, o.help alt yazı,
+   * o.onDigit(k) her rakamda (ör. telefon kadranı sesi), o.onWrong(code, msg) her yanlışta.
+   */
+  keypad(check, o = {}) {
+    const len = o.len || 4;
+    const mask = o.mask || '_'.repeat(len);
     const disp = $('keypad-display');
+    $('keypad-title').textContent = o.title || 'KİLİTLİ KUTU';
+    $('keypad-help').textContent = o.help || 'Rakamları klavyeden de girebilirsin · Esc: kapat';
+    disp.classList.toggle('long', len > 4);
     let code = '';
-    const render = () => (disp.textContent = (code + '----').slice(0, 4));
+    const render = () => {
+      let i = 0;
+      disp.textContent = mask.replace(/_/g, () => (i < code.length ? code[i++] : (i++, '-')));
+    };
     disp.classList.remove('ok');
     render();
     this.show('keypad', true);
@@ -162,28 +221,90 @@ export class UI {
         this.keypadKey = null;
         resolve(ok);
       };
+      let busy = false;
       this.keypadKey = (k) => {
         if (k === 'close') return close(false);
+        if (busy) return;
         if (k === 'clear') {
           code = '';
           render();
           return;
         }
-        if (!/^\d$/.test(k) || code.length >= 4) return;
+        if (!/^\d$/.test(k) || code.length >= len) return;
         code += k;
-        this.g.audio.sfx('beep', true);
+        if (o.onDigit) o.onDigit(k);
+        else this.g.audio.sfx('beep', true);
         render();
-        if (code.length === 4) {
-          if (check(code)) {
+        if (code.length === len) {
+          busy = true;
+          const res = check(code);
+          if (res === true) {
             disp.classList.add('ok');
             setTimeout(() => close(true), 700);
           } else {
             setTimeout(() => {
               this.g.audio.sfx('beep', false);
+              o.onWrong?.(code, typeof res === 'string' ? res : null);
+              if (typeof res === 'string') this.toast(res, 4);
               code = '';
+              busy = false;
               render();
-            }, 350);
+            }, o.onDigit ? 900 : 350);
           }
+        }
+      };
+    });
+  }
+
+  /**
+   * Harfli kilit (kelime yazılır, ENTER ile denenir). check(word) -> true | false | 'mesaj'.
+   * o.len harf sayısı, o.title, o.help, o.onWrong(word, msg).
+   */
+  wordlock(check, o = {}) {
+    const len = o.len || 4;
+    const input = $('wordlock-input');
+    const slots = $('wordlock-slots');
+    $('wordlock-title').textContent = o.title || 'HARF KİLİDİ';
+    $('wordlock-help').textContent = o.help || `${len} harf yaz · ENTER: dene · Esc: kapat`;
+    input.value = '';
+    input.maxLength = len;
+    const render = () => {
+      const v = input.value.toLocaleUpperCase('tr');
+      slots.textContent = Array.from({ length: len }, (_, i) => v[i] || '_').join(' ');
+    };
+    render();
+    this.show('wordlock', true);
+    this.g.overlay = 'wordlock';
+    setTimeout(() => input.focus({ preventScroll: true }), 30);
+    return new Promise((resolve) => {
+      const close = (ok) => {
+        input.oninput = null;
+        input.blur();
+        this.show('wordlock', false);
+        this.g.overlay = null;
+        this.wordlockKey = null;
+        resolve(ok);
+      };
+      input.oninput = render;
+      this.wordlockKey = (k) => {
+        if (k === 'close') return close(false);
+        if (k !== 'Enter') return;
+        const word = input.value.trim();
+        if (!word) return;
+        const res = check(word);
+        if (res === true) {
+          slots.classList.add('ok');
+          this.g.audio.sfx('boxClick', this.g.room.points.chest);
+          setTimeout(() => {
+            slots.classList.remove('ok');
+            close(true);
+          }, 700);
+        } else {
+          this.g.audio.sfx('beep', false);
+          o.onWrong?.(word, typeof res === 'string' ? res : null);
+          if (typeof res === 'string') this.toast(res, 4);
+          input.value = '';
+          render();
         }
       };
     });

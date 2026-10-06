@@ -149,6 +149,16 @@ button { font: inherit; color: inherit; }
 #reader-doc.card { font-family: var(--font-type); font-size: 20px; background: #f6f1e4; width: min(460px, 100%); }
 #reader-doc.card .photo { width: 120px; height: 150px; float: right; margin: 0 0 10px 14px; background: radial-gradient(circle at 50% 38%, #8a7a6a 0 22%, transparent 23%), radial-gradient(ellipse at 50% 100%, #6a5a4a 0 45%, transparent 46%), linear-gradient(#bfb6a6, #9d9384); filter: blur(.4px) contrast(1.1); border: 6px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
 #reader-doc.card h3 { margin: 0 0 8px; font-size: 22px; letter-spacing: .1em; }
+#reader-doc.drawing { font-family: var(--font-hand); font-size: 25px; line-height: 1.25; background: linear-gradient(#f4efe2, #e9e1cc); }
+#reader-doc.drawing p { margin: 0 0 .5em; }
+#reader-doc .doc-kind { font-family: var(--font-type); font-size: 15px; letter-spacing: .15em; color: #7a6a50; text-transform: uppercase; }
+#reader-doc .crayon { color: #b4232c; font-weight: 700; letter-spacing: .02em; }
+#reader-doc .grey { color: #8a8a8a; }
+#reader-doc .small { font-size: 18px; color: #6a5a40; }
+#reader-doc.memo { font-family: var(--font-type); font-size: 17px; line-height: 1.5; background: linear-gradient(#ece6d6, #ddd4bd); transform: rotate(-.4deg); }
+#reader-doc.memo .paper-name { font-size: 14px; letter-spacing: .15em; border-bottom: 2px solid var(--paper-ink); padding-bottom: 4px; margin: 0 0 10px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+#reader-doc.memo ol { padding-left: 1.4em; margin: .4em 0; }
+#reader-doc .hand { font-family: var(--font-hand); font-size: 24px; color: #1f2a6a; transform: rotate(-1.5deg); }
 #reader-doc.note { font-family: var(--font-osd); font-size: 24px; background: #111; color: var(--ink); transform: none; }
 .reader-close { margin: 0; text-align: center; color: var(--dim); font-size: 18px; }
 
@@ -176,6 +186,14 @@ button { font: inherit; color: inherit; }
 .keypad-grid button:active { transform: translateY(2px); border-bottom-width: 2px; }
 .keypad-grid button:focus-visible { outline: 3px solid var(--beste-yellow); }
 .keypad-help { margin: 0; font-size: 16px; color: #a9b8a0; text-align: center; }
+#keypad-display.long { font-size: 36px; letter-spacing: .12em; padding-left: .12em; }
+#wordlock { background: rgba(0,0,0,.75); }
+.wordlock-box { width: min(340px, 100%); }
+#wordlock-slots { background: #1b1408; color: #ffd23f; font-size: 50px; text-align: center; letter-spacing: .1em; padding: 4px 0 0; text-shadow: 0 0 10px rgba(255,210,63,.5); }
+#wordlock-slots.ok { color: #5cff6a; text-shadow: 0 0 10px rgba(92,255,106,.7); }
+#wordlock-input { font: inherit; font-size: 26px; text-align: center; text-transform: uppercase; background: #0f0c06; color: var(--ink); border: 2px solid #5a4a2a; padding: 6px; letter-spacing: .3em; }
+#wordlock-input:focus { outline: 3px solid var(--beste-yellow); }
+#btn-wordlock-close { justify-self: center; font-size: 20px; }
 
 /* ---------- Ending ---------- */
 #ending { background: #000; }

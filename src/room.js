@@ -2,6 +2,10 @@
 import * as THREE from 'three';
 import * as TX from './textures.js';
 import { clamp, lerp, smooth, rand, Tweens } from './util.js';
+import { Attic } from './attic.js';
+
+/** Kaset etiketlerinde yazan adlar (7. kaset bilerek 1. kasetin kopyası gibi görünür) */
+export const TAPE_LABELS = { 1: 'Tanışalım', 2: 'Kuyruk', 3: 'Tonton Döndü', 4: 'Kaybolursan', 5: "Sen Beste'sin", 6: 'İyi ki Doğdun', 7: 'Tanışalım', 8: 'Ebe Sensin', 9: 'HAM KAYIT', 10: 'SON' };
 
 const SEAT = new THREE.Vector3(0, 1.12, 0.55);
 const SCREEN_CENTER = new THREE.Vector3(-0.06, 0.835, -1.528);
@@ -70,6 +74,7 @@ export class Room {
     this.buildFurniture();
     this.buildLights();
     this.buildDust();
+    this.attic = new Attic(this);
   }
 
   quad(p, mat, uvw = 1, uvh = 1) {
@@ -313,7 +318,7 @@ export class Room {
     this.stack.position.set(0.44, 0.58, -1.64);
     this.scene.add(this.stack);
     this.stackTapes = {};
-    for (const n of [1, 2, 3]) {
+    for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
       const t = this.makeTape(String(n));
       t.rotation.y = -0.25 + n * 0.12;
       t.visible = false;
@@ -441,24 +446,9 @@ export class Room {
     this.scene.add(this.tape3);
     this.tag(this.tape3, 'plush');
 
-    // örtülü mobilya (hayalet gibi)
-    const sheetGeo = new THREE.BoxGeometry(0.9, 1.0, 0.6, 12, 12, 8);
-    const p = sheetGeo.attributes.position;
-    for (let i = 0; i < p.count; i++) {
-      const y = p.getY(i);
-      const k = (0.5 - y) * 0.12;
-      p.setX(i, p.getX(i) * (1 + k + rand(-0.015, 0.015)));
-      p.setZ(i, p.getZ(i) * (1 + k + rand(-0.015, 0.015)));
-      if (y > 0.45) p.setY(i, y - Math.abs(p.getX(i)) * 0.06);
-    }
-    sheetGeo.computeVertexNormals();
-    const sheet = new THREE.Mesh(sheetGeo, mats.cloth);
-    sheet.position.set(2.25, 0.5, 0.9);
-    sheet.rotation.y = -0.4;
-    sheet.castShadow = sheet.receiveShadow = true;
-    this.scene.add(sheet);
+    // örtülü mobilya ve istifin üst kutusu: src/attic.js
     // istif kutular
-    for (const [x, y, z, s, r] of [[2.35, 0.2, 1.95, 0.4, 0.2], [2.3, 0.6, 1.92, 0.36, -0.1], [1.85, 0.18, 2.2, 0.36, 0.5], [-2.45, 0.2, 1.9, 0.4, 0.3]]) {
+    for (const [x, y, z, s, r] of [[2.35, 0.2, 1.95, 0.4, 0.2], [1.85, 0.18, 2.2, 0.36, 0.5], [-2.45, 0.2, 1.9, 0.4, 0.3]]) {
       const b = this.box(s * 1.2, s, s, mats.cardboard, x, y, z);
       b.rotation.y = r;
     }
@@ -483,7 +473,7 @@ export class Room {
     x.fillRect(0, 0, 256, 14);
     x.fillStyle = '#2b2018';
     x.font = 'bold 22px "Caveat", cursive';
-    x.fillText(`Beste ${label} — ${['', 'Tanışalım', 'Kuyruk', 'SON'][+label]}`, 10, 46);
+    x.fillText(`Beste ${+label === 7 ? 1 : label} — ${TAPE_LABELS[+label] || ''}`, 10, 46);
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace;
     const l = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.036), new THREE.MeshStandardMaterial({ map: t, roughness: 0.8 }));
@@ -569,11 +559,11 @@ export class Room {
     this.points.bulb = new THREE.Vector3(0, 2.2, -0.35);
     // yeni kasetlerin konumlu sesleri için noktalar
     this.points.phone = new THREE.Vector3(-2.45, 0.42, 1.9);
-    this.points.chest = new THREE.Vector3(1.3, 0.3, 0.85);
+    this.points.chest = new THREE.Vector3(1.45, 0.3, 0.1);
     this.points.chairLeg = new THREE.Vector3(-0.2, 0.2, 0.53);
     this.points.behind = new THREE.Vector3(0, 1.1, 1.5);
-    this.points.floorboard = new THREE.Vector3(-0.6, 0.02, 0.9);
-    this.points.giftbox = new THREE.Vector3(2.2, 0.15, 2.2);
+    this.points.floorboard = new THREE.Vector3(-0.72, 0.02, 0.62);
+    this.points.giftbox = new THREE.Vector3(1.6, 0.15, 1.45);
     this.points.stairs = new THREE.Vector3(-1.2, 0.6, 3.6);
     this.tag(bulb, 'bulb');
 
@@ -649,7 +639,7 @@ export class Room {
     const owned = st.tapes || [];
     this.tape1.visible = !owned.includes(1);
     let h = 0;
-    for (const n of [1, 2, 3]) {
+    for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
       const t = this.stackTapes[n];
       t.visible = owned.includes(n) && n <= s && n !== playing;
       if (t.visible) t.position.y = h++ * 0.026;
@@ -669,6 +659,7 @@ export class Room {
     }
     this.tape3.visible = moved && !st.tape3Taken && s === 2;
     this.prints.visible = s >= 2;
+    this.attic.apply(st);
   }
 
   setMood(m) {
@@ -753,7 +744,7 @@ export class Room {
   look(dx, dy) {
     if (this.locked) return;
     this.yaw -= dx;
-    this.pitch = clamp(this.pitch - dy, -1.2, 1.2);
+    this.pitch = clamp(this.pitch - dy, -1.42, 1.2);
     if (this.focusTarget > 0.5) {
       this.yaw = clamp(this.yaw, -0.55, 0.55);
       this.pitch = clamp(this.pitch, -0.45, 0.35);

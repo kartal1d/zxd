@@ -6,10 +6,42 @@ export const SECRETS = {
   ayakkabi: 'Çalının altındaki ayakkabı',
   yardim: 'Jenerikten sonraki kare',
   fotograf: 'Dolaptaki fotoğraf',
-  'ters-mesaj': 'Geriye doğru konuşan kız',
+  arkana: 'Uyarıdaki yazı',
+  oduydu: 'Sihirli sözün arkası',
+  telefon: 'Arkadan çekilmiş oda',
+  ayna: 'Aynadaki kız',
+  misafir: 'Senin sandalyen',
+  pamuk: "Tonton'un yeri",
+  yil: 'Ağaçtaki yıl',
+  oyuncu: 'Kütüğün arkasındaki adam',
+  kural5: 'Beşinci kural',
+  klaket: 'Klaketteki isim',
+  yedinci: 'Yedinci klip',
   pencere: 'Penceredeki yüz',
   yuz: 'Karın içindeki yüz',
 };
+
+/** Geri sarınca duyulan ters mesajlar (kayıtta 'ters-<id>' olarak tutulur) */
+export const REVERSED = {
+  b2_real: 'Geriye doğru konuşan kız',
+  k3_ters: 'Heykelin arasındaki fısıltı',
+  k4_ters: 'Telefondaki ikinci ses',
+  k6_ters: 'Mumların arasındaki dilek',
+  k7_ters: 'Kopyanın altındaki ses',
+  k8_ters: 'Saklanan kızın fısıltısı',
+  k9_ters: 'Montajdan kesilen ses',
+  k10_ters: 'Kapılardaki uyarı',
+};
+
+/** kaydedilmiş listeden sayımlar */
+export function secretCounts(list = []) {
+  return {
+    frames: list.filter((s) => SECRETS[s]).length,
+    framesTotal: Object.keys(SECRETS).length,
+    rev: list.filter((s) => s.startsWith('ters-') && REVERSED[s.slice(5)]).length,
+    revTotal: Object.keys(REVERSED).length,
+  };
+}
 
 export const DOCS = {
   letter: {
@@ -361,13 +393,14 @@ export class UI {
     const good = kind === 'good';
     $('ending-kind').textContent = good ? 'GİZLİ SON' : 'KÖTÜ SON';
     const t = $('ending-title');
-    t.textContent = good ? 'Kaset Yakıldı' : 'Artık Dışarıda';
+    t.textContent = good ? 'Sobe' : 'Ebe Sensin';
     t.classList.toggle('bad', !good);
     $('ending-text').textContent = good
-      ? "Geri sardın ve gerçek Beste'yi buldun. Sabah olunca kaseti bahçede yaktın. Duman, bir çocuk gülüşü gibi kıvrılarak yükseldi."
-      : 'Ona istediği her şeyi verdin: tarihini, yaşını ve adını. Kaset kapandı ama kapı açık kaldı.';
-    const total = Object.keys(SECRETS).length;
-    $('ending-secrets').textContent = `Bulunan gizli kareler: ${secretsFound.length} / ${total}` + (good ? '' : ' · Başka bir son daha var. Kaset geriye doğru da konuşuyor.');
+      ? "Geri sardın ve gerçek Beste'yi buldun. Oyun, herkes bulununca biter: Sobe. Sabah kasetleri bahçede yaktın. Bu sefer geri dönmediler. Ertesi gün gazeteler, Çamlık'taki büyük çamın dibinde küçük, gri bir çocuk ayakkabısı bulunduğunu yazdı."
+      : 'Ona istediği her şeyi verdin: tarihini, yaşını ve adını. Kaset kapandı ama kapı açık kaldı. İlk sobelenen ebe olur. Artık ebe sensin.';
+    const c = secretCounts(secretsFound);
+    $('ending-secrets').textContent =
+      `Gizli kareler: ${c.frames} / ${c.framesTotal} · Ters mesajlar: ${c.rev} / ${c.revTotal}` + (good ? '' : ' · Başka bir son daha var. Kapılarda geri sar ve bırakma.');
     this.show('hud', false);
     this.show('ending', true);
   }

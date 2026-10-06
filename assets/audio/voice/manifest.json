@@ -376,6 +376,38 @@
   "dur": 2.005,
   "hash": "163ca34f635b"
  },
+ "k10_room_door": {
+  "dur": 0.97,
+  "hash": "bee4d86467c8"
+ },
+ "k5_room_real1": {
+  "dur": 2.855,
+  "hash": "9391e05141d7"
+ },
+ "k5_room_real2": {
+  "dur": 2.64,
+  "hash": "d02b042e51c7"
+ },
+ "k8_room_burn": {
+  "dur": 0.625,
+  "hash": "34e9719d5952"
+ },
+ "k8_room_cold": {
+  "dur": 0.74,
+  "hash": "0410fae07b7e"
+ },
+ "k8_room_hot": {
+  "dur": 0.74,
+  "hash": "abb5d0ff876b"
+ },
+ "k8_room_ice": {
+  "dur": 0.73,
+  "hash": "da7ba7516def"
+ },
+ "k8_room_warm": {
+  "dur": 1.075,
+  "hash": "6553fa8d59ef"
+ },
  "n_count_end": {
   "dur": 1.895,
   "hash": "02d3e2c47006"

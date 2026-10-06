@@ -10,7 +10,7 @@ import { TVScreen } from './tv.js';
 import { Room } from './room.js';
 import { Director } from './director.js';
 import { Finds } from './finds.js';
-import { UI, SECRETS } from './ui.js';
+import { UI, SECRETS, REVERSED, secretCounts } from './ui.js';
 import * as S from './draw/scenes.js';
 import { tape1 } from './tapes/tape1.js';
 import { tape2 } from './tapes/tape2.js';
@@ -24,7 +24,18 @@ const SETTINGS_KEY = 'beste-ayarlar-v1';
 const TAPES = { 1: tape1, 2: tape2, 3: tape10 };
 /** Son kaset: bitince oyun sona erer. */
 const FINAL = 3;
-const TAPE_NAMES = { 1: "Kaset 1 — 'Beste ile Tanışalım!'", 2: "Kaset 2 — 'Tonton Kedi'nin Kuyruğu'", 3: "Kaset 3 — 'SON'" };
+const TAPE_NAMES = {
+  1: "Kaset 1 — 'Beste ile Tanışalım!'",
+  2: "Kaset 2 — 'Tonton Kedi'nin Kuyruğu'",
+  3: "Kaset 3 — 'Tonton Kedi Geri Döndü!'",
+  4: "Kaset 4 — 'Kaybolursan Ne Yaparsın?'",
+  5: "Kaset 5 — 'Bugün Sen Beste'sin!'",
+  6: "Kaset 6 — 'İyi ki Doğdun Beste!'",
+  7: "Kaset 7 — etiketinde 'Beste 1 — Tanışalım' yazıyor",
+  8: "Kaset 8 — 'Ebe Sensin!'",
+  9: "Kaset 9 — 'HAM KAYIT — Çamlık 14.05.98'",
+  10: "Kaset 10 — 'SON'",
+};
 
 const GrainShader = {
   uniforms: { tDiffuse: { value: null }, time: { value: 0 }, amount: { value: 0.06 }, vignette: { value: 0.55 }, fade: { value: 0 } },
@@ -43,11 +54,20 @@ const GrainShader = {
 };
 
 function defaultState() {
-  return { stage: 0, tapes: [], name: '', boxOpen: false, tape2Taken: false, tape3Taken: false, flags: { pauses: 0 }, clues: {}, answers: {}, room: {}, secrets: [], ending: null, endings: [] };
+  return { v: 2, stage: 0, tapes: [], name: '', boxOpen: false, tape2Taken: false, tape3Taken: false, flags: { pauses: 0 }, clues: {}, answers: {}, room: {}, secrets: [], ending: null, endings: [] };
 }
 
 /** Eski kayıtlarda elde tutulan tek kaset (inv) vardı; artık sahip olunan kasetlerin listesi tutuluyor. */
 function migrate(st) {
+  // 3 kasetlik sürümün kaydı (v yok): eski 3. kaset artık 10. kaset. Oyunu bitirmiş ya da
+  // 3. kasete gelmiş oyuncu, yeni bölümleri oynayabilsin diye yeni 3. kasetle devam eder.
+  if (!st.v && st.stage >= 3) {
+    st.stage = 2;
+    st.tapes = [1, 2, 3];
+    st.tape3Taken = true;
+    st.ending = null;
+  }
+  st.v = 2;
   if (!Array.isArray(st.tapes)) {
     st.tapes = [];
     if (st.stage >= 1 || st.inv === 1) st.tapes.push(1);
@@ -72,7 +92,7 @@ class Game {
     this.settings = { volume: 0.9, sens: 1, subs: true, flash: false, quality: 'high', ...storage.get(SETTINGS_KEY, {}) };
     // varsayılan boş liste eski kaydın üstüne yazılmasın: tapes yoksa migrate() yeniden kursun
     const raw = storage.get(SAVE_KEY, {}) || {};
-    this.state = migrate({ ...defaultState(), ...raw, tapes: raw.tapes });
+    this.state = migrate({ ...defaultState(), ...raw, tapes: raw.tapes, v: raw.v });
     this.mode = 'title';
     this.overlay = null;
     this.clock = 0;
@@ -299,7 +319,8 @@ class Game {
     this.mode = 'paused';
     this.audio.ctx?.suspend();
     $('pause-objective').textContent = 'Hedef: ' + this.objectiveText();
-    $('pause-secrets').textContent = `Gizli kareler: ${this.state.secrets.length} / ${Object.keys(SECRETS).length}`;
+    const c = secretCounts(this.state.secrets);
+    $('pause-secrets').textContent = `Gizli kareler: ${c.frames} / ${c.framesTotal} · Ters mesajlar: ${c.rev} / ${c.revTotal}`;
     this.show('pause', true);
     $('btn-resume').focus({ preventScroll: true });
   }
@@ -649,7 +670,7 @@ class Game {
           st.tape3Taken = true;
           this.addTape(3);
           au.sfx('pickup');
-          ui.toast('Peluşun karnı yırtılmış. İçinden üçüncü kaset düştü. Etiketinde tek kelime var: SON.', 6);
+          ui.toast("Peluşun karnı yırtılmış. İçinden üçüncü kaset düştü. Etiketinde 'Tonton Döndü' yazıyor.", 6);
           this.updateObjective();
         } else if (st.stage >= 5) ui.toast('Peluşun karnındaki yırtık siyah iple dikilmiş. Sen dikmedin.');
         else if (st.stage >= 2) ui.toast('Tonton peluşu. Kuyruğu yok. Kesik yerinden pamuk taşıyor.');
@@ -853,10 +874,12 @@ class Game {
   }
 
   foundSecret(id, text) {
-    if (!SECRETS[id] || this.state.secrets.includes(id)) return;
+    const rev = id.startsWith('ters-') ? REVERSED[id.slice(5)] : null;
+    if ((!SECRETS[id] && !rev) || this.state.secrets.includes(id)) return;
     this.state.secrets.push(id);
     this.save();
-    this.ui.secret(`GİZLİ KARE ${this.state.secrets.length}/${Object.keys(SECRETS).length} · ${SECRETS[id]}`);
+    const c = secretCounts(this.state.secrets);
+    this.ui.secret(rev ? `TERS MESAJ ${c.rev}/${c.revTotal} · ${rev}` : `GİZLİ KARE ${c.frames}/${c.framesTotal} · ${SECRETS[id]}`);
   }
 
   fade(v) {

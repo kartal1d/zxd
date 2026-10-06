@@ -38,7 +38,6 @@ export async function tape4(d) {
   const g = d.g;
   const st = g.state;
   const B = d.chars.beste;
-  const T = d.chars.tonton;
   const P = g.room.points;
   const first = d.firstViewing;
   const lowFlash = !!g.settings?.flash;
@@ -360,7 +359,9 @@ export async function tape4(d) {
     let typed = '';
     let key = null;
     for (let unk = 0; ; unk++) {
-      typed = await askKara({ idle: ['b1_idle1', 'b1_idle2'], maxLen: 20 });
+      const pAsk = askKara({ idle: ['b1_idle1', 'b1_idle2'], maxLen: 20 });
+      g.audio.music?.pause(); // soru ileri sarmayı durdurunca müzik geri açılmasın
+      typed = await pAsk;
       key = strangerKey(typed);
       if (key) break;
       if (unk >= 1) {
@@ -390,7 +391,7 @@ export async function tape4(d) {
       B.lookTarget = null;
     } else {
       // bölümün en kötü cümlesi, düz bir sesle
-      kara.slot = { mode: 'wrong', text: typed.toLocaleUpperCase('tr').slice(0, 9), t0: d.time, strike: 0 };
+      kara.slot = { mode: 'wrong', text: (typed.trim().split(/\s+/)[0] || typed).toLocaleUpperCase('tr').slice(0, 8), t0: d.time, strike: 0 };
       d.stopMusic(0.02);
       B.expr = 'frozen';
       B.lookTarget = { x: 0, y: 0 };
@@ -509,7 +510,8 @@ export async function tape4(d) {
     kara.jitter = 2.6;
     v.blank = true;
     d.setBase({ saturation: 0.5 }, 3);
-    d.fx({ roll: 0.1 }, 9);
+    // yavaş dikey kayma: resim yukarı süzülür (sözler ekranın ortasında okunur kalır, rakamlar alta sarar)
+    d.fx({ roll: -0.06 }, 9);
     await d.wait(1.4);
     await swapDigit(3, '5');
     await swapDigit(4, '1');
@@ -525,7 +527,7 @@ export async function tape4(d) {
     kara.hi = '#c4cfba';
     await d.wait(0.6);
     const w3 = K.karaokeWeights(TURNED);
-    d.fx({ roll: 0.3 }, 7);
+    d.fx({ roll: -0.3 }, 7);
     await sing('k4_song_turn', w3.starts[1], w3.total);
     d.stopMusic(0.05);
     await d.wait(0.6);
@@ -550,8 +552,9 @@ export async function tape4(d) {
     d.stopFF();
     d.sfx('hangup'); // ahize kalkar
     v.holding = true;
-    v.lift = 1;
-    await d.wait(0.6);
+    v.lift = 0.2;
+    d.tweens.add(v, 'lift', 1, 0.45);
+    await d.wait(0.8);
     const dial = { rot: 0, digit: null, finger: 0, typed: '', pattern: '364 51 80' };
     const dialScene = (c, t) => K.dialCloseup(c, t, dial);
     d.sfx('static', 0.12, 0.12);
@@ -656,7 +659,7 @@ export async function tape4(d) {
     await d.say('k4_ask_find');
     const fa = await d.ask({ idle: ['b1_idle2'], maxLen: 24 });
     let fk = 'other';
-    if (has(fa, 'evet', 'gelecegim', 'gelicem', 'gelcem', 'gelirim', 'geliyorum', 'tabii', 'tabi', 'soz', 'bulurum', 'bulacagim', 'tamam', 'elbette', 'kesinlikle')) fk = 'yes';
+    if (has(fa, 'evet', 'gelecegim', 'gelicem', 'gelcem', 'gelirim', 'geliyorum', 'tabii', 'tabi', 'soz', 'bulurum', 'bulacagim', 'tamam', 'olur', 'elbette', 'kesinlikle', 'gelecem')) fk = 'yes';
     else if (has(fa, 'hayir', 'gelmem', 'gelmeyecegim', 'gelemem', 'gelmiyorum', 'istemiyorum', 'istemem', 'asla', 'bulamam', 'olmaz') || hasWord(fa, 'yok', 'no')) fk = 'no';
     if (fk === 'no') {
       d.fx({ saturation: 0.55 }, 1.2);

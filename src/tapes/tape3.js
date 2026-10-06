@@ -4,6 +4,7 @@ import * as S from '../draw/scenes.js';
 import * as S3 from '../draw/scenes3.js';
 import { has, norm, rand } from '../util.js';
 import { TAPE_FX } from '../audio.js';
+import { SCREEN_DEFAULT } from '../tv.js';
 
 /** Kasetin "restore edilmiş" fazla parlak görüntüsü */
 const BASE = { saturation: 1.25, tintR: 1.04, tintG: 1.0, tintB: 0.94, noise: 0.05, tracking: 0.15, jitter: 0.12, aberration: 0.7, glitch: 0 };
@@ -205,8 +206,10 @@ export async function tape3(d) {
   // ================================================================ HEYKEL
   d.stopMusic(0.4);
   d.sfx('static', 0.15, 0.15);
-  Object.assign(B, { x: 165, y: 458, scale: 0.85, wave: 0, expr: 'happy', lookTarget: null, tilt: 0 });
-  Object.assign(T, { x: 385, y: 458, scale: 0.8, headTilt: 0, headTurn: 0, still: false, tremble: 0 });
+  Object.assign(B, { x: 150, y: 458, scale: 0.85, wave: 0, expr: 'happy', lookTarget: null, tilt: 0 });
+  Object.assign(T, { x: 410, y: 458, scale: 0.8, headTilt: 0, headTurn: 0, still: false, tremble: 0 });
+  // heykel pozlarının bakışı: ilk ikisinde yana bakar (kıpırdarsan gözbebekleri sana döner), üçüncüde sana
+  const GAZE = [{ x: -0.75, y: -0.55 }, { x: 0.8, y: -0.4 }, { x: 0, y: 0 }];
 
   // -- kıpırdama algılayıcı: yalnızca donma pencerelerinde çalışır
   const mv = { active: false, idx: -1, moved: [false, false, false], hist: [], last: null };
@@ -325,7 +328,8 @@ export async function tape3(d) {
       d.stopMusic(0.02);
       v.phase = 'hold';
       v.freezeAt = d.time;
-      B.lookTarget = { x: B.look.x, y: B.look.y };
+      B.look = { ...GAZE[i] };
+      B.lookTarget = { ...GAZE[i] };
       if (i < 2) await d.say('k3_freeze');
       // üçüncüsünü anlatıcının yavaş sesi söyler, ağzı Beste oynatır; etiket ANLATICI kalır
       else await d.say('k3_freeze_last', { who: 'beste' });
@@ -384,6 +388,8 @@ export async function tape3(d) {
     d.onKey = null;
     d.noFF = false;
     d.tag(null);
+    // kaset donma anında iptal edilirse ekran gri kalmasın
+    if (d.aborted) for (const [k, val] of Object.entries(SCREEN_DEFAULT)) if (k in d.tv.p) d.tv.p[k] = val;
   }
   d.stopMusic(0.5);
   d.tweens.add(v, 'dance', 0, 0.6);

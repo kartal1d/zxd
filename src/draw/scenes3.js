@@ -471,8 +471,9 @@ export function gardenHeykel(ctx, t, o = {}) {
     ctx.lineTo(x + 4, y - 10);
     ctx.stroke();
   }
-  if (man && man.stage === 2) drawGreyMan(ctx, 486, 362, 230, { alpha: 0.9, headTilt: man.tilt });
-  if (man && man.stage === 3) drawGreyMan(ctx, 285, 472, 520, { alpha: 1, headTilt: man.tilt, reach: { x: 258, y: 318 } });
+  if (man && man.stage === 2) drawGreyMan(ctx, 505, 362, 230, { alpha: 0.9, headTilt: man.tilt });
+  // tam arkalarında: başı kadrajın üstünden taşar, bir kolu Beste'nin omzunun yanına sarkar
+  if (man && man.stage === 3) drawGreyMan(ctx, 310, 472, 520, { alpha: 1, headTilt: man.tilt, reach: { x: 244, y: 326 } });
 }
 
 // ------------------------------------------------------------------ Haftanın Sihirli Sözü

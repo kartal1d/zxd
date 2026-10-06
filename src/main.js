@@ -39,7 +39,20 @@ const GrainShader = {
 };
 
 function defaultState() {
-  return { stage: 0, inv: null, name: '', boxOpen: false, tape2Taken: false, tape3Taken: false, flags: { pauses: 0 }, clues: {}, secrets: [], ending: null, endings: [] };
+  return { stage: 0, tapes: [], name: '', boxOpen: false, tape2Taken: false, tape3Taken: false, flags: { pauses: 0 }, clues: {}, secrets: [], ending: null, endings: [] };
+}
+
+/** Eski kayıtlarda elde tutulan tek kaset (inv) vardı; artık sahip olunan kasetlerin listesi tutuluyor. */
+function migrate(st) {
+  if (!Array.isArray(st.tapes)) {
+    st.tapes = [];
+    if (st.stage >= 1 || st.inv === 1) st.tapes.push(1);
+    if (st.tape2Taken || st.stage >= 2) st.tapes.push(2);
+    if (st.tape3Taken || st.stage >= 3) st.tapes.push(3);
+  }
+  delete st.inv;
+  st.flags = { pauses: 0, ...st.flags };
+  return st;
 }
 
 class Game {
@@ -49,7 +62,7 @@ class Game {
     this.audio = new AudioEngine();
     this.tv = new TVScreen();
     this.settings = { volume: 0.9, sens: 1, subs: true, flash: false, quality: 'high', ...storage.get(SETTINGS_KEY, {}) };
-    this.state = { ...defaultState(), ...storage.get(SAVE_KEY, {}) };
+    this.state = migrate({ ...defaultState(), ...storage.get(SAVE_KEY, {}) });
     this.mode = 'title';
     this.overlay = null;
     this.clock = 0;
@@ -151,7 +164,7 @@ class Game {
 
   // ===================================================================== menüler
   refreshTitle() {
-    const has = this.state.stage > 0 || this.state.inv || this.state.name;
+    const has = this.state.stage > 0 || this.state.tapes.length || this.state.name;
     this.show('btn-continue', !!has && !this.state.ending);
     (has && !this.state.ending ? $('btn-continue') : $('btn-new')).focus({ preventScroll: true });
   }
@@ -254,7 +267,8 @@ class Game {
     this.show('title', false);
     this.show('ending', false);
     this.show('hud', true);
-    this.ui.inventory(this.state.inv ? TAPE_NAMES[this.state.inv] : null);
+    this.refreshInventory();
+    this.room.applyStage(this.state);
     this.updateObjective();
     this.ui.toast('Etrafa bakmak için ekrana tıkla.', 4);
     this.lockPointer();
@@ -279,8 +293,9 @@ class Game {
 
   quitToTitle() {
     this.director.abort();
-    if (this.state.inv == null && this.playingTape) this.state.inv = this.playingTape;
     this.playingTape = null;
+    this.loadingTape = false;
+    this.ui.closeTapes?.(null);
     this.save();
     this.show('pause', false);
     this.show('ending', false);
@@ -366,6 +381,10 @@ class Game {
         this.input.rewindHeld = false;
         this.director.stopRewind();
       }
+      if (e.key === 'ArrowRight') {
+        this.input.ffHeld = false;
+        this.director.stopFF();
+      }
     });
   }
 
@@ -384,6 +403,14 @@ class Game {
         this.ui.closeReader?.();
         this.lockPointer();
       }
+      return;
+    }
+    if (this.overlay === 'tapes') {
+      e.preventDefault();
+      if (k === 'Escape') {
+        this.ui.tapeKey?.('close');
+        this.lockPointer();
+      } else this.ui.tapeKey?.(k);
       return;
     }
     if (this.overlay === 'keypad') {
@@ -413,6 +440,14 @@ class Game {
       return;
     }
     const d = this.director;
+    if (k === 'ArrowRight' && !d.input) {
+      e.preventDefault();
+      if (!e.repeat) {
+        this.input.ffHeld = true;
+        d.startFF();
+      }
+      return;
+    }
     if (d.input) {
       const a = $('answer');
       if (k === 'Enter') {
@@ -454,9 +489,13 @@ class Game {
     const playing = this.director.active;
     switch (id) {
       case 'tapebox':
-        return st.stage === 0 && !st.inv && !this.playingTape ? 'Kaseti al' : 'Eski kaset kutuları';
+        return !st.tapes.includes(1) ? 'Kaseti al' : 'Eski kaset kutuları';
       case 'vcr':
-        return st.inv && !playing ? '<b>Kaseti tak</b>' : playing ? 'Kaseti çıkar' : 'Video oynatıcı';
+        if (playing || this.loadingTape) return 'Kaseti çıkar';
+        if (this.newTape()) return '<b>Kaseti tak</b>';
+        return st.tapes.length ? 'Kaset seç' : 'Video oynatıcı';
+      case 'tapestack':
+        return playing || this.loadingTape ? 'İzlediğin kasetler' : 'Kasetleri tekrar izle';
       case 'tv':
         return this.room.focusTarget > 0.5 ? 'Geri çekil [F]' : 'Televizyona odaklan [F]';
       case 'letter':
@@ -468,7 +507,7 @@ class Game {
       case 'plush':
         return st.stage >= 2 && !st.tape3Taken ? '<b>Peluşa bak</b>' : 'Tonton peluşu';
       case 'door':
-        return 'Kapı';
+        return 'Kapı (kilitli)';
       case 'window':
         return 'Pencere';
       case 'bulb':
@@ -485,32 +524,35 @@ class Game {
     const au = this.audio;
     switch (id) {
       case 'tapebox':
-        if (st.stage === 0 && !st.inv && !this.playingTape) {
-          st.inv = 1;
+        if (!st.tapes.includes(1)) {
+          this.addTape(1);
           au.sfx('pickup');
-          ui.inventory(TAPE_NAMES[1]);
           ui.toast("Kutunun en üstünde etiketli bir kaset var: 'Beste 1 — Tanışalım'.");
-          this.room.applyStage(st);
         } else ui.toast('Kutuda yalnızca boş kaset kapları var. Etiketlerin hepsi kazınmış.');
         break;
       case 'tv':
         this.room.setFocus(this.room.focusTarget < 0.5);
         break;
       case 'vcr':
+        if (this.loadingTape) break;
         if (this.director.active) {
           if (this.director.tryEject()) {
             this.director.abort();
             au.sfx('vcrEject', this.room.points.vcr);
-            st.inv = this.playingTape;
             this.playingTape = null;
-            ui.inventory(TAPE_NAMES[st.inv]);
+            this.refreshInventory();
+            this.room.applyStage(st);
             ui.toast('Kaseti çıkardın. Tekrar takarsan baştan başlar.');
           } else {
             au.sfx('vcrStuck', this.room.points.vcr);
             ui.toast('EJECT tuşu tepki vermiyor.');
           }
-        } else if (st.inv) this.playTape(st.inv);
+        } else if (st.tapes.length) await this.pickAndPlay();
         else ui.toast('Eski bir video oynatıcı. Ekranında 12:00 yanıp sönüyor.');
+        break;
+      case 'tapestack':
+        if (this.director.active || this.loadingTape) ui.toast('Şu an bir kaset oynuyor. Bitince istediğini tekrar izleyebilirsin.');
+        else await this.pickAndPlay();
         break;
       case 'letter':
         await this.readDoc('letter');
@@ -535,11 +577,8 @@ class Game {
           this.lockPointer();
         } else if (!st.tape2Taken) {
           st.tape2Taken = true;
-          st.inv = 2;
+          this.addTape(2);
           au.sfx('pickup');
-          ui.inventory(TAPE_NAMES[2]);
-          this.room.applyStage(st);
-          this.save();
           await this.readDoc('card');
           this.updateObjective();
         } else await this.readDoc('card');
@@ -547,18 +586,16 @@ class Game {
       case 'plush':
         if (st.stage >= 2 && !st.tape3Taken) {
           st.tape3Taken = true;
-          st.inv = 3;
+          this.addTape(3);
           au.sfx('pickup');
-          ui.inventory(TAPE_NAMES[3]);
-          this.room.applyStage(st);
-          this.save();
           ui.toast('Peluşun karnı yırtılmış. İçinden üçüncü kaset düştü. Etiketinde tek kelime var: SON.', 6);
           this.updateObjective();
         } else if (st.stage >= 2) ui.toast('Tonton peluşu. Kuyruğu yok. Kesik yerinden pamuk taşıyor.');
         else ui.toast("Eski bir Tonton Kedi peluşu. Etiketinde 'Yıldız Çocuk Yapım 1998' yazıyor. Bir gözü kopmuş.", 5);
         break;
       case 'door':
-        ui.toast(st.stage >= 2 ? 'Kapı açılmıyor. Öbür taraftan biri nefes alıyor gibi.' : 'Kapı sıkışmış. Kolu çevirince öbür taraftan biri tutuyormuş gibi geliyor.');
+        au.sfx('vcrStuck', this.room.points.door);
+        ui.toast(st.stage >= 2 ? 'Kapı hâlâ kilitli. Anahtar deliğinden soğuk bir hava geliyor.' : 'Kapı kilitli. Kol yerinden oynamıyor, anahtar da ortada yok.');
         break;
       case 'window':
         ui.toast(st.stage >= 2 ? 'Camda küçük el izleri var. İçeride değil, dışarıda.' : 'Dışarısı zifiri karanlık. Sokak lambaları bile yanmıyor.');
@@ -568,6 +605,41 @@ class Game {
         break;
     }
     this.updateObjective(true);
+  }
+
+  /** Bulunmuş ama henüz izlenmemiş kaset (oyunda aynı anda en fazla bir tane olur). */
+  newTape() {
+    const st = this.state;
+    return st.tapes.filter((n) => n > st.stage).sort()[0] ?? null;
+  }
+
+  addTape(n) {
+    const st = this.state;
+    if (!st.tapes.includes(n)) st.tapes.push(n);
+    st.tapes.sort();
+    this.refreshInventory();
+    this.room.applyStage(st, this.playingTape);
+    this.save();
+  }
+
+  refreshInventory() {
+    const n = this.playingTape ? null : this.newTape();
+    this.ui.inventory(n ? TAPE_NAMES[n] : null);
+  }
+
+  /** Tek kaset varsa onu oynatır; birden fazlaysa seçim ekranı açar. */
+  async pickAndPlay() {
+    const st = this.state;
+    let n = st.tapes[0];
+    if (st.tapes.length > 1) {
+      this.releasePointer();
+      n = await this.ui.chooseTape(
+        st.tapes.map((t) => ({ n: t, name: TAPE_NAMES[t], watched: t <= st.stage })),
+        this.newTape() ?? st.tapes[st.tapes.length - 1],
+      );
+      this.lockPointer();
+    }
+    if (n) this.playTape(n);
   }
 
   releasePointer() {
@@ -588,7 +660,7 @@ class Game {
   objectiveText() {
     const st = this.state;
     if (this.playingTape) return 'Kaseti izle. Beste soru sorarsa klavyeden cevap ver.';
-    if (st.inv) return 'Kaseti televizyonun altındaki video oynatıcıya tak.';
+    if (this.newTape()) return 'Kaseti televizyonun altındaki video oynatıcıya tak.';
     if (st.stage === 0) return 'Karton kutudaki kaseti bul.';
     if (st.stage === 1 && !st.boxOpen) return 'Sehpadaki kilitli kutunun 4 haneli şifresini bul.';
     if (st.stage === 1) return 'Kilitli kutudaki kaseti al.';
@@ -604,15 +676,20 @@ class Game {
   }
 
   async playTape(n) {
+    if (this.loadingTape || this.director.active) return;
     const st = this.state;
-    st.inv = null;
+    this.loadingTape = true;
     this.playingTape = n;
-    this.ui.inventory(null);
+    this.refreshInventory();
+    this.room.applyStage(st, n);
     this.audio.sfx('vcrInsert', this.room.points.vcr);
     this.room.vcrText = 'LOAD';
     this.room.setFocus(true);
     this.updateObjective();
     await sleep(1300);
+    this.loadingTape = false;
+    // yüklenirken ana menüye dönüldüyse oynatma
+    if (this.playingTape !== n || this.mode === 'title') return;
     this.room.vcrText = 'PLAY';
     this.audio.sfx('tvOn');
     this.ui.show('vcr-hint', true);
@@ -621,7 +698,12 @@ class Game {
     this.audio.setHiss(false);
     this.audio.setTapeFx('off', 0.5);
     this.room.vcrText = '12:00';
-    if (res !== 'done' || this.mode === 'title') return;
+    if (res !== 'done' || this.mode === 'title') {
+      if (this.playingTape === n) this.playingTape = null;
+      this.refreshInventory();
+      this.room.applyStage(st);
+      return;
+    }
     this.playingTape = null;
     this.onTapeDone(n);
   }
@@ -629,18 +711,28 @@ class Game {
   async onTapeDone(n) {
     const st = this.state;
     const r = this.room;
+    // tekrar izlenen kaset hikâyeyi ilerletmez, olaylar yeniden tetiklenmez
+    const first = n > st.stage;
     st.stage = Math.max(st.stage, n);
     this.save();
+    this.refreshInventory();
+    r.applyStage(st);
     if (n < 3) {
       this.audio.sfx('vcrEject', r.points.vcr);
-      this.ui.toast('Kaset bitti ve kendiliğinden dışarı çıktı.');
+      this.ui.toast(first ? 'Kaset bitti ve kendiliğinden dışarı çıktı.' : 'Kaset bitti. Dolabın üstüne, diğer kasetlerin yanına koydun.');
     }
     r.setFocus(false);
+    if (n < 3 && !first) {
+      this.updateObjective();
+      return;
+    }
     if (n === 1) {
       await sleep(2500);
       this.audio.sfx('boxClick', r.points.metalbox);
       r.applyStage(st);
       this.ui.toast("Sehpadaki kilitli kutudan bir 'tık' sesi geldi. Tuş takımının ışığı yandı.", 5);
+      await sleep(5500);
+      if (this.mode === 'play' && !this.playingTape) this.ui.toast('İzlediğin kasetler dolabın üstünde. Video oynatıcıdan istediğini tekrar izleyebilirsin.', 6);
     } else if (n === 2) {
       await sleep(2500);
       r.applyStage(st);
@@ -713,7 +805,7 @@ class Game {
       S.titleCard(c, this.clock * 0.6, { decay: 0.15 });
       return;
     }
-    S.blueScreen(c, this.clock, { text: 'VİDEO 1', sub: this.state.inv ? 'KASET BEKLENİYOR' : '', clock: true });
+    S.blueScreen(c, this.clock, { text: 'VİDEO 1', sub: this.newTape() ? 'KASET BEKLENİYOR' : '', clock: true });
   }
 }
 

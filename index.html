@@ -26,7 +26,7 @@
     <div id="secret-toast"></div>
     <div id="subtitles" aria-live="polite"></div>
     <div id="type-hint" hidden>Klavyeden yaz · <b>ENTER</b> ile gönder</div>
-    <div id="vcr-hint" hidden><b>BOŞLUK</b> duraklat · <b>◀ SOL OK</b> basılı tut: geri sar · <b>F</b> odak</div>
+    <div id="vcr-hint" hidden><b>BOŞLUK</b> duraklat · <b>◀ / ▶</b> basılı tut: geri / ileri sar · <b>F</b> odak</div>
     <button id="mobile-type" type="button" hidden>⌨ Yaz</button>
   </div>
 
@@ -59,6 +59,8 @@
         <dt>F</dt><dd>Televizyona odaklan / geri çekil</dd>
         <dt>Boşluk</dt><dd>Kaseti duraklat (Beste fark edebilir)</dd>
         <dt>Sol ok (basılı)</dt><dd>Kaseti geri sar. Gizli kareleri yakala</dd>
+        <dt>Sağ ok (basılı)</dt><dd>Kaseti ileri sar. Soru gelince kendiliğinden durur</dd>
+        <dt>Video oynatıcı</dt><dd>İzlediğin kasetleri istediğin zaman tekrar oynat</dd>
         <dt>Esc</dt><dd>Duraklatma menüsü</dd>
       </dl>
       <button class="back" type="button" data-back>◀ GERİ</button>
@@ -96,6 +98,14 @@
   <section id="reader" class="screen" hidden>
     <article id="reader-doc"></article>
     <p class="reader-close">Kapatmak için tıkla ya da <b>E</b> / <b>Esc</b></p>
+  </section>
+
+  <section id="tapes" class="screen panel" hidden>
+    <div class="panel-inner">
+      <h2>HANGİ KASET?</h2>
+      <div id="tapes-list" class="tapes-list"></div>
+      <p class="keypad-help">Rakam tuşu ya da ↑ ↓ ve ENTER · Esc: vazgeç</p>
+    </div>
   </section>
 
   <section id="keypad" class="screen" hidden>

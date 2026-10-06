@@ -16,6 +16,7 @@
   "b1_ask_name": { "v": "beste", "t": "Senin adın ne arkadaşım? Klavyeden yazabilirsin. Ben beklerim!" },
   "b1_name_nice": { "v": "beste", "t": "Ne güzel bir isim! Bu ismi hiç unutmayacağım.", "s": "{ad}! Ne güzel bir isim! Bu ismi hiç unutmayacağım." },
   "b1_name_same": { "v": "beste", "t": "Aaa! Benim adım da Beste! Ama ikimiz aynı olamayız. Değil mi?" },
+  "b1_name_known": { "v": "beste", "t": "Seni hatırlıyorum! Sen benim arkadaşımsın. Seni hiç unutmadım.", "s": "Seni hatırlıyorum, {ad}! Sen benim arkadaşımsın. Seni hiç unutmadım." },
   "b1_name_tonton": { "v": "beste", "t": "Hihi! Tonton, sen değilsin! Arkadaşımın gerçek adını soruyorum." },
   "b1_name_empty": { "v": "beste", "t": "Utanma! Adını yazıp entıra basman yeterli.", "s": "Utanma! Adını yazıp ENTER'a basman yeterli." },
   "b1_idle1": { "v": "beste", "t": "Arkadaşım? Orada mısın?" },

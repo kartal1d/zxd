@@ -21,7 +21,10 @@ Kulaklıkla ve karanlıkta oynaman önerilir. Oyunda yanıp sönen ışıklar va
 | **F** | Televizyona odaklan / geri çekil |
 | **Boşluk** | Kaseti duraklat (Beste fark edebilir) |
 | **◀ Sol ok** (basılı tut) | Kaseti geri sar, gizli kareleri yakala |
+| **▶ Sağ ok** (basılı tut) | Kaseti ileri sar (soru gelince kendiliğinden durur) |
 | **Esc** | Duraklatma menüsü |
+
+İzlediğin kasetler dolabın üstünde durur. Video oynatıcıya tıklayıp istediğini **tekrar izleyebilirsin**, ipucunu unuttuysan geri dönüp bakmak için. Tekrar izlemek hikâyeyi ilerletmez. Beste adını sormaz, seni hatırlar.
 
 İlerleme tarayıcıda otomatik kaydedilir (localStorage).
 

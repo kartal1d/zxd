@@ -189,6 +189,53 @@ export class UI {
     });
   }
 
+  /**
+   * Kaset seçme ekranı. list = [{ n, name, watched }], preferred = seçili başlayacak kaset.
+   * Seçilen kaset numarasıyla, vazgeçilirse null ile çözülür.
+   */
+  chooseTape(list, preferred) {
+    const box = $('tapes-list');
+    box.innerHTML = '';
+    let idx = Math.max(0, list.findIndex((t) => t.n === preferred));
+    const buttons = list.map((t, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tape-choice';
+      b.innerHTML = `<span class="tape-key">${t.n}</span><span class="tape-name"></span><span class="tape-tag">${t.watched ? 'izlendi' : 'YENİ'}</span>`;
+      b.querySelector('.tape-name').textContent = t.name;
+      b.onclick = () => close(t.n);
+      b.onmouseenter = () => select(i);
+      box.appendChild(b);
+      return b;
+    });
+    const select = (i) => {
+      idx = (i + list.length) % list.length;
+      buttons.forEach((b, j) => b.classList.toggle('sel', j === idx));
+      buttons[idx].focus({ preventScroll: true });
+    };
+    let resolveFn;
+    const close = (n) => {
+      this.show('tapes', false);
+      this.g.overlay = null;
+      this.tapeKey = null;
+      this.closeTapes = null;
+      resolveFn(n);
+    };
+    this.show('tapes', true);
+    this.g.overlay = 'tapes';
+    select(idx);
+    this.closeTapes = close;
+    this.tapeKey = (k) => {
+      if (k === 'close') return close(null);
+      if (k === 'ArrowUp' || k === 'ArrowLeft') return select(idx - 1);
+      if (k === 'ArrowDown' || k === 'ArrowRight') return select(idx + 1);
+      if (k === 'Enter' || k === ' ' || k === 'e' || k === 'E') return close(list[idx].n);
+      const hit = list.find((t) => String(t.n) === k);
+      if (hit) close(hit.n);
+    };
+    return new Promise((r) => (resolveFn = r));
+  }
+
   ending(kind, secretsFound) {
     const good = kind === 'good';
     $('ending-kind').textContent = good ? 'GİZLİ SON' : 'KÖTÜ SON';

@@ -4,6 +4,8 @@ import { TV_W as W, TV_H as H, SCREEN_DEFAULT } from './tv.js';
 import * as S from './draw/scenes.js';
 import { drawBeste, drawTonton } from './draw/characters.js';
 
+const FF_SPEED = 5;
+
 const WHO = {
   beste: { label: 'BESTE', cls: '' },
   beste_cold: { label: 'BESTE', cls: '' },
@@ -36,6 +38,8 @@ export class Director {
     this.paused = false;
     this.rewinding = false;
     this.rw = null;
+    this.ff = false;
+    this.ffStop = null;
     this.aborted = false;
     this.tweens = new Tweens();
     this.waiters = [];
@@ -96,6 +100,9 @@ export class Director {
     this.rw?.stopSfx?.();
     this.rw = null;
     this.rewinding = false;
+    this.ffStop?.();
+    this.ffStop = null;
+    this.ff = false;
     this.paused = false;
     this.endTyping();
     this.g.ui.subtitle(null);
@@ -130,6 +137,7 @@ export class Director {
       return true;
     }
     if (!this.paused) {
+      if (this.ff) dt *= FF_SPEED;
       this.time += dt;
       this.tweens.update(dt);
       this.resolveWaiters();
@@ -159,7 +167,7 @@ export class Director {
       if (this.input.options) S.optionsBar(ctx, this.input.options, { evil: this.input.evil });
       S.promptBox(ctx, this.time, this.input.text, { evil: this.input.evil });
     }
-    const label = this.paused ? '❚❚ DURAKLAT' : this.time < this.osdUntil ? this.osdLabel : '';
+    const label = this.paused ? '❚❚ DURAKLAT' : this.ff ? '▶▶ İLERİ SAR' : this.time < this.osdUntil ? this.osdLabel : '';
     if (label) S.osd(ctx, { label, counter: this.counter() });
   }
 
@@ -247,9 +255,9 @@ export class Director {
     const text = o.sub ?? this.fmt(line.s || line.t);
     this.g.ui.subtitle(w.label, text, w.cls);
     this.speaker = who;
-    // test kancası: sesleri atlayıp kısa bekle
-    const fast = this.g.debug?.fast;
-    const h = fast ? { promise: this.wait(0.2), pause() {}, resume() {}, stop() {} } : this.audio.playVoice(o.file || id, { rate: o.rate, gain: o.gain, detune: o.detune, dest: o.dest });
+    // ileri sarılırken (ve test kancasında) replik çalınmaz, kısa bir an altyazı görünür
+    const skip = this.ff || this.g.debug?.fast;
+    const h = skip ? { promise: this.wait(this.ff ? 0.6 : 0.2), pause() {}, resume() {}, stop() {} } : this.audio.playVoice(o.file || id, { rate: o.rate, gain: o.gain, detune: o.detune, dest: o.dest });
     this.voice = h;
     if (this.paused || this.rewinding) h.pause();
     try {
@@ -272,7 +280,7 @@ export class Director {
 
   music(mode, o) {
     this.audio.music.play(mode, o);
-    if (this.paused || this.rewinding) this.audio.music.pause();
+    if (this.paused || this.rewinding || this.ff) this.audio.music.pause();
   }
   stopMusic(fade = 0.8) {
     this.audio.music.stop(fade);
@@ -308,6 +316,8 @@ export class Director {
   // ---------------------------------------------------------------- klavye cevapları
   ask(o = {}) {
     this.check();
+    // soru gelince ileri sarma durur, cevap beklenir
+    if (this.ff) this.stopFF();
     this.input = {
       text: '',
       options: o.options,
@@ -375,6 +385,7 @@ export class Director {
   // ---------------------------------------------------------------- duraklat / geri sar
   togglePause() {
     if (!this.active || this.rewinding || this.input) return false;
+    if (this.ff) this.stopFF();
     this.paused = !this.paused;
     this.sfx('click');
     if (this.paused) {
@@ -395,8 +406,35 @@ export class Director {
     return true;
   }
 
+  /** Sağ ok basılıyken: bant hızlanır, replikler atlanır. Soru gelince kendiliğinden durur. */
+  startFF() {
+    if (!this.active || this.rewinding || this.paused || this.input || this.ff) return;
+    this.ff = true;
+    this.voice?.stop();
+    this.audio.pauseVoices();
+    this.audio.music?.pause();
+    this.ffStop = this.sfx('ffwd');
+    this.tv.p.jitter = 0.9;
+    this.tv.p.tracking = 1.1;
+  }
+
+  stopFF() {
+    if (!this.ff) return;
+    this.ff = false;
+    this.ffStop?.();
+    this.ffStop = null;
+    this.tv.p.jitter = this.baseFx.jitter;
+    this.tv.p.tracking = this.baseFx.tracking;
+    if (!this.paused && !this.rewinding) {
+      this.audio.resumeVoices();
+      this.audio.music?.resume();
+    }
+    this.showOsd('▶ OYNAT', 1.5);
+  }
+
   startRewind() {
     if (!this.active || this.rewinding) return;
+    if (this.ff) this.stopFF();
     this.rewinding = true;
     this.audio.pauseVoices();
     this.audio.music?.pause();

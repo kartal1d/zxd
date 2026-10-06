@@ -307,6 +307,20 @@ export class Room {
     for (let i = 0; i < 4; i++) this.box(0.014, 0.008, 0.006, mats.plasticGrey, 0.09 + i * 0.022, 0.022, 0.152, vcr);
     this.tag(vb, 'vcr');
     this.points.vcr = new THREE.Vector3(0, 0.34, -1.53);
+
+    // izlenen kasetler dolabın üstünde, televizyonun sağında üst üste durur
+    this.stack = new THREE.Group();
+    this.stack.position.set(0.44, 0.58, -1.64);
+    this.scene.add(this.stack);
+    this.stackTapes = {};
+    for (const n of [1, 2, 3]) {
+      const t = this.makeTape(String(n));
+      t.rotation.y = -0.25 + n * 0.12;
+      t.visible = false;
+      this.stack.add(t);
+      this.stackTapes[n] = t;
+    }
+    this.tag(this.stack, 'tapestack');
     this.points.tv = SCREEN_CENTER.clone();
     this.vcrText = '12:00';
     this.drawVcr();
@@ -621,9 +635,17 @@ export class Room {
   }
 
   // ======================================================================= durum
-  applyStage(st) {
+  /** playing: şu an oynatıcıdaki kaset (yığında gösterilmez) */
+  applyStage(st, playing = null) {
     const s = st.stage;
-    this.tape1.visible = s === 0 && !st.inv;
+    const owned = st.tapes || [];
+    this.tape1.visible = !owned.includes(1);
+    let h = 0;
+    for (const n of [1, 2, 3]) {
+      const t = this.stackTapes[n];
+      t.visible = owned.includes(n) && n <= s && n !== playing;
+      if (t.visible) t.position.y = h++ * 0.026;
+    }
     this.tape2.visible = st.boxOpen && !st.tape2Taken;
     this.lidPivot.rotation.x = st.boxOpen ? -1.6 : 0;
     this.keypadLed.material.color.set(st.boxOpen ? 0x10ff40 : s >= 1 ? 0xff1a10 : 0x110000);

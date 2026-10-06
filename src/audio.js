@@ -648,6 +648,32 @@ const SFX = {
       n.src.stop(now + 0.2);
     };
   },
+  ffwd(t) {
+    // ileri sarma: geri sarmadan daha tiz, hızla yükselen motor sesi
+    const ctx = this.ctx;
+    const o = ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(420, t);
+    o.frequency.linearRampToValueAtTime(1100, t + 1.2);
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 1800;
+    bp.Q.value = 2.5;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.045, t + 0.1);
+    o.connect(bp).connect(g).connect(this.tvPan);
+    o.start(t);
+    const n = this.noiseBurst(this.tvPan, t, 60, { freq: 6500, q: 0.6, gain: 0.04, attack: 0.05 });
+    return () => {
+      const now = this.now;
+      g.gain.setTargetAtTime(0, now, 0.03);
+      n.g.gain.cancelScheduledValues(now);
+      n.g.gain.setTargetAtTime(0, now, 0.03);
+      o.stop(now + 0.2);
+      n.src.stop(now + 0.2);
+    };
+  },
   warble(t) {
     this.tone(this.tvPan, t, 300, 0.9, { type: 'sine', gain: 0.15, endFreq: 140 });
     this.tone(this.tvPan, t, 303, 0.9, { type: 'sine', gain: 0.15, endFreq: 133 });

@@ -54,31 +54,38 @@ export async function tape1(d) {
   T.lookTarget = null;
   await d.say('t1_hello', { after: 0.4 });
 
-  // ---- isim
-  await d.say('b1_ask_name');
-  let name = '';
-  for (;;) {
-    const r = await d.ask({ idle: ['b1_idle1', 'b1_idle2', 'b1_idle3'], maxLen: 18 });
-    name = titleCase(r).slice(0, 18);
-    if (has(name, 'tonton')) {
-      await d.say('b1_name_tonton');
-      continue;
-    }
-    break;
-  }
-  st.name = name;
-  g.save();
-  if (norm(name) === 'beste') {
-    B.expr = 'frozen';
-    d.stopMusic(0.05);
-    await d.say('b1_name_same');
-    await d.glitch(0.5, 0.3);
-    B.expr = 'happy';
-    d.music('box', { gain: 0.13 });
-  } else {
+  // ---- isim (kaset tekrar izlenirse Beste adını hatırlar)
+  if (st.name) {
     B.wave = 1;
-    await d.say('b1_name_nice');
+    await d.say('b1_name_known');
     B.wave = 0;
+  } else await askName();
+  async function askName() {
+    await d.say('b1_ask_name');
+    let name = '';
+    for (;;) {
+      const r = await d.ask({ idle: ['b1_idle1', 'b1_idle2', 'b1_idle3'], maxLen: 18 });
+      name = titleCase(r).slice(0, 18);
+      if (has(name, 'tonton')) {
+        await d.say('b1_name_tonton');
+        continue;
+      }
+      break;
+    }
+    st.name = name;
+    g.save();
+    if (norm(name) === 'beste') {
+      B.expr = 'frozen';
+      d.stopMusic(0.05);
+      await d.say('b1_name_same');
+      await d.glitch(0.5, 0.3);
+      B.expr = 'happy';
+      d.music('box', { gain: 0.13 });
+    } else {
+      B.wave = 1;
+      await d.say('b1_name_nice');
+      B.wave = 0;
+    }
   }
 
   // ---- bahçe: elmaları say

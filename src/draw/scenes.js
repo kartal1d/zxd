@@ -1027,6 +1027,17 @@ export function doors(ctx, t, o = {}) {
       ctx.beginPath();
       ctx.arc(38, 6, 6, 0, Math.PI * 2);
       ctx.fill();
+      if (o.reveal?.[i]) {
+        // Beste'nin söylediği cevap kapının üstünde parlar
+        ctx.font = `46px ${FONT_OSD}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = '#ff2020';
+        ctx.shadowBlur = 14;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(o.reveal[i], 0, -54);
+        ctx.shadowBlur = 0;
+      }
     }
     ctx.fillStyle = open[i] ? '#ff9a9a' : '#ff5050';
     ctx.font = `40px ${FONT_OSD}`;

@@ -14,7 +14,6 @@ export async function tape1(d) {
   g.audio.setTapeFx('t1', 0.1);
   g.audio.setHiss(true);
   d.setBase({ saturation: 1.05, noise: 0.045, tracking: 0.12, jitter: 0.12, aberration: 0.6, tintR: 1, tintG: 1, tintB: 1 }, 0.1);
-  d.ejectPolicy = 'allow';
   d.eyeMode = 'viewer';
 
   // ---- açılış: mavi ekran, uyarı, jenerik

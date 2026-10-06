@@ -487,7 +487,7 @@ class Game {
       return;
     }
     if (k === 'e' || k === 'E') this.interact(this.room.hover);
-    if (k === 'f' || k === 'F') this.room.setFocus(this.room.focusTarget < 0.5);
+    if (k === 'f' || k === 'F') this.toggleFocus();
   }
 
   waitAnyKey(sec) {
@@ -505,12 +505,13 @@ class Game {
       case 'tapebox':
         return !st.tapes.includes(1) ? 'Kaseti al' : 'Eski kaset kutuları';
       case 'vcr':
-        if (playing || this.loadingTape) return 'Kaseti çıkar';
+        if (playing || this.loadingTape) return 'Kaset oynuyor';
         if (this.newTape()) return '<b>Kaseti tak</b>';
         return st.tapes.length ? 'Kaset seç' : 'Video oynatıcı';
       case 'tapestack':
         return playing || this.loadingTape ? 'İzlediğin kasetler' : 'Kasetleri tekrar izle';
       case 'tv':
+        if (playing || this.loadingTape) return '';
         return this.room.focusTarget > 0.5 ? 'Geri çekil [F]' : 'Televizyona odaklan [F]';
       case 'letter':
         return 'Mektubu oku';
@@ -545,7 +546,7 @@ class Game {
         } else ui.toast('Kutuda yalnızca boş kaset kapları var. Etiketlerin hepsi kazınmış.');
         break;
       case 'tv':
-        this.room.setFocus(this.room.focusTarget < 0.5);
+        this.toggleFocus();
         break;
       case 'vcr':
         if (this.loadingTape) break;
@@ -559,7 +560,7 @@ class Game {
             ui.toast('Kaseti çıkardın. Tekrar takarsan baştan başlar.');
           } else {
             au.sfx('vcrStuck', this.room.points.vcr);
-            ui.toast('EJECT tuşu tepki vermiyor.');
+            ui.toast('Kaset oynarken çıkarılamaz. Bitmesini bekle ya da ▶ sağ okla ileri sar.', 5);
           }
         } else if (st.tapes.length) await this.pickAndPlay();
         else ui.toast('Eski bir video oynatıcı. Ekranında 12:00 yanıp sönüyor.');
@@ -619,6 +620,16 @@ class Game {
         break;
     }
     this.updateObjective(true);
+  }
+
+  /** Kaset oynarken ekrandan ayrılmak yok: odak kilitli kalır. */
+  toggleFocus() {
+    if (this.director.active || this.loadingTape) {
+      this.room.setFocus(true);
+      this.ui.toast('Kaset oynarken ekrandan ayrılamazsın.', 2.5);
+      return;
+    }
+    this.room.setFocus(this.room.focusTarget < 0.5);
   }
 
   /** Bulunmuş ama henüz izlenmemiş kaset (oyunda aynı anda en fazla bir tane olur). */

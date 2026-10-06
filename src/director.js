@@ -59,7 +59,7 @@ export class Director {
     this.onRewindEnd = null;
     this.noFF = false;
     this.ffSkipped = null;
-    this.ejectPolicy = 'allow';
+    this.ejectPolicy = 'deny'; // video oynarken kaset çıkarılamaz
     this.baseFx = { ...SCREEN_DEFAULT };
     this.chars = {
       beste: newChar(320, 450, 1),

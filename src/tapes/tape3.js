@@ -7,7 +7,7 @@ export async function tape3(d) {
   const g = d.g;
   const st = g.state;
   const B = d.chars.beste;
-  const v = { open: [false, false, false], active: -1, exit: false, nameFlash: 0, corrupt: 0.6, face: 0, doorsPhase: false, good: false, teased: false };
+  const v = { open: [false, false, false], reveal: [null, null, null], active: -1, exit: false, nameFlash: 0, corrupt: 0.6, face: 0, doorsPhase: false, good: false, teased: false };
 
   g.audio.setTapeFx('t3', 0.1);
   g.audio.setHiss(true);
@@ -109,7 +109,7 @@ export async function tape3(d) {
     }
   };
   d.scene((c, t) => {
-    S.doors(c, t, { open: v.open, active: v.active, exitButton: v.exit });
+    S.doors(c, t, { open: v.open, reveal: v.reveal, active: v.active, exitButton: v.exit });
     if (v.nameFlash > 0) S.bigText(c, repeatText(st.name || 'ARKADAŞIM', 3), { color: `rgba(255,60,60,${v.nameFlash})`, font: `40px ${S.FONT_OSD}`, y: 60 });
   });
   v.doorsPhase = true;
@@ -117,18 +117,21 @@ export async function tape3(d) {
   const QUESTIONS = [
     {
       line: 'b3_q1',
+      truth: 'b3_truth1',
+      answer: '1405',
       ok: (txt) => {
         const dg = digits(txt);
         return dg.includes('1405') || dg.startsWith('145') || dg.includes('14598') || (dg.includes('14') && has(txt, 'mayis'));
       },
     },
-    { line: 'b3_q2', ok: (txt) => parseNum(txt) === 7 },
-    { line: 'b3_q3', ok: (txt) => has(txt, 'aydin', 'aydın') },
+    { line: 'b3_q2', truth: 'b3_truth2', answer: '7', ok: (txt) => parseNum(txt) === 7 },
+    { line: 'b3_q3', truth: 'b3_truth3', answer: 'AYDIN', ok: (txt) => has(txt, 'aydin', 'aydın') },
   ];
   let wrong = 0;
   for (let i = 0; i < 3 && !v.good; i++) {
     v.active = i;
     await d.say(QUESTIONS[i].line);
+    let wrongHere = 0;
     for (;;) {
       if (v.good) break;
       const ans = await d.ask({ evil: true });
@@ -141,9 +144,14 @@ export async function tape3(d) {
         break;
       }
       wrong++;
+      wrongHere++;
       g.room.flickerBurst(1.2);
       d.glitch(1, 0.6);
-      if (wrong % 2 === 0) {
+      if (wrongHere === 3) {
+        // üçüncü yanlışta Beste gerçeği söyler, cevap kapının üstünde yazar
+        v.reveal[i] = QUESTIONS[i].answer;
+        await d.say(QUESTIONS[i].truth);
+      } else if (wrong % 2 === 0) {
         v.nameFlash = 1;
         d.tweens.add(v, 'nameFlash', 0, 3);
         await d.say('b3_wrong2');

@@ -42,7 +42,7 @@ Kasetlerin arasında tavan arasında bulmaca çözersin: mektup, gazete kupürü
 <summary><b>Spoiler: çözümler, sonlar ve gizli kareler</b></summary>
 
 - Metal kutunun şifresi **1405**: 1. kasette ormandaki ağaca büyük harflerle kazınmış (saklambaçta "ağaç" seçilmese de bir an ekrana gelir). Takvimde 14 Mayıs daire içinde, gazete 16 Mayıs tarihli ve kız "iki gündür" kayıp.
-- Üç kapı: ağacın hatırladığı sayı (**1405**), Beste'nin yaşı (**7**, elmalar ve gazete), gerçek soyadı (**Aydın**, kutudaki okul kartı).
+- Üç kapı (bir soruya 3 kez yanlış cevap verirsen Beste doğrusunu söyler ve kapının üstüne yazar): ağacın hatırladığı sayı (**1405**), Beste'nin yaşı (**7**, elmalar ve gazete), gerçek soyadı (**Aydın**, kutudaki okul kartı).
 - **Kötü son (Artık Dışarıda):** üç cevabı verip ÇIKIŞ yazarsın. Kaset çöker, ışıklar söner, kapı çalınır.
 - **Gizli son (Kaset Yakıldı):** 2. kasetin sonundaki tersten konuşmayı geri sararak dinlersen gerçek Beste seni uyarır: "Ona soyadımı söyleme. Sıkışırsan, kaseti geri sar." 3. kasette kapı sorularında **sol oku 3 saniye basılı tut**.
 - 7 gizli kare: ağaçlardaki adam, çalının altındaki ayakkabı, jenerikten sonraki "YARDIM ET", dolaptaki fotoğraf, ters mesaj, penceredeki yüz, karın içindeki yüz. Hepsi duraklatarak ya da geri sararak yakalanır.

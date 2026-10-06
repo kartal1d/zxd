@@ -20,13 +20,31 @@
     "appId": "com.kartal1d.beste",
     "productName": "Beste Sihirli Dunya",
     "copyright": "Yıldız Çocuk Yapım, 1998",
-    "directories": { "output": "dist", "buildResources": "build" },
-    "files": ["main.cjs", "package.json", "build/icon.png", "game/**/*"],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.cjs",
+      "package.json",
+      "build/icon.png",
+      "game/**/*"
+    ],
     "asar": true,
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "build/icon.png"
     },
@@ -41,6 +59,17 @@
     },
     "portable": {
       "artifactName": "Beste-Sihirli-Dunya-${version}-Tasinabilir.exe"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "kartal1d",
+        "repo": "zxd"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kartal1d/zxd.git"
   }
 }

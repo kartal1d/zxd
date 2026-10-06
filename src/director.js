@@ -715,6 +715,8 @@ export class Director {
   }
 
   startRewind() {
+    // ters mesaj çalarken tuş bırakılıp yeniden basılırsa geri sarma mesaj bitince kesilmez
+    if (this.rewinding && this.rw) this.rw.release = false;
     // sahte bitişte VCR "durdu"; ekran kapalıyken (oda sahnesi gerçek zamanlı) geri sarılmaz
     if (!this.active || this.rewinding || this.fakeEnding || this.tv.p.power < 0.05) return;
     if (this.ff) this.stopFF();

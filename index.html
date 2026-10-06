@@ -26,6 +26,7 @@
     <div id="subtitles" aria-live="polite"></div>
     <div id="type-hint" hidden>Klavyeden yaz · <b>ENTER</b> ile gönder</div>
     <div id="vcr-hint" hidden><b>BOŞLUK</b> duraklat · <b>◀ / ▶</b> basılı tut: geri / ileri sar</div>
+    <div id="walk-hint" hidden><b>W A S D</b> yürü · <b>Shift</b> koş · <b>E</b> / tık: etkileşim · <b>Q</b> fener · oturmak için video oynatıcıya tıkla</div>
     <button id="mobile-type" type="button" hidden>⌨ Yaz</button>
   </div>
 
@@ -55,7 +56,10 @@
         <dt>Fare</dt><dd>Etrafa bak (önce ekrana tıkla)</dd>
         <dt>Sol tık / E</dt><dd>Etkileşim: al, oku, kaseti tak</dd>
         <dt>Klavye</dt><dd>Beste soru sorduğunda cevabını yaz, <b>ENTER</b>'a bas</dd>
-        <dt>F</dt><dd>Televizyona odaklan / geri çekil (kaset oynarken ekrandan ayrılamazsın)</dd>
+        <dt>W A S D</dt><dd>Yürü (tavan arası kapısı açıldıktan sonra; bir yön tuşu seni ayağa kaldırır)</dd>
+        <dt>Shift</dt><dd>Kısa bir süre koş</dd>
+        <dt>Q / Sağ tık</dt><dd>El fenerini aç / kapat</dd>
+        <dt>F</dt><dd>Televizyona odaklan / geri çekil (yalnızca otururken; kaset oynarken ekrandan ayrılamazsın)</dd>
         <dt>Boşluk</dt><dd>Kaseti duraklat (Beste fark edebilir)</dd>
         <dt>Sol ok (basılı)</dt><dd>Kaseti geri sar. Gizli kareleri yakala</dd>
         <dt>Sağ ok (basılı)</dt><dd>Kaseti ileri sar. Soru gelince kendiliğinden durur</dd>
@@ -147,7 +151,10 @@
     </div>
   </section>
 
+  <section id="keyhole" class="screen" hidden><canvas id="keyhole-canvas" width="640" height="480"></canvas></section>
+
   <div id="fade"></div>
+  <div id="flash"></div>
 </div>
 <script type="module" src="src/main.js"></script>
 </body>

@@ -85,6 +85,11 @@ button { font: inherit; color: inherit; }
   font-size: 19px; color: var(--dim); text-shadow: 0 0 4px #000; white-space: nowrap;
 }
 #type-hint b, #vcr-hint b { color: var(--ink); font-weight: normal; }
+#walk-hint {
+  position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+  font-size: 19px; color: var(--dim); text-shadow: 0 0 4px #000; white-space: nowrap;
+}
+#walk-hint b { color: var(--ink); font-weight: normal; }
 #type-hint { color: var(--beste-yellow); animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .45; } }
 #mobile-type {
@@ -207,10 +212,14 @@ button { font: inherit; color: inherit; }
 
 #fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 1.2s; }
 #fade.on { opacity: 1; }
+#flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 40; }
+#keyhole { background: #000; z-index: 30; }
+#keyhole canvas { width: min(92vw, 160vh * 0.75, 640px); height: auto; aspect-ratio: 4 / 3; image-rendering: auto; }
 
 @media (max-width: 600px) {
   #subtitles { font-size: 21px; }
   #vcr-hint { display: none; }
+  #walk-hint { display: none; }
   .keys { grid-template-columns: 1fr; }
   .keys dd { margin-bottom: 6px; }
 }

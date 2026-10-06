@@ -99,7 +99,7 @@ export const DOCS = {
 <li>İş bitince bütün kasetler imha edilecek.</li>
 <li>Bu konu dışarıda konuşulmayacak.</li>
 </ol>
-<p class="hand">Pilot asla bitmeyecek. Kaseti ben saklıyorum. Listede benim işaretlemediğim bir klip var: 7. —N.</p>`,
+<p class="hand">Pilot asla bitmeyecek. Kaseti ben saklıyorum. Listede benim işaretlemediğim bir klip var: 7. Ham kayıt aşağıda, montaj odamda; kendi rafında değil. —N.</p>`,
   },
   ifade: {
     cls: 'memo',
@@ -109,6 +109,35 @@ export const DOCS = {
 <p>Gözümü açtığımda Beste yoktu. Piknik sepeti ve atlama ipi ağacın dibindeydi.</p>
 <p>Kameraman Kâmil kamerayı kapatmamıştı. Kayıtta her şey vardır.</p>`,
   },
+  // ---- ev (src/house.js)
+  defter: { cls: 'letter', html: `<p class="doc-kind">Kurgu defteri · N.</p>
+<p><b>21.05.98</b> — Bölüm 3 için ses yok. Rıza: "Eskilerden kes, yapıştır." Beste'nin kelimelerinden yeni cümleler kurdum. Hiçbirini o söylemedi.</p>
+<p><b>02.06.98</b> — Gece montajda yalnızdım. Monitörde Beste, benim kurmadığım bir cümle söyledi: "Nermin abla, sıra sende." Geri sardım. O kare bantta yok.</p>
+<p><b>19.06.98</b> — Rıza bütün kasetleri istiyor. Vermeyeceğim.</p>
+<p><b>03.02.99</b> — Bugün sekiz yaşına girecekti. Hediyesini tavan arasına kaldırdım.</p>
+<p><b>14.05.99</b> — Bir yıl. Ham kaydın yerini buraya yazmıyorum. Bahçedeki ağacın dibindeki kutuya yazdım. Ağaç her şeyi hatırlıyor.</p>` },
+  teneke: { cls: 'letter', html: `<p class="doc-kind">Paslı bir bisküvi kutusu · içinde bir Polaroid ve bir not</p>
+<p class="small">Polaroid: Büyük çamın önünde sarı elbiseli küçük bir kız kameraya el sallıyor. Arkasındaki ağaçların arasında, odak dışında, çok uzun, gri bir leke. Altında: 14.05.98 · 13.40</p>
+<p>Rıza bütün Mayıs kasetlerini topladı. Hepsini yaktığını sanıyor.</p>
+<p>Ham kaydı arşive koydum ama kendi rafına değil. Hiç kutlanmayan bir günün kasetine sakladım. Hediyesini o gün açacaktı.</p>
+<p>Bu çamı bahçeye kimse dikmedi. Bir sabah uyandım, buradaydı. Yaşlı bir ağaç. Üstünde aynı rakamlar vardı.</p>
+<p style="text-align:right">— N.</p>` },
+  riza: { cls: 'memo', html: `<p class="paper-name"><span>YILDIZ ÇOCUK YAPIM</span><span>11.11.1999</span></p>
+<p>Nermin Hanım,</p>
+<p>Kasetleri yaktığınızı söylemiştiniz. Dün gece stüdyodaki bütün monitörlerde program oynuyordu. Jenerik müziği. Kimse kaset takmamıştı.</p>
+<p>Elinizde ne kaldıysa getirin. Kimseye göstermeyin. Jandarmaya hiç.</p>
+<p>Ben o gün yalnızca "kamera açık kalsın" dedim. Başka hiçbir şey demedim.</p>
+<p>R. Yıldız</p>
+<p class="hand">Gece biri telefonda ona kadar sayıyor. Sekizden sonrasını o sayıyor.</p>` },
+  fotograf: { cls: 'card', html: `<div class="photo" role="img" aria-label="Soluk bir fotoğraf"></div>
+<h3>STÜDYO 2 · 02.05.98</h3>
+<p>Mikrofonun önünde ters çevrilmiş bir kutunun üstüne çıkmış küçük bir kız ve yanında gülen bir kadın. Kızın kucağında turuncu, kuyruklu bir peluş kedi.</p>
+<p style="font-family:var(--font-hand);font-size:24px">Arkasında: "İlk kayıt günü. Mikrofona yetişemedi, kutunun üstüne çıktı. Bana sordu: 'Nermin abla, sesim kaydedilince ben de kasette mi yaşayacağım?' — N."</p>` },
+  kamil: { cls: 'memo', html: `<p class="paper-name"><span>JANDARMA İFADE TUTANAĞI</span><span>16.05.1998</span></p>
+<p>İfade veren: Kâmil T., 41, kameraman (Yıldız Çocuk Yapım)</p>
+<p>Rıza Bey öğle arasında kamerayı kapatmamamı söyledi, ışığı kaçırmayalım diye. Kamera sehpadaydı, ben sepetin yanındaydım.</p>
+<p>Saat ikiye doğru kuşlar sustu. Kızı ağaçların arasında, çok uzun boylu birine doğru yürürken gördüm. Ekipten biri sandım. Ekipte o boyda kimse yok.</p>
+<p>Kasetin o dakikası bozuk çıktı. Bozukluğun içinde bir ses var. Biri ona kadar sayıyor.</p>` },
   card: {
     cls: 'card',
     html: `<div class="photo" role="img" aria-label="Soluk bir vesikalık fotoğraf"></div>
@@ -213,6 +242,141 @@ export class UI {
   inventory(label) {
     this.show('inventory', !!label);
     $('inventory-label').textContent = label || '';
+  }
+
+  /** Tam ekran beyaz çakma (korkutma). 'Titreşimi azalt' ayarında hiçbir şey yapmaz. */
+  flash(ms = 80) {
+    if (this.g.settings?.flash) return;
+    const el = $('flash');
+    if (!el) return;
+    el.style.transition = 'none';
+    el.style.opacity = '0.85';
+    void el.offsetWidth;
+    el.style.transition = `opacity ${ms}ms ease-out`;
+    el.style.opacity = '0';
+  }
+
+  /** Yürüme ipucu (WASD...) birkaç saniye gösterilir */
+  walkHint(on = true, sec = 6) {
+    const el = $('walk-hint');
+    if (!el) return;
+    clearTimeout(this.walkHintT);
+    el.hidden = !on;
+    if (on) this.walkHintT = setTimeout(() => (el.hidden = true), sec * 1000);
+  }
+
+  /**
+   * Anahtar deliğinden bakış (S8): loş bir yatak odası, müzik kutusu; 1.6 sn sonra kanlı bir göz deliği doldurur.
+   * onEye() göz belirdiği an çağrılır. Overlay kapanınca çözülür.
+   */
+  keyhole(onEye) {
+    const cv = $('keyhole-canvas');
+    const x = cv.getContext('2d');
+    this.show('keyhole', true);
+    this.g.overlay = 'keyhole';
+    const W = cv.width, H = cv.height;
+    const t0 = performance.now();
+    let eye = false;
+    const hole = () => {
+      x.beginPath();
+      x.arc(W / 2, 190, 74, 0, Math.PI * 2);
+      x.moveTo(W / 2 - 22, 240);
+      x.lineTo(W / 2 + 22, 240);
+      x.lineTo(W / 2 + 46, 410);
+      x.lineTo(W / 2 - 46, 410);
+      x.closePath();
+    };
+    const draw = (t) => {
+      x.fillStyle = '#000';
+      x.fillRect(0, 0, W, H);
+      x.save();
+      hole();
+      x.clip();
+      // oda
+      const wall = x.createLinearGradient(0, 100, 0, 330);
+      wall.addColorStop(0, '#16151d');
+      wall.addColorStop(1, '#241d1d');
+      x.fillStyle = wall;
+      x.fillRect(0, 0, W, H);
+      x.fillStyle = '#120d0b';
+      x.fillRect(0, 330, W, 160);
+      // perde ve ay ışığı şeridi
+      x.fillStyle = '#2b1c26';
+      x.fillRect(180, 90, 70, 250);
+      x.fillStyle = 'rgba(140,160,220,.16)';
+      x.fillRect(255, 100, 36, 235);
+      // yatak
+      x.fillStyle = '#3a2a2a';
+      x.fillRect(360, 270, 190, 70);
+      x.fillStyle = '#5a4a48';
+      x.fillRect(360, 252, 54, 24);
+      // komodin ve müzik kutusu
+      x.fillStyle = '#1e1511';
+      x.fillRect(290, 285, 60, 55);
+      x.fillStyle = '#6b4a2e';
+      x.fillRect(298, 262, 44, 26);
+      x.fillStyle = '#c9b88f';
+      x.fillRect(318, 244, 4, 18);
+      x.beginPath();
+      x.arc(320, 241, 4, 0, Math.PI * 2);
+      x.fill();
+      // titreşen ışık
+      x.fillStyle = `rgba(0,0,0,${0.15 + 0.1 * Math.sin(t * 11)})`;
+      x.fillRect(0, 0, W, H);
+      if (t >= 1.6) {
+        const k = Math.min(1, (t - 1.6) / 0.25);
+        const r = 30 + 90 * k;
+        x.fillStyle = '#d9c9bd';
+        x.fillRect(0, 0, W, H);
+        const cx = W / 2, cy = 215;
+        x.strokeStyle = 'rgba(160,20,20,.75)';
+        x.lineWidth = 2;
+        for (let i = 0; i < 26; i++) {
+          const a = (i / 26) * Math.PI * 2 + 0.2;
+          x.beginPath();
+          x.moveTo(cx + Math.cos(a) * r * 1.1, cy + Math.sin(a) * r * 1.1);
+          x.lineTo(cx + Math.cos(a + 0.1) * r * 0.55, cy + Math.sin(a + 0.1) * r * 0.55);
+          x.stroke();
+        }
+        const g = x.createRadialGradient(cx, cy, 2, cx, cy, r * 0.62);
+        g.addColorStop(0, '#000');
+        g.addColorStop(0.34, '#000');
+        g.addColorStop(0.36, '#5b2a14');
+        g.addColorStop(1, '#2a1208');
+        x.fillStyle = g;
+        x.beginPath();
+        x.arc(cx, cy, r * 0.62, 0, Math.PI * 2);
+        x.fill();
+        x.fillStyle = 'rgba(255,255,255,.8)';
+        x.beginPath();
+        x.arc(cx - r * 0.12, cy - r * 0.14, r * 0.07, 0, Math.PI * 2);
+        x.fill();
+      }
+      x.restore();
+      // delik kenarı
+      x.save();
+      hole();
+      x.lineWidth = 10;
+      x.strokeStyle = '#2a2420';
+      x.stroke();
+      x.restore();
+    };
+    return new Promise((resolve) => {
+      const tick = () => {
+        const t = (performance.now() - t0) / 1000;
+        draw(t);
+        if (t >= 1.6 && !eye) {
+          eye = true;
+          onEye?.();
+        }
+        if (t >= 2.1) {
+          this.show('keyhole', false);
+          this.g.overlay = null;
+          resolve();
+        } else setTimeout(tick, 33);
+      };
+      tick();
+    });
   }
 
   /** Belge okuma ekranı; kapanınca çözülür. */

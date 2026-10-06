@@ -98,6 +98,7 @@ export class Finds {
     if (n === 5 && r.kilimLifted) return 'Halının altına bak.';
     if (n === 6 && r.giftOpen) return 'Hediye kutusundaki kaseti al.';
     if (n === 10 && r.ritualDone) return 'Kapının önündeki kaseti al.';
+    if (n === 9 && r.fbOpen) return this.g.house?.objective9() || OBJECTIVES[9];
     return OBJECTIVES[n];
   }
 
@@ -129,7 +130,7 @@ export class Finds {
         if (!r.furnitureMoved) return 'Örtülü eşya';
         if (s >= 3 && !r.chestOpen) return '<b>Sandığın harf kilidi</b>';
         if (r.chestOpen && !this.has(4)) return '<b>Kaseti al</b>';
-        if (r.falseBottom && !this.has(9)) return '<b>Sahte dibin kilidi</b>';
+        if (r.falseBottom && !r.fbOpen) return '<b>Sahte dibin kilidi</b>';
         return 'Oyuncak sandığı';
       case 'phone':
         return s >= 4 && !this.has(5) && !r.kilimLifted ? '<b>Telefonu çevir</b>' : 'Telefon';
@@ -196,7 +197,7 @@ export class Finds {
           g.updateObjective();
           return true;
         }
-        if (r.falseBottom && !this.has(9)) {
+        if (r.falseBottom && !r.fbOpen) {
           const ok = await this.lock('falsebottom', 'EBE', 3, 'SAHTE DİP', [
             'Nermin onun adı diyor: ağaçların arasındaki adamın adı.',
             'Saklambaçta sayan, arayan kişi.',
@@ -208,12 +209,20 @@ export class Finds {
             au.sfx('boxOpen', g.room.points.chest);
             await sleep(1400);
             au.sfx('pickup');
-            g.addTape(9);
-            this.toast("Sahte dibin altında 'HAM KAYIT — ÇAMLIK 14.05.98' yazan bir kaset ve iki kâğıt var.", 6);
+            g.room.attic.apply(this.st); // anahtar ve fener sandıktan alındı
+            g.house?.ensureBuilt();
+            this.toast("Sahte dibin altına bantlanmış eski bir anahtar var. Kâğıt etiketinde 'ALT KAT' yazıyor. Yanında küçük bir el feneri ve iki kâğıt.", 7);
+            g.save();
+            g.updateObjective();
             await g.readDoc('memo');
             await g.readDoc('ifade');
+            g.save();
             g.updateObjective();
           }
+          return true;
+        }
+        if (r.fbOpen) {
+          this.toast('Sandığın sahte dibi açık. İçi boş.');
           return true;
         }
         if (r.chestOpen && s < 8) {
@@ -501,10 +510,9 @@ export class Finds {
     rit.past = true;
     const alive = () => this.ritual === rit && g.mode !== 'title';
     // merdivenden yavaş adımlar
-    const stair = pts.stairs;
-    for (let i = 0; i < 4; i++) {
-      const k = i / 3;
-      au.sfx('footCreak', new THREE.Vector3(stair.x, stair.y, stair.z - k * 0.9));
+    for (let i = 0; i < 5; i++) {
+      const k = i / 4;
+      au.sfx('footCreak', new THREE.Vector3(-1.2, -1.6 + k * 1.6, 6.0 - k * 2.4));
       await sleep(1100);
       if (!alive()) return;
     }

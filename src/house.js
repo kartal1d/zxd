@@ -53,15 +53,15 @@ const RACK_HINTS = [
 
 /** Bölge başına ışık ve sis (bkz. docs/ev-tasarim.md §9) */
 const ZONES = {
-  sahanlik: { bulb: 1, moon: 0.35, hemi: 0.25, fog: 0x040405, dens: 0.05, zl: [-1.2, 1.9, 3.2, 0.25] },
-  merdiven: { bulb: null, moon: 0.2, hemi: 0.15, fog: 0x030304, dens: 0.06, zl: null },
-  giris: { bulb: 0, moon: 0.08, hemi: 0.1, fog: 0x030304, dens: 0.06, zl: [0.9, -1.3, -2.6, 0.5] },
-  hol: { bulb: 0, moon: 0.08, hemi: 0.1, fog: 0x030304, dens: 0.06, zl: [0.9, -1.3, -2.6, 0.5] },
-  salon: { bulb: 0, moon: 0.08, hemi: 0.1, fog: 0x030304, dens: 0.06, zl: [-4.3, -1.4, 6.0, 0.55] },
-  montaj: { bulb: 0, moon: 0.06, hemi: 0.08, fog: 0x030304, dens: 0.065, zl: [-4.4, -1.6, 1.8, 0.3] },
-  mutfak: { bulb: 0, moon: 0.1, hemi: 0.12, fog: 0x030304, dens: 0.06, zl: [0.95, -1.3, -2.9, 0.6] },
-  banyo: { bulb: 0, moon: 0.06, hemi: 0.08, fog: 0x030304, dens: 0.06, zl: [2.1, -1.0, 9.0, 0.35] },
-  bahce: { bulb: 0, moon: 0.65, hemi: 0.25, fog: 0x0b0f18, dens: 0.085, zl: null },
+  sahanlik: { bulb: 1, moon: 0.35, hemi: 0.3, fog: 0x040405, dens: 0.05, zl: [-1.2, 1.9, 3.2, 0.25] },
+  merdiven: { bulb: null, moon: 0.2, hemi: 0.2, fog: 0x030304, dens: 0.06, zl: null },
+  giris: { bulb: 0, moon: 0.08, hemi: 0.16, fog: 0x030304, dens: 0.06, zl: [0.9, -1.3, -2.6, 0.5] },
+  hol: { bulb: 0, moon: 0.08, hemi: 0.16, fog: 0x030304, dens: 0.06, zl: [0.9, -1.3, -2.6, 0.5] },
+  salon: { bulb: 0, moon: 0.08, hemi: 0.16, fog: 0x030304, dens: 0.06, zl: [-4.3, -1.4, 6.0, 0.55] },
+  montaj: { bulb: 0, moon: 0.06, hemi: 0.14, fog: 0x030304, dens: 0.065, zl: [-4.4, -1.6, 1.8, 0.3] },
+  mutfak: { bulb: 0, moon: 0.1, hemi: 0.18, fog: 0x030304, dens: 0.06, zl: [0.95, -1.3, -2.9, 0.6] },
+  banyo: { bulb: 0, moon: 0.06, hemi: 0.14, fog: 0x030304, dens: 0.06, zl: [2.1, -1.0, 9.0, 0.35] },
+  bahce: { bulb: 0, moon: 0.8, hemi: 0.45, fog: 0x0b0f18, dens: 0.07, zl: null },
 };
 const GROUND = ['giris', 'hol', 'salon', 'montaj', 'mutfak', 'banyo'];
 
@@ -180,7 +180,7 @@ export class House {
     const r = this.room;
     // ışıklar açılışta kurulur, sonra hiç eklenip çıkarılmaz (gölgelendiriciler yeniden derlenmesin)
     r.scene.add(r.camera);
-    this.flashlight = new THREE.SpotLight(0xfff0d8, 0, 9, 0.38, 0.6, 1.4);
+    this.flashlight = new THREE.SpotLight(0xfff0d8, 0, 11, 0.6, 0.9, 1.0);
     this.flashlight.position.set(0.12, -0.12, 0);
     this.flashlight.castShadow = false;
     this.flashTarget = new THREE.Object3D();
@@ -313,7 +313,7 @@ export class House {
     M.floor = std({ map: floorMap, bumpMap: floorBump, bumpScale: 0.6, roughness: 0.82 });
     M.stair = std({ map: floorMap, bumpMap: floorBump, bumpScale: 0.6, roughness: 0.82, color: 0xb0a090 });
     M.tileFloor = std({ map: TX.tiles({ base: [150, 140, 118], grout: [70, 66, 60], seed: 8 }), roughness: 0.55 });
-    M.tileWall = std({ map: TX.tiles({ base: [196, 204, 198], grout: [120, 124, 118], n: 6, seed: 3 }), roughness: 0.35 });
+    M.tileWall = std({ map: TX.tiles({ base: [160, 168, 162], grout: [96, 100, 94], n: 6, seed: 3 }), roughness: 0.35 });
     M.wood = R.furniture;
     M.door = std({ map: TX.woodPlanks({ w: 128, h: 256, planks: 3, base: [92, 60, 38], seed: 31 }).map, roughness: 0.75 });
     M.dark = std({ color: 0x2a2420, roughness: 0.8 });
@@ -603,17 +603,32 @@ export class House {
       const a = (i / 5) * Math.PI * 2;
       this.add('ust', 'sahanlik', M.deadWood, rodGeo(V(-0.86, 0.2, 2.86), V(-0.86 + Math.cos(a) * 0.12, 0.5 + hash(i) * 0.2, 2.86 + Math.sin(a) * 0.12), 0.006, 4));
     }
-    // sarı çocuk yağmurluğu (askıda)
+    // sarı çocuk yağmurluğu (askıda): düz, kollu bir palto; duvardan 6 cm açıkta
     const coat = new THREE.Group();
-    coat.position.set(-1.56, 0.86, 3.5);
+    coat.position.set(-1.628, 0.92, 3.5);
+    coat.rotation.y = HALF;
     this.chunks.ust.add(coat);
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, 0.62, 12, 1, true), M.yellow);
-    body.material = std({ color: 0xe0b020, roughness: 0.55, side: THREE.DoubleSide });
-    body.scale.set(0.45, 1, 1);
+    const cs = new THREE.Shape();
+    cs.moveTo(-0.06, 0.3);
+    cs.lineTo(0.06, 0.3);
+    cs.lineTo(0.12, 0.26);
+    cs.lineTo(0.27, -0.02);
+    cs.lineTo(0.22, -0.07);
+    cs.lineTo(0.14, 0.04);
+    cs.lineTo(0.17, -0.32);
+    cs.lineTo(-0.17, -0.32);
+    cs.lineTo(-0.14, 0.04);
+    cs.lineTo(-0.22, -0.07);
+    cs.lineTo(-0.27, -0.02);
+    cs.lineTo(-0.12, 0.26);
+    cs.closePath();
+    const coatMat = std({ color: 0xe0b020, roughness: 0.55, side: THREE.DoubleSide });
+    const body = new THREE.Mesh(new THREE.ExtrudeGeometry(cs, { depth: 0.035, bevelEnabled: false }), coatMat);
+    body.position.z = -0.0175;
     coat.add(body);
-    const hood = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8), M.yellow);
-    hood.position.set(-0.02, 0.36, 0);
-    hood.scale.set(0.6, 1, 1);
+    const hood = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 8), coatMat);
+    hood.position.set(0, 0.3, -0.03);
+    hood.scale.set(1, 0.75, 0.7);
     coat.add(hood);
     this.add('ust', 'sahanlik', M.metal, rodGeo(V(-1.66, 1.2, 3.5), V(-1.58, 1.23, 3.5), 0.008));
     this.tag(coat, 'ev:yagmurluk');
@@ -969,7 +984,7 @@ export class House {
         });
       });
     });
-    const boxMat = std({ map: atlas, roughness: 0.75 });
+    const boxMat = std({ map: atlas, color: 0x9a948a, roughness: 0.75 });
     this.rackBoxes = {};
     RACK_ROWS.forEach((row, ri) => {
       for (let ci = 0; ci < 6; ci++) {
@@ -1406,11 +1421,11 @@ export class House {
       this.add('bahce', 'agac', M.bark, rodGeo(V(2.0, YB + 0.15, -6.4), V(2.0 + Math.cos(a) * 0.7, YB - 0.02, -6.4 + Math.sin(a) * 0.7), 0.06, 5));
     }
     const carve = ctex(128, 64, (x, w, h) => {
-      x.fillStyle = '#d8c49a';
+      x.fillStyle = '#a98a58';
       x.fillRect(0, 0, w, h);
-      x.fillStyle = 'rgba(120,80,40,.4)';
+      x.fillStyle = 'rgba(90,60,30,.4)';
       for (let i = 0; i < 30; i++) x.fillRect(hash(i) * w, 0, 1, h);
-      x.fillStyle = '#5a3a1a';
+      x.fillStyle = '#2e1a0a';
       x.font = 'bold 38px Georgia, serif';
       x.textAlign = 'center';
       x.textBaseline = 'middle';

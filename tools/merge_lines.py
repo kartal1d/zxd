@@ -5,7 +5,7 @@ Ana dosyanın düzeni korunur: her replik tek satır, kasetler arasında boş sa
 Ana dosyada zaten olan bir anahtar parçada da varsa satırı yerinde güncellenir.
 
     python3 tools/merge_lines.py            # bütün parçalar
-    python3 tools/merge_lines.py 3 4        # sadece k3 ve k4
+    python3 tools/merge_lines.py 3 4        # sadece k3 ve k4 (ev.json için: ev)
 """
 import json
 import os
@@ -25,11 +25,14 @@ def one_line(key, val):
 
 def main():
     nums = sys.argv[1:] or sorted((m.group(1) for f in os.listdir(FRAG) if (m := re.fullmatch(r"k(\d+)\.json", f))), key=int)
+    if not sys.argv[1:] and os.path.exists(os.path.join(FRAG, "ev.json")):
+        nums.append("ev")  # ev.json: ev (serbest yürüyüş) replikleri
     text = open(MAIN, encoding="utf-8").read()
     have = json.loads(text, object_pairs_hook=OrderedDict)
     added = updated = 0
     for n in nums:
-        frag = json.load(open(os.path.join(FRAG, f"k{n}.json"), encoding="utf-8"), object_pairs_hook=OrderedDict)
+        fname = f"{n}.json" if n == "ev" else f"k{n}.json"
+        frag = json.load(open(os.path.join(FRAG, fname), encoding="utf-8"), object_pairs_hook=OrderedDict)
         new = []
         for key, val in frag.items():
             if key.startswith("_"):

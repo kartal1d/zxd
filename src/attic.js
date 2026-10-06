@@ -96,19 +96,52 @@ export class Attic {
       x.fillRect(0, 0, w, h);
       x.fillStyle = '#2b241b';
       x.font = '22px "Caveat", cursive';
-      x.fillText('Ham kayıt burada.', 12, 34);
+      x.fillText('Aşağının anahtarı burada.', 12, 34);
       x.fillText('Kilidi, onun adını öğrenen açsın. — N.', 12, 70);
     });
     const note = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.11), new THREE.MeshStandardMaterial({ map: noteTex, roughness: 0.9 }));
     note.rotation.x = Math.PI / 2;
     note.position.set(0.15, -0.012, 0.13);
     this.falseBottom.add(note);
-    this.chestTape9 = r.makeTape('9');
-    this.chestTape9.rotation.set(Math.PI, 0, 0.15);
-    this.chestTape9.position.set(-0.17, -0.011, 0.27);
-    this.falseBottom.add(this.chestTape9);
+    // altına bantlı: "ALT KAT" anahtarı, kâğıt etiketi ve küçük bir el feneri (9. kaset artık aşağıda)
+    this.chestKey = new THREE.Group();
+    this.chestKey.position.set(-0.12, -0.014, 0.26);
+    this.chestKey.rotation.x = Math.PI;
+    this.falseBottom.add(this.chestKey);
+    const brass = new THREE.MeshStandardMaterial({ color: 0xb08a38, roughness: 0.35, metalness: 0.8 });
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.07, 8), brass);
+    shaft.rotation.z = Math.PI / 2;
+    shaft.position.set(0.035, 0, 0);
+    const bow = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.005, 8, 16), brass);
+    bow.rotation.x = Math.PI / 2;
+    bow.position.set(-0.016, 0, 0);
+    const bit = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.003, 0.016), brass);
+    bit.position.set(0.064, 0, 0.008);
+    const tagTex = labelTex(128, 64, (x, w, h) => {
+      x.fillStyle = '#e4d6a4';
+      x.fillRect(0, 0, w, h);
+      x.fillStyle = '#2b241b';
+      x.font = '700 30px "Caveat", cursive';
+      x.fillText('ALT KAT', 10, 42);
+    });
+    const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.03), new THREE.MeshStandardMaterial({ map: tagTex, roughness: 0.9, side: THREE.DoubleSide }));
+    tag.rotation.x = -Math.PI / 2;
+    tag.position.set(0.0, -0.004, 0.032);
+    const torch = new THREE.Group();
+    const tb = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.14, 12), new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.5, metalness: 0.4 }));
+    tb.rotation.z = Math.PI / 2;
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(0.016, 12), new THREE.MeshStandardMaterial({ color: 0xcfe0ff, emissive: 0x405070, roughness: 0.2 }));
+    lens.rotation.y = Math.PI / 2;
+    lens.position.set(0.0705, 0, 0);
+    torch.add(tb, lens);
+    torch.position.set(0.12, 0, 0.07);
+    torch.rotation.y = 0.4;
+    this.chestKey.add(shaft, bow, bit, tag, torch);
     const tapeStrip = new THREE.MeshStandardMaterial({ color: 0xd8d0b0, roughness: 0.5, transparent: true, opacity: 0.7 });
-    for (const x of [-0.24, -0.1]) r.box(0.03, 0.002, 0.13, tapeStrip, x, -0.038, 0.27, this.falseBottom);
+    for (const [x, z, ry] of [[-0.06, 0.26, 0.2], [0.02, 0.33, -0.3]]) {
+      const strip = r.box(0.03, 0.002, 0.13, tapeStrip, x, -0.038, z, this.falseBottom);
+      strip.rotation.y = ry;
+    }
     r.tag(chest, 'chest');
     // çarşaf
     const sheetGeo = new THREE.BoxGeometry(0.9, 1.0, 0.6, 12, 12, 8);
@@ -357,7 +390,7 @@ export class Attic {
     this.chestTape4.visible = !has(4);
     this.falseBottom.rotation.x = room.fbOpen ? FB_UP : room.falseBottom ? FB_AJAR : 0;
     this.chestTail.position.y = room.fbOpen ? 0.2 : 0.39;
-    this.chestTape9.visible = !has(9);
+    this.chestKey.visible = !room.fbOpen;
     // telefon: ahize, sesli arama sonrası yerinde
     // kilim ve tahta
     this.kilimFlap.visible = !!room.kilimLifted;

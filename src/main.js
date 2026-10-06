@@ -10,6 +10,9 @@ import { TVScreen } from './tv.js';
 import { Room } from './room.js';
 import { Director } from './director.js';
 import { Finds } from './finds.js';
+import { House } from './house.js';
+import { Walk } from './walk.js';
+import { Scares } from './scares.js';
 import { UI, SECRETS, REVERSED, secretCounts } from './ui.js';
 import * as S from './draw/scenes.js';
 import { storage, clamp } from './util.js';
@@ -113,6 +116,9 @@ class Game {
     this.room = new Room(this);
     this.director = new Director(this);
     this.finds = new Finds(this);
+    this.house = new House(this);
+    this.walk = new Walk(this);
+    this.scares = new Scares(this);
     this.room.applyStage(this.state);
     this.ambience = new Ambience(this.audio);
     this.audio.setTvPosition(this.room.points.tv.x, this.room.points.tv.y, this.room.points.tv.z);
@@ -309,6 +315,7 @@ class Game {
     this.show('ending', false);
     this.show('hud', true);
     this.refreshInventory();
+    this.enterHouse();
     this.room.applyStage(this.state);
     this.finds.applyLight();
     this.updateObjective();
@@ -317,8 +324,25 @@ class Game {
     this.lockPointer();
   }
 
+  /** Ev bölümü: oyuncu hep koltukta başlar; eski kayıtların 9. kasetini koru, mühürlenmemişse sessizce mühürle */
+  enterHouse() {
+    const st = this.state;
+    const r = (st.room = st.room || {});
+    const has9 = st.tapes.includes(9);
+    this.scares.cancelAll();
+    this.walk.resetSeated();
+    if (r.fbOpen && has9 && !r.walk) {
+      r.walk = true;
+      r.atticSealed = true;
+      r.doors = r.doors || { montaj: true, banyo: true, arka: false, dolap: false };
+    }
+    if (r.fbOpen || st.stage >= 8) this.house.ensureBuilt();
+    if (has9 && r.walk && !r.atticSealed) this.scares.seal(true);
+  }
+
   pause() {
     if (this.mode !== 'play') return;
+    this.walk?.clearKeys();
     this.mode = 'paused';
     this.ui.clickHint(false);
     // menü tıklanabilsin: fare kilidi açıksa bırak (Esc'ye tarayıcı dışında basılmış olabilir)
@@ -339,6 +363,9 @@ class Game {
   }
 
   quitToTitle() {
+    this.scares.cancelAll();
+    this.walk.clearKeys();
+    this.walk.resetSeated();
     this.director.abort();
     this.playingTape = null;
     this.loadingTape = false;
@@ -443,6 +470,11 @@ class Game {
       if (down && down.moved < 6 && this.mode === 'play' && !this.overlay && document.pointerLockElement !== this.canvas) this.interact(this.room.hover);
       down = null;
     });
+    // sağ tık: el feneri (ayaktayken)
+    this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    this.canvas.addEventListener('mousedown', (e) => {
+      if (e.button === 2 && this.mode === 'play' && !this.overlay && this.walk.standing && this.walk.canMove()) this.walk.toggleLight();
+    });
     this.canvas.addEventListener('click', () => {
       if (document.pointerLockElement === this.canvas && this.mode === 'play' && !this.overlay) this.interact(this.room.hover);
     });
@@ -450,12 +482,14 @@ class Game {
     window.addEventListener('keydown', (e) => this.onKey(e));
     // tuş başka pencerede bırakılırsa keyup gelmez: odak gidince sarmayı bırak
     window.addEventListener('blur', () => {
+      this.walk.clearKeys();
       this.input.ffHeld = false;
       this.input.rewindHeld = false;
       this.director.stopFF();
       this.director.stopRewind();
     });
     window.addEventListener('keyup', (e) => {
+      this.walk.onKeyUp(e);
       if (e.key === 'ArrowLeft') {
         this.input.rewindHeld = false;
         this.director.stopRewind();
@@ -473,6 +507,10 @@ class Game {
       const w = this.anyKeyWaiters;
       this.anyKeyWaiters = [];
       w.forEach((r) => r());
+      e.preventDefault();
+      return;
+    }
+    if (this.overlay === 'keyhole') {
       e.preventDefault();
       return;
     }
@@ -566,6 +604,7 @@ class Game {
       if (document.activeElement !== a) a.focus({ preventScroll: true });
       return;
     }
+    if (this.walk.onKeyDown(e)) return;
     if (k === 'Escape') {
       this.pause();
       return;
@@ -592,6 +631,8 @@ class Game {
     const playing = this.director.active;
     const fl = this.finds.label(id);
     if (fl != null) return fl;
+    const hl = this.house.label(id);
+    if (hl != null) return hl;
     switch (id) {
       case 'tapebox':
         return !st.tapes.includes(1) ? 'Kaseti al' : 'Eski kaset kutuları';
@@ -626,7 +667,7 @@ class Game {
 
   /** şifre paneli, okuyucu, kaset seçici, duraklatma gibi bir ekran açık mı */
   panelOpen() {
-    return !!this.overlay || this.mode !== 'play' || ['keypad', 'wordlock', 'reader', 'tapes', 'pause'].some((id) => !$(id)?.hidden);
+    return !!this.overlay || this.mode !== 'play' || ['keypad', 'wordlock', 'reader', 'tapes', 'pause', 'keyhole'].some((id) => !$(id)?.hidden);
   }
 
   async interact(id) {
@@ -634,7 +675,19 @@ class Game {
     const st = this.state;
     const ui = this.ui;
     const au = this.audio;
+    // ayaktayken video oynatıcı / televizyon / kaset yığınına önce oturulur
+    if (this.walk.standing && (id === 'vcr' || id === 'tv' || id === 'tapestack')) {
+      await this.walk.sitDown();
+      if (id === 'tv') {
+        this.room.setFocus(true);
+        return;
+      }
+    }
     if (await this.finds.interact(id)) {
+      this.updateObjective(true);
+      return;
+    }
+    if (await this.house.interact(id)) {
       this.updateObjective(true);
       return;
     }
@@ -727,6 +780,14 @@ class Game {
   /** Kaset oynarken ekrandan ayrılmak yok: odak kilitli kalır. */
   toggleFocus() {
     if (this.director.fakeEnding) return;
+    // ayaktayken: koltuğa yakınsan otur ve odaklan, değilse uyar
+    if (this.walk.standing) {
+      const w = this.walk;
+      if (!this.director.active && !this.loadingTape && w.level === 'ust' && w.zone === 'cati' && Math.hypot(w.pos.x, w.pos.z - 0.55) <= 2.5) {
+        w.sitDown().then(() => this.room.setFocus(true));
+      } else this.ui.toast('F yalnızca televizyonun karşısında otururken çalışır.', 3);
+      return;
+    }
     if (this.director.active || this.loadingTape) {
       this.room.setFocus(true);
       this.ui.toast('Kaset oynarken ekrandan ayrılamazsın.', 2.5);
@@ -789,6 +850,7 @@ class Game {
   objectiveText() {
     const st = this.state;
     if (this.playingTape) return 'Kaseti izle. Beste soru sorarsa klavyeden cevap ver.';
+    if (this.newTape() === 9 && st.room?.fbOpen && !st.room.atticSealed) return 'Kaseti tavan arasına götür.';
     if (this.newTape()) return 'Kaseti televizyonun altındaki video oynatıcıya tak.';
     if (st.stage === 0) return 'Karton kutudaki kaseti bul.';
     if (st.stage === 1 && !st.boxOpen) return 'Sehpadaki kilitli kutunun 4 haneli şifresini bul.';
@@ -806,6 +868,7 @@ class Game {
   }
 
   async playTape(n) {
+    if (this.walk.standing) await this.walk.sitDown();
     if (this.loadingTape || this.director.active) return;
     const st = this.state;
     const tok = (this.loadSeq = (this.loadSeq || 0) + 1);
@@ -952,7 +1015,10 @@ class Game {
       r.pitch = -0.05 + Math.sin(this.clock * 0.11) * 0.04;
     }
     const ndc = this.free && this.mode === 'play' ? this.ndc : new THREE.Vector2(0, 0);
+    this.walk.update(dt);
     r.update(dt, ndc);
+    this.house.update(dt, this.clock);
+    this.scares.update(dt);
     this.gazeOnTv = r.gaze;
     // televizyona odaklanınca ekranın ortasına yazı basma
     const tvFocus = r.hover === 'tv' && r.focusTarget > 0.5;

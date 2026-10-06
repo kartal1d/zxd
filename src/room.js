@@ -35,7 +35,11 @@ export class Room {
     this.flicker = false;
     this.burst = 0;
     this.raycaster = new THREE.Raycaster();
-    this.raycaster.far = 3.6;
+    this.reach = 3.6; // oturarak 3.6 m, ayakta 2.0 m (walk.js)
+    this.raycaster.far = this.reach;
+    this.walkCam = null; // ayaktayken kamera konumu (walk.js); boşsa SEAT/FOCUS
+    this.bulbZone = 1; // alt katta ampul tavan arasındaki ışığı vermez (house.js)
+    this.standing = false;
     this.screenPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -SCREEN_CENTER.z);
     this.build();
   }
@@ -111,8 +115,10 @@ export class Room {
     this.quad([[-3, 0, Z1], [-3, 0, Z0], [-3, 1.2, Z0], [-3, 1.2, Z1]], mats.wall, 4, 1);
     this.quad([[3, 0, Z0], [3, 0, Z1], [3, 1.2, Z1], [3, 1.2, Z0]], mats.wall, 4, 1);
     // çatı eğimleri
-    this.quad([[-3, 1.2, Z1], [-3, 1.2, Z0], [0, 3, Z0], [0, 3, Z1]], mats.roof);
-    this.quad([[0, 3, Z1], [0, 3, Z0], [3, 1.2, Z0], [3, 1.2, Z1]], mats.roof);
+    this.roofs = [
+      this.quad([[-3, 1.2, Z1], [-3, 1.2, Z0], [0, 3, Z0], [0, 3, Z1]], mats.roof),
+      this.quad([[0, 3, Z1], [0, 3, Z0], [3, 1.2, Z0], [3, 1.2, Z1]], mats.roof),
+    ];
 
     // alın duvarları (beşgen) — ön duvarda pencere, arka duvarda kapı boşluğu
     const gable = (holes) => {
@@ -143,6 +149,7 @@ export class Room {
     const front = gable([[1.4, 1.55, 0.7, 0.8]]);
     front.position.z = Z0;
     this.scene.add(front);
+    this.frontGable = front;
     const back = gable([[1.2, 0.99, 0.88, 1.98]]); // arkadan bakınca x ters döner: kapı x=-1.2
     back.rotation.y = Math.PI;
     back.position.z = Z1;
@@ -207,6 +214,7 @@ export class Room {
     const corr = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.0, 2.4), new THREE.MeshStandardMaterial({ color: 0x3a3430, roughness: 1, side: THREE.BackSide }));
     corr.position.set(-1.2, 1.0, Z1 + 1.22);
     this.scene.add(corr);
+    this.corridor = corr;
     this.corridorLight = new THREE.PointLight(0xffc38a, 0, 7, 1.6);
     this.corridorLight.position.set(-1.2, 1.6, Z1 + 1.8);
     this.scene.add(this.corridorLight);
@@ -564,7 +572,7 @@ export class Room {
     this.points.behind = new THREE.Vector3(0, 1.1, 1.5);
     this.points.floorboard = new THREE.Vector3(-0.72, 0.02, 0.62);
     this.points.giftbox = new THREE.Vector3(1.6, 0.15, 1.45);
-    this.points.stairs = new THREE.Vector3(-1.2, 0.6, 3.6);
+    this.points.stairs = new THREE.Vector3(-1.2, -1.6, 6.0);
     this.tag(bulb, 'bulb');
 
     // ay ışığı
@@ -660,6 +668,7 @@ export class Room {
     this.tape3.visible = moved && !st.tape3Taken && s === 2;
     this.prints.visible = s >= 2;
     this.attic.apply(st);
+    this.g.house?.apply(st);
   }
 
   setMood(m) {
@@ -744,7 +753,7 @@ export class Room {
   look(dx, dy) {
     if (this.locked) return;
     this.yaw -= dx;
-    this.pitch = clamp(this.pitch - dy, -1.42, 1.2);
+    this.pitch = clamp(this.pitch - dy, this.standing ? -1.35 : -1.42, this.standing ? 1.35 : 1.2);
     if (this.focusTarget > 0.5) {
       this.yaw = clamp(this.yaw, -0.55, 0.55);
       this.pitch = clamp(this.pitch, -0.45, 0.35);
@@ -757,11 +766,12 @@ export class Room {
     this.tweens.update(dt);
     this.focus += (this.focusTarget - this.focus) * Math.min(1, dt * 4);
     const f = smooth(clamp(this.focus, 0, 1));
-    this.camera.position.lerpVectors(SEAT, FOCUS, f);
+    if (this.walkCam) this.camera.position.copy(this.walkCam);
+    else this.camera.position.lerpVectors(SEAT, FOCUS, f);
     // nefes alma salınımı
     this.camera.position.y += Math.sin(this.clock * 1.3) * 0.004;
     this.camera.rotation.order = 'YXZ';
-    this.camera.rotation.set(this.pitch, this.yaw, 0);
+    this.camera.rotation.set(this.pitch, this.yaw, this.roll || 0);
 
     // ampul: sallanma + titreme
     this.bulbGroup.rotation.z = Math.sin(this.clock * 0.7) * 0.035;
@@ -779,8 +789,8 @@ export class Room {
       lvl *= this._fl.v;
     }
     this.bulbLevel += (lvl - this.bulbLevel) * Math.min(1, dt * 30);
-    this.bulb.intensity = 4.2 * this.bulbLevel;
-    this.bulbMat.emissiveIntensity = 3 * this.bulbLevel + 0.02;
+    this.bulb.intensity = 4.2 * this.bulbLevel * this.bulbZone;
+    this.bulbMat.emissiveIntensity = (3 * this.bulbLevel + 0.02) * (this.bulbZone > 0.05 ? 1 : 0.1);
 
     // kapı altı ışığı: önünden biri geçiyormuş gibi kesilir
     const feet = Math.sin(this.clock * 2.1) > 0.55 ? 0.25 : 1;
@@ -812,9 +822,12 @@ export class Room {
 
     // bakılan nesne ve ekrandaki bakış noktası
     this.raycaster.setFromCamera(ndc, this.camera);
-    const hits = this.raycaster.intersectObjects(this.interactables, true);
-    const hit = hits.find((h) => h.object.visible !== false && isVisible(h.object));
-    this.hover = hit ? hit.object.userData.interact : null;
+    this.raycaster.far = this.reach;
+    const extra = this.g.house?.built ? this.g.house.extraInteractables() : null;
+    const hits = this.raycaster.intersectObjects(extra && extra.length ? this.interactables.concat(extra) : this.interactables, true);
+    // perde görevi gören duvarlar (extra) etkileşimleri örter; ilk görünür çarpışma kazanır
+    const hit = hits.find((h) => h.object.visible !== false && isVisible(h.object) && (h.object.userData.interact || h.object.userData.occ));
+    this.hover = hit ? hit.object.userData.interact || null : null;
     const pt = new THREE.Vector3();
     const ray = this.raycaster.ray;
     let gx = 0, gy = 0;

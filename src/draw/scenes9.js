@@ -16,6 +16,37 @@ function ell(ctx, x, y, rx, ry, rot = 0) {
   ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2);
 }
 
+
+/**
+ * ctx.filter = blur() her çizim çağrısına ayrı uygulandığı için yazılım çiziminde çok yavaştır (kare başına saniyeler).
+ * Bunun yerine sahneyi küçük bir tuvale çizip büyüterek yumuşatırız (ucuz, kamera görüntüsü gibi bulanık).
+ * key: önbellek tuvalinin adı, scale: çözünürlük oranı (küçüldükçe daha bulanık), alpha: bindirme saydamlığı.
+ */
+const SOFT = {};
+function soft(ctx, key, fn, scale = 0.5, alpha = 1) {
+  const w = Math.max(8, Math.round(W * scale));
+  const h = Math.max(8, Math.round(H * scale));
+  const id = `${key}@${w}`;
+  let o = SOFT[id];
+  if (!o) {
+    o = SOFT[id] = document.createElement('canvas');
+    o.width = w;
+    o.height = h;
+  }
+  const c = o.getContext('2d');
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.globalAlpha = 1;
+  c.clearRect(0, 0, w, h);
+  c.scale(w / W, h / H);
+  fn(c);
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(o, 0, 0, W, H);
+  ctx.restore();
+}
+
 /** Deck zaman kodu: 01:00:00:00 (25 kare) */
 export function tcString(sec, base = 3600) {
   const tot = base + Math.max(0, sec);
@@ -581,7 +612,6 @@ export function slate(ctx, t, o = {}) {
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
   ctx.save();
-  ctx.filter = 'blur(0.8px)';
   ctx.translate(W / 2, H / 2 + 14);
   ctx.rotate(-0.025);
   ctx.translate(-W / 2, -H / 2 - 14);
@@ -795,8 +825,15 @@ function dapple(ctx, t, n = 16) {
  * o.yellow {x,y,h,alpha,walk} | o.dark: 0..1 karartma
  */
 export function rawClearing(ctx, t, o = {}) {
+  soft(ctx, 'clear', (c) => clearingBody(c, t, o), 0.55);
+  if (o.dark) {
+    ctx.fillStyle = `rgba(0,0,0,${o.dark})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+
+function clearingBody(ctx, t, o) {
   ctx.save();
-  ctx.filter = 'blur(1.1px)';
   ctx.fillStyle = '#c9d8bc';
   ctx.fillRect(0, 0, W, GY + 14);
   // uzak yapraklar
@@ -845,17 +882,10 @@ export function rawClearing(ctx, t, o = {}) {
     ctx.fill();
   }
   if (o.figure) {
-    ctx.save();
-    ctx.filter = 'blur(3px)';
-    drawSilhouette(ctx, o.figure.x, o.figure.y, o.figure.h, o.figure.alpha);
-    ctx.restore();
+    soft(ctx, 'fig', (c) => drawSilhouette(c, o.figure.x, o.figure.y, o.figure.h, o.figure.alpha), 0.25);
   }
   if (o.yellow && o.yellow.alpha > 0.01) {
-    ctx.save();
-    ctx.globalAlpha = o.yellow.alpha;
-    ctx.filter = 'blur(1.6px)';
-    person(ctx, { who: 'girl', x: o.yellow.x, y: o.yellow.y, h: o.yellow.h, walk: o.yellow.walk, pose: o.yellow.pose || 'stand', flip: o.yellow.flip }, t);
-    ctx.restore();
+    soft(ctx, 'yel', (c) => person(c, { who: 'girl', x: o.yellow.x, y: o.yellow.y, h: o.yellow.h, walk: o.yellow.walk, pose: o.yellow.pose || 'stand', flip: o.yellow.flip }, t), 0.33, o.yellow.alpha);
   }
   o.behind?.(ctx);
   // büyük çam: düzgün, pürüzsüz kabuk
@@ -965,39 +995,37 @@ export function rawClearing(ctx, t, o = {}) {
   dapple(ctx, t, o.dapple ?? 16);
   o.front?.(ctx);
   ctx.restore();
-  if (o.dark) {
-    ctx.fillStyle = `rgba(0,0,0,${o.dark})`;
-    ctx.fillRect(0, 0, W, H);
-  }
 }
 
 /** Kameranın önüne uzanan el (kameraya yapışır). k: 0..1 */
 export function grabHand(ctx, k, t) {
   if (k <= 0.01) return;
-  ctx.save();
-  ctx.filter = 'blur(6px)';
   const x = lerp(-240, 120, smooth(k));
-  ctx.fillStyle = '#7d5a46';
-  ctx.beginPath();
-  ctx.moveTo(x - 200, H + 20);
-  ctx.lineTo(x - 140, 190);
-  ctx.quadraticCurveTo(x - 20, 140, x + 100, 210);
-  ctx.lineTo(x + 170, 260);
-  ctx.lineTo(x + 120, 330);
-  ctx.lineTo(x + 170, 360);
-  ctx.lineTo(x + 100, 420);
-  ctx.lineTo(x + 60, H + 20);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = 'rgba(0,0,0,.35)';
-  ctx.fillRect(0, 0, W, H);
-  ctx.restore();
+  soft(ctx, 'hand', (c) => {
+    c.fillStyle = '#7d5a46';
+    c.beginPath();
+    c.moveTo(x - 200, H + 20);
+    c.lineTo(x - 140, 190);
+    c.quadraticCurveTo(x - 20, 140, x + 100, 210);
+    c.lineTo(x + 170, 260);
+    c.lineTo(x + 120, 330);
+    c.lineTo(x + 170, 360);
+    c.lineTo(x + 100, 420);
+    c.lineTo(x + 60, H + 20);
+    c.closePath();
+    c.fill();
+    c.fillStyle = 'rgba(0,0,0,.35)';
+    c.fillRect(0, 0, W, H);
+  }, 0.15);
 }
 
 /** Ağaç kabuğu yakın planı; o.carve: oyma görünür mü (0|1) */
 export function rawBark(ctx, t, o = {}) {
+  soft(ctx, 'bark', (c) => barkBody(c, t, o), 0.6);
+}
+
+function barkBody(ctx, t, o) {
   ctx.save();
-  ctx.filter = 'blur(0.9px)';
   const bg = ctx.createLinearGradient(0, 0, W, 0);
   bg.addColorStop(0, '#6a4c36');
   bg.addColorStop(0.5, '#5a3f2c');
@@ -1257,8 +1285,7 @@ export function povTrees(ctx, t, o = {}) {
   ctx.translate(0, Math.sin(t * 15) * (o.giggle ?? 0) * 2);
   ctx.fillStyle = '#080605';
   ctx.fillRect(176, 90, 46, 400);
-  ctx.filter = 'blur(1.2px)';
-  person(ctx, { who: 'girl', x: 238, y: 410, h: 56, pose: 'crouch' }, t);
+  soft(ctx, 'povgirl', (c) => person(c, { who: 'girl', x: 238, y: 410, h: 56, pose: 'crouch' }, t), 0.5);
   ctx.restore();
   ctx.fillStyle = '#080605';
   ctx.fillRect(200, 90, 26, 400);
@@ -1315,10 +1342,9 @@ export function maskFinal(ctx, t, drawB, o = {}) {
   const base = hy + 270 * s;
   const manFn = (c) => {
     if (k <= 0) return;
-    c.save();
-    c.filter = `blur(${lerp(1.4, 0.4, walk)}px)`;
-    S3.drawGreyMan(c, hx, base, 300 * s, { alpha: 1, headTilt: Math.sin(t * 1.3) * 0.05 });
-    c.restore();
+    const draw = (cc) => S3.drawGreyMan(cc, hx, base, 300 * s, { alpha: 1, headTilt: Math.sin(t * 1.3) * 0.05 });
+    if (walk < 0.35) soft(c, 'man', draw, 0.3);
+    else draw(c);
   };
   rawClearing(ctx, t, {
     blanket: false,

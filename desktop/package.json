@@ -1,0 +1,46 @@
+{
+  "name": "beste-sihirli-dunya",
+  "productName": "Beste Sihirli Dunya",
+  "version": "1.0.0",
+  "description": "Beste'nin Sihirli Dünyası: Türkçe seslendirmeli retro VHS korku oyunu",
+  "author": "kartal1d",
+  "license": "MIT",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "prepare-game": "node prepare.mjs",
+    "start": "node prepare.mjs && electron .",
+    "dist": "node prepare.mjs && electron-builder --win --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.kartal1d.beste",
+    "productName": "Beste Sihirli Dunya",
+    "copyright": "Yıldız Çocuk Yapım, 1998",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.cjs", "package.json", "build/icon.png", "game/**/*"],
+    "asar": true,
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Beste'nin Sihirli Dünyası",
+      "artifactName": "Beste-Sihirli-Dunya-Kurulum-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "Beste-Sihirli-Dunya-${version}-Tasinabilir.exe"
+    }
+  }
+}

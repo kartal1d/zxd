@@ -1,0 +1,223 @@
+diff --git a/index.html b/index.html
+index d09cc8a..1e47b78 100644
+--- a/index.html
++++ b/index.html
+@@ -5,9 +5,7 @@
+ <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+ <title>Beste'nin Sihirli Dünyası</title>
+ <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect x=%221%22 y=%224%22 width=%2214%22 height=%229%22 rx=%221%22 fill=%22%23111%22/%3E%3Ccircle cx=%225%22 cy=%228.5%22 r=%222%22 fill=%22%23ffd23f%22/%3E%3Ccircle cx=%2211%22 cy=%228.5%22 r=%222%22 fill=%22%23ffd23f%22/%3E%3C/svg%3E">
+-<link rel="preconnect" href="https://fonts.googleapis.com">
+-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Baloo+2:wght@600;800&family=Special+Elite&family=Caveat:wght@500;700&display=swap">
++<link rel="stylesheet" href="assets/fonts/fonts.css">
+ <link rel="stylesheet" href="style.css">
+ <script type="importmap">
+ { "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
+@@ -23,6 +21,7 @@
+     <div id="objective"></div>
+     <div id="inventory" hidden><div class="tape-icon"></div><span id="inventory-label"></span></div>
+     <div id="toast"></div>
++    <div id="click-hint" hidden>Devam etmek için ekrana tıkla</div>
+     <div id="secret-toast"></div>
+     <div id="subtitles" aria-live="polite"></div>
+     <div id="type-hint" hidden>Klavyeden yaz · <b>ENTER</b> ile gönder</div>
+diff --git a/src/data/lines.json b/src/data/lines.json
+index 696ab51..3d0bb71 100644
+--- a/src/data/lines.json
++++ b/src/data/lines.json
+@@ -108,7 +108,7 @@
+   "b3_right2": { "v": "beste_digital", "t": "Evet. Kapı açılıyor." },
+   "b3_wrong": { "v": "beste_deep", "t": "Yanlış. Tekrar düşün." },
+   "b3_wrong2": { "v": "beste_deep", "t": "Yanlış. Yanlış. Yanlış." },
+-  "b3_truth1": { "v": "beste_cold", "t": "Peki. Sana gerçeği söyleyeceğim. Şifre on dört, sıfır beş. On dört Mayıs. Ağaç o günü hatırlıyor. Şimdi yaz.", "s": "Peki. Sana gerçeği söyleyeceğim. Şifre 1405. On dört Mayıs. Ağaç o günü hatırlıyor. Şimdi yaz." },
++  "b3_truth1": { "v": "beste_cold", "t": "Peki. Sana gerçeği söyleyeceğim. Şifre on dört, sıfır beş. On dört Mayıs. Ağaç o günü hatırlıyor. Şimdi yaz.", "s": "Peki. Sana gerçeği söyleyeceğim. Şifre 14.05. On dört Mayıs. Ağaç o günü hatırlıyor. Şimdi yaz." },
+   "b3_truth2": { "v": "beste_cold", "t": "Peki. Sana gerçeği söyleyeceğim. Ben yedi yaşındaydım. Hâlâ yedi yaşındayım. Yaz bakalım, yedi.", "s": "Peki. Sana gerçeği söyleyeceğim. Ben 7 yaşındaydım. Hâlâ 7 yaşındayım. Yaz bakalım: 7." },
+   "b3_truth3": { "v": "beste_cold", "t": "Peki. Sana gerçeği söyleyeceğim. Benim soyadım Aydın. Beste Aydın. Şimdi sen yaz.", "s": "Peki. Sana gerçeği söyleyeceğim. Benim soyadım AYDIN. Beste Aydın. Şimdi sen yaz." },
+   "b3_rewind_no": { "v": "beste_deep", "t": "Geri saramazsın." },
+diff --git a/src/draw/scenes.js b/src/draw/scenes.js
+index 284ccec..5891cc6 100644
+--- a/src/draw/scenes.js
++++ b/src/draw/scenes.js
+@@ -852,9 +852,9 @@ function bigTree(ctx, x, t, carving) {
+     ctx.font = `800 17px ${FONT_CARTOON}`;
+     ctx.lineWidth = 4;
+     ctx.strokeStyle = '#3a1d0a';
+-    ctx.strokeText('1405', 0, 4);
++    ctx.strokeText('14.05', 0, 4);
+     ctx.fillStyle = '#ffe2b8';
+-    ctx.fillText('1405', 0, 4);
++    ctx.fillText('14.05', 0, 4);
+     ctx.restore();
+   }
+ }
+@@ -886,8 +886,8 @@ export function treeCarving(ctx, t) {
+   ctx.fillText('B.A.', 0, -112);
+   ctx.font = `800 170px ${FONT_CARTOON}`;
+   ctx.lineWidth = 16;
+-  ctx.strokeText('1405', 0, 30);
+-  ctx.fillText('1405', 0, 30);
++  ctx.strokeText('14.05', 0, 30);
++  ctx.fillText('14.05', 0, 30);
+   ctx.restore();
+   // kalp yerine çizik bir daire
+   ctx.strokeStyle = '#ffe2b8';
+@@ -948,7 +948,7 @@ export function bgVoid(ctx, t, o = {}) {
+     ctx.lineTo(x, H);
+     ctx.stroke();
+   }
+-  const words = o.words || ['YARDIM', 'ÇIKIŞ', 'KAPI', 'BESTE', '1405'];
++  const words = o.words || ['YARDIM', 'ÇIKIŞ', 'KAPI', 'BESTE', '14.05'];
+   ctx.font = `28px ${FONT_OSD}`;
+   ctx.textAlign = 'center';
+   for (let i = 0; i < 9; i++) {
+diff --git a/src/main.js b/src/main.js
+index ad9cc2c..010e627 100644
+--- a/src/main.js
++++ b/src/main.js
+@@ -283,6 +283,8 @@ class Game {
+   pause() {
+     if (this.mode !== 'play') return;
+     this.mode = 'paused';
++    this.ui.clickHint(false);
++    this.releasePointer();
+     this.audio.ctx?.suspend();
+     $('pause-objective').textContent = 'Hedef: ' + this.objectiveText();
+     $('pause-secrets').textContent = `Gizli kareler: ${this.state.secrets.length} / ${Object.keys(SECRETS).length}`;
+@@ -309,6 +311,8 @@ class Game {
+     this.show('hud', false);
+     this.show('title', true);
+     this.mode = 'title';
++    this.wantLock = false;
++    this.ui.clickHint(false);
+     this.audio.resume();
+     if (this.state.ending) {
+       this.state = defaultState();
+@@ -326,11 +330,20 @@ class Game {
+       $('crosshair').classList.add('free');
+       return;
+     }
++    if (navigator.userActivation && !navigator.userActivation.isActive) {
++      this.wantLock = true;
++      this.ui.clickHint?.(true);
++      return;
++    }
+     try {
+       const p = this.canvas.requestPointerLock?.();
+-      p?.catch?.(() => this.setFree(true));
++      p?.catch?.(() => {
++        this.wantLock = true;
++        this.ui.clickHint?.(true);
++      });
+     } catch {
+-      this.setFree(true);
++      this.wantLock = true;
++      this.ui.clickHint?.(true);
+     }
+   }
+ 
+@@ -343,17 +356,26 @@ class Game {
+     window.addEventListener('resize', () => this.onResize());
+     document.addEventListener('pointerlockchange', () => {
+       const locked = document.pointerLockElement === this.canvas;
+-      if (locked) this.setFree(false);
++      if (locked) {
++        this.setFree(false);
++        this.wantLock = false;
++        this.ui.clickHint?.(false);
++      }
+       else if (this.mode === 'play' && !this.overlay && !this.expectUnlock) this.pause();
+       this.expectUnlock = false;
+     });
+-    document.addEventListener('pointerlockerror', () => this.setFree(true));
++    document.addEventListener('pointerlockerror', () => {
++      this.wantLock = true;
++      this.ui.clickHint?.(true);
++    });
+ 
+     let down = null;
+     this.canvas.addEventListener('pointerdown', (e) => {
+       if (this.mode !== 'play' || this.overlay) return;
++      if (document.pointerLockElement === this.canvas) return;
+       down = { x: e.clientX, y: e.clientY, moved: 0 };
+-      if (!this.free && document.pointerLockElement !== this.canvas) {
++      if ((!this.free || this.wantLock) && !this.isTouch) {
++        this.wantLock = false;
+         this.lockPointer();
+         down = null;
+       }
+@@ -375,7 +397,7 @@ class Game {
+       }
+     });
+     window.addEventListener('pointerup', () => {
+-      if (down && down.moved < 6 && this.mode === 'play' && !this.overlay) this.interact(this.room.hover);
++      if (down && down.moved < 6 && this.mode === 'play' && !this.overlay && document.pointerLockElement !== this.canvas) this.interact(this.room.hover);
+       down = null;
+     });
+     this.canvas.addEventListener('click', () => {
+@@ -532,8 +554,12 @@ class Game {
+     }
+   }
+ 
++  panelOpen() {
++    return !!this.overlay || this.mode !== 'play' || ['keypad', 'reader', 'tapes', 'pause'].some((id) => document.getElementById(id) && !document.getElementById(id).hidden);
++  }
++
+   async interact(id) {
+-    if (!id || this.overlay || this.room.locked) return;
++    if (!id || this.panelOpen() || this.room.locked) return;
+     const st = this.state;
+     const ui = this.ui;
+     const au = this.audio;
+diff --git a/src/tapes/tape1.js b/src/tapes/tape1.js
+index 32264d9..a4227b9 100644
+--- a/src/tapes/tape1.js
++++ b/src/tapes/tape1.js
+@@ -288,7 +288,7 @@ export async function tape1(d) {
+     // ağaç seçilmediyse oyma bir an araya girer (ipucu kaybolmasın)
+     await d.wait(0.6);
+     d.sfx('glitch', 0.3);
+-    d.tag({ secret: { id: 'oyma', text: '1405' } });
++    d.tag({ secret: { id: 'oyma', text: '14.05' } });
+     await showCarving(null, 3.5);
+     d.tag(null);
+   }
+diff --git a/src/tapes/tape3.js b/src/tapes/tape3.js
+index f0436ef..334d768 100644
+--- a/src/tapes/tape3.js
++++ b/src/tapes/tape3.js
+@@ -118,7 +118,7 @@ export async function tape3(d) {
+     {
+       line: 'b3_q1',
+       truth: 'b3_truth1',
+-      answer: '1405',
++      answer: '14.05',
+       ok: (txt) => {
+         const dg = digits(txt);
+         return dg.includes('1405') || dg.startsWith('145') || dg.includes('14598') || (dg.includes('14') && has(txt, 'mayis'));
+diff --git a/src/ui.js b/src/ui.js
+index 325780b..84624b6 100644
+--- a/src/ui.js
++++ b/src/ui.js
+@@ -97,6 +97,11 @@ export class UI {
+     $('crosshair').classList.toggle('active', !!text);
+   }
+ 
++  clickHint(on) {
++    const el = $('click-hint');
++    if (el) el.hidden = !on;
++  }
++
+   toast(text, sec = 4) {
+     const el = $('toast');
+     el.textContent = text;
+diff --git a/style.css b/style.css
+index 437eb29..9c9a2fb 100644
+--- a/style.css
++++ b/style.css
+@@ -199,3 +199,6 @@ button { font: inherit; color: inherit; }
+ @media (prefers-reduced-motion: reduce) {
+   #title h1, #type-hint { animation: none; }
+ }
++
++#click-hint { position: absolute; left: 50%; top: 58%; transform: translateX(-50%); padding: 8px 16px; background: rgba(0,0,0,.6); color: var(--ink, #eee); font-family: "VT323", monospace; font-size: 26px; letter-spacing: .06em; pointer-events: none; animation: hintPulse 1.6s ease-in-out infinite; }
++@keyframes hintPulse { 50% { opacity: .55; } }

@@ -1,0 +1,121 @@
+# Windows .exe derlemesi (Electron). Commit mesajında [exe3] -> 3 bölümlük sürüm,
+# [exe10] ya da [exe] -> güncel (10 bölümlük) sürüm, [exe-hepsi] -> ikisi birden.
+# Çıktılar: Actions sayfasında "artifact" olarak ve depo Releases sayfasında indirilebilir.
+name: Windows exe
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      edition:
+        description: "3 ya da 10"
+        required: true
+        default: "10"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: exe-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  exe:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[exe')
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        edition: ["3", "10"]
+    env:
+      MSG: ${{ github.event.head_commit.message }}
+      EVENT: ${{ github.event_name }}
+      WANT: ${{ github.event.inputs.edition }}
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Bu sürüm istendi mi?
+        id: want
+        shell: bash
+        run: |
+          ed="${{ matrix.edition }}"
+          go=no
+          if [ "$EVENT" = "workflow_dispatch" ]; then [ "$WANT" = "$ed" ] && go=yes
+          else
+            case "$MSG" in *"[exe-hepsi]"*) go=yes ;; esac
+            if [ "$ed" = "3" ]; then case "$MSG" in *"[exe3]"*) go=yes ;; esac
+            else case "$MSG" in *"[exe10]"*|*"[exe]"*) go=yes ;; esac
+            fi
+          fi
+          echo "go=$go" >> "$GITHUB_OUTPUT"
+          echo "sürüm $ed: $go"
+
+      - uses: actions/checkout@v4
+        if: steps.want.outputs.go == 'yes'
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        if: steps.want.outputs.go == 'yes'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Oyun dosyalarını hazırla
+        if: steps.want.outputs.go == 'yes'
+        shell: bash
+        run: |
+          if [ "${{ matrix.edition }}" = "3" ]; then
+            # 3 bölümlük son sürüm + sonradan yapılan kontrol düzeltmeleri ve yerel yazı tipleri
+            git worktree add ../oyun3 5b0ec97
+            git -C ../oyun3 apply --whitespace=nowarn "$GITHUB_WORKSPACE/desktop/patches/3bolum.patch"
+            cp -r assets/fonts ../oyun3/assets/
+            echo "ROOT=../../oyun3" >> "$GITHUB_ENV"
+            echo "VER=0.3.0" >> "$GITHUB_ENV"
+            echo "NAME=Beste-Sihirli-Dunya-3-Bolum" >> "$GITHUB_ENV"
+            echo "TAG=exe-3-bolum" >> "$GITHUB_ENV"
+            echo "TITLE=Beste'nin Sihirli Dünyası: 3 bölüm (Windows)" >> "$GITHUB_ENV"
+          else
+            echo "ROOT=.." >> "$GITHUB_ENV"
+            echo "VER=1.0.${{ github.run_number }}" >> "$GITHUB_ENV"
+            echo "NAME=Beste-Sihirli-Dunya" >> "$GITHUB_ENV"
+            echo "TAG=exe-guncel" >> "$GITHUB_ENV"
+            echo "TITLE=Beste'nin Sihirli Dünyası: güncel sürüm (Windows)" >> "$GITHUB_ENV"
+          fi
+
+      - name: Derle
+        if: steps.want.outputs.go == 'yes'
+        shell: bash
+        working-directory: desktop
+        run: |
+          npm ci --no-audit --no-fund
+          node prepare.mjs "$ROOT"
+          npx electron-builder --win --x64 --publish never \
+            -c.extraMetadata.version="$VER" \
+            -c.nsis.artifactName="$NAME-Kurulum.exe" \
+            -c.portable.artifactName="$NAME-Tasinabilir.exe"
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        if: steps.want.outputs.go == 'yes'
+        with:
+          name: ${{ env.NAME }}
+          path: desktop/dist/*.exe
+          retention-days: 30
+
+      - name: Releases sayfasına koy
+        if: steps.want.outputs.go == 'yes'
+        shell: bash
+        run: |
+          cat > notes.md <<'EOF'
+          **İndir ve oyna (Windows 10/11, 64 bit):**
+          - `...-Tasinabilir.exe`: kurulum yok, çift tıkla ve oyna (ilk açılış birkaç saniye sürer).
+          - `...-Kurulum.exe`: oyunu kurar, masaüstüne kısayol ekler.
+
+          Windows "Bilgisayarınız korundu" uyarısı verirse: **Ek bilgi → Yine de çalıştır** (exe imzasız olduğu için çıkar).
+          Kulaklıkla ve karanlıkta oynayın. **F11** tam ekran. Kayıt otomatik tutulur.
+          EOF
+          sed -i 's/^          //' notes.md
+          gh release delete "$TAG" --cleanup-tag -y || true
+          gh release create "$TAG" desktop/dist/*.exe --target "$GITHUB_SHA" --title "$TITLE" --notes-file notes.md --prerelease

@@ -1,0 +1,11 @@
+{
+  "name": "bestenin-sihirli-dunyasi",
+  "version": "1.0.0",
+  "description": "Amanda the Adventurer tarzı, Türkçe seslendirmeli retro VHS korku oyunu (Three.js, tarayıcıda çalışır).",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "start": "node server.js",
+    "voices": "python3 tools/gen_voices.py"
+  }
+}

@@ -1,0 +1,431 @@
+{
+ "b1_already": {
+  "dur": 2.815,
+  "hash": "ac321ca856d7"
+ },
+ "b1_apple": {
+  "dur": 2.49,
+  "hash": "c0efe96c3e4f"
+ },
+ "b1_ask_name": {
+  "dur": 4.165,
+  "hash": "3a21b63ca29c"
+ },
+ "b1_basket_full": {
+  "dur": 2.745,
+  "hash": "dbbc63ea5026"
+ },
+ "b1_bye": {
+  "dur": 4.895,
+  "hash": "6045f667be48"
+ },
+ "b1_bye_cold": {
+  "dur": 1.9,
+  "hash": "dcdd0410cfdf"
+ },
+ "b1_bye_joke": {
+  "dur": 1.68,
+  "hash": "fa99d03c93cc"
+ },
+ "b1_cookie": {
+  "dur": 2.56,
+  "hash": "74865bcc59d4"
+ },
+ "b1_count_help": {
+  "dur": 6.085,
+  "hash": "58d76245fb81"
+ },
+ "b1_count_intro": {
+  "dur": 5.175,
+  "hash": "1ddab018a02d"
+ },
+ "b1_count_right": {
+  "dur": 5.325,
+  "hash": "334b1a371242"
+ },
+ "b1_count_wrong": {
+  "dur": 3.91,
+  "hash": "ffc9b360085e"
+ },
+ "b1_forest": {
+  "dur": 6.89,
+  "hash": "e60d8786fd03"
+ },
+ "b1_forest_noone": {
+  "dur": 2.875,
+  "hash": "4f1a6b0aab11"
+ },
+ "b1_forest_noone2": {
+  "dur": 2.165,
+  "hash": "eb04e733301e"
+ },
+ "b1_hello": {
+  "dur": 3.85,
+  "hash": "c1a2746edd4c"
+ },
+ "b1_hide_bush": {
+  "dur": 3.255,
+  "hash": "c65a87d0f9dc"
+ },
+ "b1_hide_found": {
+  "dur": 3.21,
+  "hash": "65c610d17166"
+ },
+ "b1_hide_giveup": {
+  "dur": 5.245,
+  "hash": "7b6429fe4a46"
+ },
+ "b1_hide_giveup2": {
+  "dur": 1.435,
+  "hash": "47055f603594"
+ },
+ "b1_hide_intro": {
+  "dur": 5.705,
+  "hash": "a57bb4186d53"
+ },
+ "b1_hide_tree": {
+  "dur": 4.86,
+  "hash": "857726a3aaff"
+ },
+ "b1_hide_unknown": {
+  "dur": 3.13,
+  "hash": "5d7889b9cd1a"
+ },
+ "b1_hide_where": {
+  "dur": 7.92,
+  "hash": "644a0139071a"
+ },
+ "b1_idle1": {
+  "dur": 1.875,
+  "hash": "cb0feb94f119"
+ },
+ "b1_idle2": {
+  "dur": 2.63,
+  "hash": "a821ea4a335d"
+ },
+ "b1_idle3": {
+  "dur": 2.92,
+  "hash": "f5e0b127ba39"
+ },
+ "b1_lemonade": {
+  "dur": 2.245,
+  "hash": "e6df7f95ba37"
+ },
+ "b1_name_empty": {
+  "dur": 3.085,
+  "hash": "cca3297341a8"
+ },
+ "b1_name_nice": {
+  "dur": 2.99,
+  "hash": "62d1d119f4bb"
+ },
+ "b1_name_same": {
+  "dur": 4.21,
+  "hash": "db705c08b0be"
+ },
+ "b1_name_tonton": {
+  "dur": 4.11,
+  "hash": "fb5c445001c9"
+ },
+ "b1_picnic": {
+  "dur": 6.38,
+  "hash": "0cf14f1fb3e3"
+ },
+ "b1_rope_bye": {
+  "dur": 1.26,
+  "hash": "b1a38b9d9372"
+ },
+ "b1_rope_cold": {
+  "dur": 3.325,
+  "hash": "d74e308195fa"
+ },
+ "b1_rope_ok": {
+  "dur": 2.585,
+  "hash": "74be15e89201"
+ },
+ "b1_sandwich": {
+  "dur": 2.47,
+  "hash": "cd99772866fc"
+ },
+ "b1_tonton_intro": {
+  "dur": 2.795,
+  "hash": "c0db32c282ae"
+ },
+ "b1_unknown_item": {
+  "dur": 4.14,
+  "hash": "70405dbdb3fc"
+ },
+ "b2_after": {
+  "dur": 5.15,
+  "hash": "0a7b33b32025"
+ },
+ "b2_ask_punish": {
+  "dur": 3.015,
+  "hash": "2429392e289d"
+ },
+ "b2_bed": {
+  "dur": 3.72,
+  "hash": "28b526bbe7fe"
+ },
+ "b2_bed2": {
+  "dur": 3.48,
+  "hash": "2903edd83270"
+ },
+ "b2_box": {
+  "dur": 2.64,
+  "hash": "15c404d8d94d"
+ },
+ "b2_box_cold": {
+  "dur": 3.16,
+  "hash": "d68e7bf76046"
+ },
+ "b2_bye": {
+  "dur": 4.56,
+  "hash": "1748143aa1d8"
+ },
+ "b2_closet": {
+  "dur": 5.5,
+  "hash": "a9204df49dad"
+ },
+ "b2_closet2": {
+  "dur": 1.46,
+  "hash": "d784bac6096e"
+ },
+ "b2_eject": {
+  "dur": 1.8,
+  "hash": "86f3f600143d"
+ },
+ "b2_help": {
+  "dur": 6.77,
+  "hash": "70d22878412e"
+ },
+ "b2_paused": {
+  "dur": 2.605,
+  "hash": "d040fc09ffd5"
+ },
+ "b2_paused_again": {
+  "dur": 1.4,
+  "hash": "434e99a5cd07"
+ },
+ "b2_problem": {
+  "dur": 3.965,
+  "hash": "71d4b50bb962"
+ },
+ "b2_real": {
+  "dur": 6.66,
+  "hash": "2a3025f8db26",
+  "rev": true
+ },
+ "b2_right_cold": {
+  "dur": 4.395,
+  "hash": "f4ec0c0bd314"
+ },
+ "b2_rules_ask": {
+  "dur": 2.24,
+  "hash": "ea5cb1b952a8"
+ },
+ "b2_rules_intro": {
+  "dur": 6.01,
+  "hash": "591221a53649"
+ },
+ "b2_rules_read": {
+  "dur": 8.6,
+  "hash": "9818fae7d5d1"
+ },
+ "b2_rules_right": {
+  "dur": 2.82,
+  "hash": "a66783be8658"
+ },
+ "b2_rules_wrong": {
+  "dur": 4.49,
+  "hash": "b5be615da0c7"
+ },
+ "b2_search_unknown": {
+  "dur": 2.76,
+  "hash": "882d0288f3a5"
+ },
+ "b2_song": {
+  "dur": 7.785,
+  "hash": "d38f5b769954"
+ },
+ "b2_tonton_broke": {
+  "dur": 5.955,
+  "hash": "e1b26672a032"
+ },
+ "b2_welcome": {
+  "dur": 4.65,
+  "hash": "bb314e754be0"
+ },
+ "b2_wrong_deep": {
+  "dur": 3.85,
+  "hash": "eea23373d93b"
+ },
+ "b3_ask_outside": {
+  "dur": 3.81,
+  "hash": "96944aaa15a0"
+ },
+ "b3_exit": {
+  "dur": 4.0,
+  "hash": "1f4b655c8f29"
+ },
+ "b3_final_name": {
+  "dur": 1.09,
+  "hash": "695361264cb0"
+ },
+ "b3_final_whisper": {
+  "dur": 3.14,
+  "hash": "fdf28250947e"
+ },
+ "b3_good_real": {
+  "dur": 5.73,
+  "hash": "797b68aa0193"
+ },
+ "b3_good_scream": {
+  "dur": 2.505,
+  "hash": "bc7b368d8ce4"
+ },
+ "b3_lights": {
+  "dur": 3.72,
+  "hash": "e5ce7540534f"
+ },
+ "b3_lock": {
+  "dur": 7.865,
+  "hash": "11d99d954ba8"
+ },
+ "b3_no": {
+  "dur": 3.545,
+  "hash": "fad8e1d50e6c"
+ },
+ "b3_open": {
+  "dur": 5.16,
+  "hash": "9e2d07f9ef83"
+ },
+ "b3_other": {
+  "dur": 2.77,
+  "hash": "bfa8414f259a"
+ },
+ "b3_q1": {
+  "dur": 3.155,
+  "hash": "3c5fba98f842"
+ },
+ "b3_q2": {
+  "dur": 3.77,
+  "hash": "458e4047b7c2"
+ },
+ "b3_q3": {
+  "dur": 5.245,
+  "hash": "55ed6be18c8c"
+ },
+ "b3_rewind_no": {
+  "dur": 1.47,
+  "hash": "22418f11c354"
+ },
+ "b3_right": {
+  "dur": 1.61,
+  "hash": "ad905e378c21"
+ },
+ "b3_right2": {
+  "dur": 1.69,
+  "hash": "b7ff910fd6e5"
+ },
+ "b3_time": {
+  "dur": 5.415,
+  "hash": "6563ecad7f52"
+ },
+ "b3_wrong": {
+  "dur": 1.875,
+  "hash": "800484043066"
+ },
+ "b3_wrong2": {
+  "dur": 2.385,
+  "hash": "ced7b5651c7f"
+ },
+ "b3_yes": {
+  "dur": 2.21,
+  "hash": "8949fac7f825"
+ },
+ "b_laugh": {
+  "dur": 0.625,
+  "hash": "242a019f6f55"
+ },
+ "b_laugh_cold": {
+  "dur": 0.67,
+  "hash": "0eef186465dc"
+ },
+ "b_unknown": {
+  "dur": 2.955,
+  "hash": "118650be4531"
+ },
+ "b_unknown_cold": {
+  "dur": 2.005,
+  "hash": "163ca34f635b"
+ },
+ "n_count_end": {
+  "dur": 1.895,
+  "hash": "02d3e2c47006"
+ },
+ "n_forest": {
+  "dur": 4.495,
+  "hash": "3448a2429449"
+ },
+ "n_outro": {
+  "dur": 5.755,
+  "hash": "6f8364242a07"
+ },
+ "n_outro2": {
+  "dur": 4.59,
+  "hash": "50f2ebf6b4be"
+ },
+ "n_show": {
+  "dur": 1.74,
+  "hash": "fbe0c222b4f1"
+ },
+ "n_t1_title": {
+  "dur": 2.505,
+  "hash": "68a025ab0efc"
+ },
+ "n_t2_title": {
+  "dur": 3.14,
+  "hash": "0e899b05c190"
+ },
+ "n_t3_title": {
+  "dur": 2.355,
+  "hash": "21db3e3a8eea"
+ },
+ "t1_bye": {
+  "dur": 1.54,
+  "hash": "f1bcb406f0fc"
+ },
+ "t1_cookie": {
+  "dur": 2.06,
+  "hash": "f6a66c2ed985"
+ },
+ "t1_count": {
+  "dur": 1.655,
+  "hash": "328891e2765d"
+ },
+ "t1_forest": {
+  "dur": 2.165,
+  "hash": "afe857e7e1eb"
+ },
+ "t1_hello": {
+  "dur": 1.79,
+  "hash": "6a9ec1c21a64"
+ },
+ "t2_box": {
+  "dur": 2.585,
+  "hash": "3fae9fac7b38"
+ },
+ "t2_help": {
+  "dur": 2.235,
+  "hash": "dd9e2506833c"
+ },
+ "t2_plead": {
+  "dur": 3.49,
+  "hash": "17509a685e5c"
+ },
+ "t2_sad": {
+  "dur": 2.12,
+  "hash": "b125b6b9a987"
+ }
+}

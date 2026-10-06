@@ -1,0 +1,102 @@
+# Beste'nin Sihirli Dünyası
+
+*Amanda the Adventurer* tarzında, Türkçe seslendirmeli, tarayıcıda çalışan retro VHS korku oyunu.
+
+1998'de İzmir'de çekilmiş, yayınlanmamış bir çocuk programının kasetlerini, rahmetli halanın tavan arasında buluyorsun. Kaseti oynatıyorsun. Ekrandaki neşeli kız Beste soru soruyor, sen klavyeden cevap yazıyorsun. Kasetler ilerledikçe renkler soluyor, ses bozuluyor ve Beste'nin gülümsemesi donuyor.
+
+## Nasıl oynanır
+
+```bash
+npm start            # bağımlılık yok, sadece Node.js gerekir
+# tarayıcıda: http://localhost:8080
+```
+
+Kulaklıkla ve karanlıkta oynaman önerilir. Oyunda yanıp sönen ışıklar var; **Ayarlar → Yanıp sönmeyi azalt** ile kısılabilir.
+
+| Tuş | İşlev |
+| --- | --- |
+| Fare | Etrafa bak (önce ekrana tıkla) |
+| Sol tık / **E** | Al, oku, kaseti tak |
+| Klavye + **ENTER** | Beste soru sorduğunda cevabını yaz |
+| **F** | Televizyona odaklan / geri çekil |
+| **Boşluk** | Kaseti duraklat (Beste fark edebilir) |
+| **◀ Sol ok** (basılı tut) | Kaseti geri sar, gizli kareleri yakala |
+| **Esc** | Duraklatma menüsü |
+
+İlerleme tarayıcıda otomatik kaydedilir (localStorage).
+
+## Bölümler
+
+Her kaset 3–5 dakika sürer, cevaplarına göre değişen sahneler ve repliklerle doludur. Aradaki bulmacalarla birlikte bir oyun yaklaşık 20–30 dakika.
+
+1. **Beste ile Tanışalım!** Uyarı ekranı, jenerik, tanışma. Beste adını sorar ve aklında tutar. Ağaçtaki elmaları sayarsın, piknik sepetini doldurursun (ekranda masum yiyeceklerin yanında yerde bir *ip* de vardır), Çamlık Ormanı'na gidip saklambaç oynarsın. Ağaçların arasında bir an gri bir siluet belirir.
+2. **Tonton Kedi'nin Kaybolan Kuyruğu.** Renkler solmuş, sesler metalik. Beste'nin gülümsemesi sabit, gözleri imlecini takip ediyor. Kuyruğu ararsın, "Beste'nin Kuralları"nı ezberlersin. "Kurallara uymayanlara ne yapılır?" sorusundan sonra çizgi filmin içine gerçek bir insan eli uzanır.
+3. **Zamanın Sonu.** Kırmızı-siyah, pikselleşmiş bir kâbus. Beste ekrandan doğrudan sana konuşur, saati ve adını bilir, odandaki ışıklarla oynar. Kaset kilitlenir; çıkmak için üç kapının şifresini çözmen gerekir.
+
+Kasetlerin arasında tavan arasında bulmaca çözersin: mektup, gazete kupürü, şifreli metal kutu, Tonton peluşu.
+
+<details>
+<summary><b>Spoiler: çözümler, sonlar ve gizli kareler</b></summary>
+
+- Metal kutunun şifresi **1405**: ağaca kazınmış "B.A. 14.5.98" yazısı. Gazete 16 Mayıs tarihli ve kız "iki gündür" kayıp.
+- Üç kapı: ağacın hatırladığı tarih (**14.05.98**), Beste'nin yaşı (**7**, elmalar ve gazete), gerçek soyadı (**Aydın**, kutudaki okul kartı).
+- **Kötü son (Artık Dışarıda):** üç cevabı verip ÇIKIŞ yazarsın. Kaset çöker, ışıklar söner, kapı çalınır.
+- **Gizli son (Kaset Yakıldı):** 2. kasetin sonundaki tersten konuşmayı geri sararak dinlersen gerçek Beste seni uyarır: "Ona soyadımı söyleme. Sıkışırsan, kaseti geri sar." 3. kasette kapı sorularında **sol oku 3 saniye basılı tut**.
+- 7 gizli kare: ağaçlardaki adam, çalının altındaki ayakkabı, jenerikten sonraki "YARDIM ET", dolaptaki fotoğraf, ters mesaj, penceredeki yüz, karın içindeki yüz. Hepsi duraklatarak ya da geri sararak yakalanır.
+- Sepete ip koyarsan, ismini "Beste" yazarsan ya da 2. kasette duraklatırsan Beste farklı tepki verir.
+
+</details>
+
+## Teknik yapı
+
+Görsel ya da ses dosyası indirilmeden, her şey kodla üretilir:
+
+- **3D tavan arası:** Three.js. Prosedürel dokular (ahşap, lekeli duvar kâğıdı, kilim, karton), sallanan ampulden gölgeler, ay ışığı, toz, bloom ve film greni.
+- **Kasetler:** 640×480 Canvas 2D'de çizilen çizgi film; ekrana VHS shader'ı ile yansıtılır (kavis, renk kayması, tracking bandı, kar, satır titremesi, açılma/kapanma). TV'deki görüntünün rengi odaya ışık olarak vurur.
+- **Ses:** Web Audio. TV sesi gerçekten televizyonun konumundan gelir (HRTF), VHS zincirinden geçer (bant kayması, bozulma, bölüme göre metalik yankı). Müzik kutusu ve jenerik müziği gerçek zamanlı sentezlenir; 3. bölümde minöre döner ve yavaşlar. Kapı vuruşu ve son fısıltı arkandan gelir.
+- **Geri sarma:** Son ~10 saniyenin kareleri tamponda tutulur; sol ok bunları tersten oynatır.
+
+```
+index.html, style.css     arayüz
+src/main.js               oyun döngüsü, kontroller, oda bulmacaları, kayıt
+src/room.js               3D sahne, ışıklar, kamera
+src/tv.js                 TV ekranı ve VHS shader'ı
+src/director.js           kaset oynatıcı: replik, soru-cevap, duraklatma, geri sarma
+src/tapes/tape1-3.js      kaset senaryoları
+src/draw/                 Beste, Tonton Kedi ve sahnelerin çizimi
+src/data/lines.json       tüm replikler (oyun ve seslendirme aynı dosyayı kullanır)
+assets/audio/voice/       üretilmiş seslendirmeler (mp3)
+tools/gen_voices.py       seslendirme üreticisi
+```
+
+## Seslendirme
+
+107 replik, Türkçe Piper sesleriyle **çevrimdışı** üretildi (sherpa-onnx). Ardından WORLD vokoderiyle karaktere göre işlendi:
+
+| Stil | Nasıl |
+| --- | --- |
+| `beste` | perde ×1.5, formant ×1.16, abartılı tonlama (çizgi film kızı) |
+| `beste_cold` | aynı ses, tonlama düzleştirilmiş, yavaş (donuk gülümseme) |
+| `beste_deep` | perde ×0.5, formant ×0.86, hırıltı ("Yanlış cevap...") |
+| `beste_digital` | sabit perde + bir oktav alttan ikinci ses (3. bölüm) |
+| `beste_whisper` | tamamen fısıltı (son sahne) |
+| `beste_real` | nefesli, titrek (gerçek Beste, ters mesaj) |
+| `tonton`, `tonton_sad` | perde ×1.85, formant ×1.28, ağlarken titreme |
+| `narrator`, `narrator_slow` | 90'lar anlatıcısı ve yavaşlamış hali |
+
+Anlaşılırlık Whisper ile otomatik ölçüldü: stillerin ortalaması %85–100.
+
+Replik eklemek ya da değiştirmek için:
+
+```bash
+bash tools/fetch_models.sh                       # Türkçe Piper sesleri (CC0)
+python3 -m venv .venv && .venv/bin/pip install -r tools/requirements.txt
+# src/data/lines.json'u düzenle, sonra:
+.venv/bin/python tools/gen_voices.py             # sadece değişen replikleri üretir
+```
+
+Kullanılan sesler (`fettah`, `fahrettin`) CC0 lisanslıdır, oyun ticari olarak da dağıtılabilir. `dfki` sesi ticari olmayan lisanslı olduğu için bilerek kullanılmadı.
+
+## Gerçekçi karakterler
+
+Kasetlerdeki çizgi film tarzı bilerek 2D (Amanda'daki gibi). Odadaki "gerçek" dünya 3D, ışık ve gölgeler gerçek zamanlı. Kapı arkasındaki çocuk silueti gibi sahnelere gerçekçi insan modeli koymak istersen `.glb` model (Mixamo, Ready Player Me, Sketchfab CC0) `assets/models/` altına konup `src/room.js` içinde Three.js `GLTFLoader` ile yüklenebilir.

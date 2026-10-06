@@ -1,0 +1,727 @@
+// Beste'nin Sihirli Dünyası — giriş noktası.
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { AudioEngine, Ambience } from './audio.js';
+import { TVScreen } from './tv.js';
+import { Room } from './room.js';
+import { Director } from './director.js';
+import { UI, SECRETS } from './ui.js';
+import * as S from './draw/scenes.js';
+import { tape1 } from './tapes/tape1.js';
+import { tape2 } from './tapes/tape2.js';
+import { tape3 } from './tapes/tape3.js';
+import { storage, clamp } from './util.js';
+
+const $ = (id) => document.getElementById(id);
+const SAVE_KEY = 'beste-kayit-v1';
+const SETTINGS_KEY = 'beste-ayarlar-v1';
+const TAPES = { 1: tape1, 2: tape2, 3: tape3 };
+const TAPE_NAMES = { 1: "Kaset 1 — 'Beste ile Tanışalım!'", 2: "Kaset 2 — 'Tonton Kedi'nin Kuyruğu'", 3: "Kaset 3 — 'SON'" };
+
+const GrainShader = {
+  uniforms: { tDiffuse: { value: null }, time: { value: 0 }, amount: { value: 0.06 }, vignette: { value: 0.55 }, fade: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float time, amount, vignette, fade; varying vec2 vUv;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
+    void main(){
+      vec4 c = texture2D(tDiffuse, vUv);
+      float n = h(vUv * 1000.0 + fract(time) * 100.0) - 0.5;
+      c.rgb += n * amount * (0.4 + c.rgb);
+      float v = smoothstep(0.95, 0.3, length(vUv - 0.5));
+      c.rgb *= mix(1.0, v, vignette);
+      c.rgb *= 1.0 - fade;
+      gl_FragColor = c;
+    }`,
+};
+
+function defaultState() {
+  return { stage: 0, inv: null, name: '', boxOpen: false, tape2Taken: false, tape3Taken: false, flags: { pauses: 0 }, clues: {}, secrets: [], ending: null, endings: [] };
+}
+
+class Game {
+  constructor() {
+    this.canvas = $('view');
+    this.ui = new UI(this);
+    this.audio = new AudioEngine();
+    this.tv = new TVScreen();
+    this.settings = { volume: 0.9, sens: 1, subs: true, flash: false, quality: 'high', ...storage.get(SETTINGS_KEY, {}) };
+    this.state = { ...defaultState(), ...storage.get(SAVE_KEY, {}) };
+    this.mode = 'title';
+    this.overlay = null;
+    this.clock = 0;
+    this.input = { rewindHeld: false };
+    this.ndc = new THREE.Vector2(0, 0);
+    this.free = false;
+    this.isTouch = matchMedia('(pointer: coarse)').matches;
+    this.anyKeyWaiters = [];
+    window.__game = this;
+  }
+
+  async boot() {
+    this.lines = await (await fetch('src/data/lines.json')).json();
+    this.audio.init();
+    this.setupRenderer();
+    this.room = new Room(this);
+    this.director = new Director(this);
+    this.room.applyStage(this.state);
+    this.ambience = new Ambience(this.audio);
+    this.audio.setTvPosition(this.room.points.tv.x, this.room.points.tv.y, this.room.points.tv.z);
+    this.applySettings();
+    this.bindUI();
+    this.bindInput();
+    this.onResize();
+    this.tv.p.power = 1;
+    // fontlar yüklenmeden tuval yazıları yanlış görünür
+    try {
+      await Promise.race([
+        Promise.all([`800 30px "Baloo 2"`, `30px "VT323"`, `700 30px "Caveat"`].map((f) => document.fonts.load(f))),
+        new Promise((r) => setTimeout(r, 2500)),
+      ]);
+    } catch {
+      /* fontsuz devam */
+    }
+    this.last = performance.now();
+    requestAnimationFrame((t) => this.frame(t));
+    await this.audio.loadVoices((p) => ($('load-pct').textContent = Math.round(p * 100) + '%'));
+    this.show('loading', false);
+    this.refreshTitle();
+  }
+
+  setupRenderer() {
+    const r = (this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: 'high-performance' }));
+    r.outputColorSpace = THREE.SRGBColorSpace;
+    r.toneMapping = THREE.ACESFilmicToneMapping;
+    r.toneMappingExposure = 1.15;
+    r.shadowMap.enabled = true;
+    r.shadowMap.type = THREE.PCFSoftShadowMap;
+  }
+
+  setupComposer() {
+    const r = this.renderer;
+    this.composer?.dispose?.();
+    const c = (this.composer = new EffectComposer(r));
+    c.addPass(new RenderPass(this.room.scene, this.room.camera));
+    if (this.settings.quality === 'high') {
+      this.bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), 0.5, 0.55, 0.75);
+      c.addPass(this.bloom);
+    }
+    this.grain = new ShaderPass(GrainShader);
+    c.addPass(this.grain);
+    c.addPass(new OutputPass());
+  }
+
+  applySettings() {
+    const s = this.settings;
+    this.audio.setVolume(s.volume);
+    const low = s.quality === 'low';
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, low ? 1 : 2) * (low ? 0.75 : 1));
+    this.renderer.shadowMap.enabled = !low;
+    this.room.scene.traverse((o) => o.material && (o.material.needsUpdate = true));
+    this.setupComposer();
+    this.onResize();
+    $('set-volume').value = s.volume;
+    $('set-sens').value = s.sens;
+    $('set-subs').checked = s.subs;
+    $('set-flash').checked = s.flash;
+    $('set-quality').value = s.quality;
+    storage.set(SETTINGS_KEY, s);
+  }
+
+  onResize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    this.renderer.setSize(w, h, false);
+    this.composer?.setSize(w, h);
+    this.room.camera.aspect = w / h;
+    // dar ekranda televizyon kadrajdan çıkmasın
+    this.room.camera.fov = w / h < 1 ? 80 : 62;
+    this.room.camera.updateProjectionMatrix();
+  }
+
+  save() {
+    storage.set(SAVE_KEY, this.state);
+  }
+
+  show(id, on = true) {
+    $(id).hidden = !on;
+  }
+
+  // ===================================================================== menüler
+  refreshTitle() {
+    const has = this.state.stage > 0 || this.state.inv || this.state.name;
+    this.show('btn-continue', !!has && !this.state.ending);
+    (has && !this.state.ending ? $('btn-continue') : $('btn-new')).focus({ preventScroll: true });
+  }
+
+  bindUI() {
+    $('btn-new').onclick = () => {
+      if (this.state.stage > 0 || this.state.name) this.show('confirm-new', true);
+      else this.newGame();
+    };
+    $('btn-new-yes').onclick = () => this.newGame();
+    $('btn-new-no').onclick = () => this.show('confirm-new', false);
+    $('btn-continue').onclick = () => this.enterGame();
+    $('btn-controls').onclick = () => this.panel('controls');
+    $('btn-settings').onclick = () => this.panel('settings');
+    $('btn-pause-controls').onclick = () => this.panel('controls');
+    $('btn-pause-settings').onclick = () => this.panel('settings');
+    $('btn-resume').onclick = () => this.resume();
+    $('btn-quit').onclick = () => this.quitToTitle();
+    $('btn-ending-menu').onclick = () => this.quitToTitle();
+    document.querySelectorAll('[data-back]').forEach((b) => (b.onclick = () => this.panelBack()));
+    $('set-volume').oninput = (e) => {
+      this.settings.volume = +e.target.value;
+      this.audio.setVolume(this.settings.volume);
+      storage.set(SETTINGS_KEY, this.settings);
+    };
+    $('set-sens').oninput = (e) => {
+      this.settings.sens = +e.target.value;
+      storage.set(SETTINGS_KEY, this.settings);
+    };
+    $('set-subs').onchange = (e) => {
+      this.settings.subs = e.target.checked;
+      storage.set(SETTINGS_KEY, this.settings);
+    };
+    $('set-flash').onchange = (e) => {
+      this.settings.flash = e.target.checked;
+      storage.set(SETTINGS_KEY, this.settings);
+    };
+    $('set-quality').onchange = (e) => {
+      this.settings.quality = e.target.value;
+      this.applySettings();
+    };
+    $('reader').onclick = () => this.ui.closeReader?.();
+    document.querySelectorAll('.keypad-grid button').forEach((b) => (b.onclick = () => this.ui.keypadKey?.(b.dataset.k || b.textContent)));
+    $('mobile-type').onclick = () => $('answer').focus();
+    $('answer').addEventListener('input', (e) => this.director.typed(e.target.value));
+  }
+
+  panel(id) {
+    this.panelReturn = this.mode === 'paused' ? 'pause' : 'title';
+    this.show('title', false);
+    this.show('pause', false);
+    this.show(id, true);
+    this.openPanel = id;
+    $(id).querySelector('button, input')?.focus({ preventScroll: true });
+  }
+
+  panelBack() {
+    this.show(this.openPanel, false);
+    this.openPanel = null;
+    this.show(this.panelReturn, true);
+  }
+
+  newGame() {
+    this.state = defaultState();
+    this.save();
+    this.show('confirm-new', false);
+    this.room.applyStage(this.state);
+    this.resetRoom();
+    this.enterGame();
+  }
+
+  resetRoom() {
+    const r = this.room;
+    r.locked = false;
+    r.focusTarget = 0;
+    r.focus = 0;
+    r.yaw = 0;
+    r.pitch = -0.06;
+    r.doorPivot.rotation.y = 0;
+    r.showGirl(false);
+    r.setFlicker(false);
+    r.setMood('calm');
+    r.bulbBase = 1;
+    r.sky.material.map = r.skyNight;
+    r.sky.material.needsUpdate = true;
+    r.moon.color.set(0x7f95d6);
+    r.moon.intensity = 0.5;
+    r.hemi.intensity = 0.35;
+    r.corridorLight.intensity = 0;
+    r.gapLevel = 0;
+    r.spill.intensity = 0;
+    r.vcrText = '12:00';
+    this.tv.p.power = 1;
+    this.fade(0);
+  }
+
+  enterGame() {
+    this.audio.resume();
+    this.mode = 'play';
+    this.show('title', false);
+    this.show('ending', false);
+    this.show('hud', true);
+    this.ui.inventory(this.state.inv ? TAPE_NAMES[this.state.inv] : null);
+    this.updateObjective();
+    this.ui.toast('Etrafa bakmak için ekrana tıkla.', 4);
+    this.lockPointer();
+  }
+
+  pause() {
+    if (this.mode !== 'play') return;
+    this.mode = 'paused';
+    this.audio.ctx?.suspend();
+    $('pause-objective').textContent = 'Hedef: ' + this.objectiveText();
+    $('pause-secrets').textContent = `Gizli kareler: ${this.state.secrets.length} / ${Object.keys(SECRETS).length}`;
+    this.show('pause', true);
+    $('btn-resume').focus({ preventScroll: true });
+  }
+
+  resume() {
+    this.show('pause', false);
+    this.mode = 'play';
+    this.audio.resume();
+    this.lockPointer();
+  }
+
+  quitToTitle() {
+    this.director.abort();
+    if (this.state.inv == null && this.playingTape) this.state.inv = this.playingTape;
+    this.playingTape = null;
+    this.save();
+    this.show('pause', false);
+    this.show('ending', false);
+    this.show('hud', false);
+    this.show('title', true);
+    this.mode = 'title';
+    this.audio.resume();
+    if (this.state.ending) {
+      this.state = defaultState();
+      this.save();
+      this.room.applyStage(this.state);
+    }
+    this.resetRoom();
+    this.refreshTitle();
+  }
+
+  // ===================================================================== giriş
+  lockPointer() {
+    if (this.isTouch) {
+      this.free = true;
+      $('crosshair').classList.add('free');
+      return;
+    }
+    try {
+      const p = this.canvas.requestPointerLock?.();
+      p?.catch?.(() => this.setFree(true));
+    } catch {
+      this.setFree(true);
+    }
+  }
+
+  setFree(on) {
+    this.free = on;
+    $('crosshair').classList.toggle('free', on);
+  }
+
+  bindInput() {
+    window.addEventListener('resize', () => this.onResize());
+    document.addEventListener('pointerlockchange', () => {
+      const locked = document.pointerLockElement === this.canvas;
+      if (locked) this.setFree(false);
+      else if (this.mode === 'play' && !this.overlay && !this.expectUnlock) this.pause();
+      this.expectUnlock = false;
+    });
+    document.addEventListener('pointerlockerror', () => this.setFree(true));
+
+    let down = null;
+    this.canvas.addEventListener('pointerdown', (e) => {
+      if (this.mode !== 'play' || this.overlay) return;
+      down = { x: e.clientX, y: e.clientY, moved: 0 };
+      if (!this.free && document.pointerLockElement !== this.canvas) {
+        this.lockPointer();
+        down = null;
+      }
+    });
+    window.addEventListener('pointermove', (e) => {
+      if (this.mode !== 'play' || this.overlay) return;
+      const k = 0.0022 * this.settings.sens;
+      if (document.pointerLockElement === this.canvas) {
+        this.room.look(e.movementX * k, e.movementY * k);
+      } else if (this.free) {
+        this.ndc.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+        if (down) {
+          const dx = e.clientX - down.x, dy = e.clientY - down.y;
+          down.moved += Math.abs(dx) + Math.abs(dy);
+          this.room.look(dx * k * 1.4, dy * k * 1.4);
+          down.x = e.clientX;
+          down.y = e.clientY;
+        }
+      }
+    });
+    window.addEventListener('pointerup', () => {
+      if (down && down.moved < 6 && this.mode === 'play' && !this.overlay) this.interact(this.room.hover);
+      down = null;
+    });
+    this.canvas.addEventListener('click', () => {
+      if (document.pointerLockElement === this.canvas && this.mode === 'play' && !this.overlay) this.interact(this.room.hover);
+    });
+
+    window.addEventListener('keydown', (e) => this.onKey(e));
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowLeft') {
+        this.input.rewindHeld = false;
+        this.director.stopRewind();
+      }
+    });
+  }
+
+  onKey(e) {
+    const k = e.key;
+    if (this.anyKeyWaiters.length && this.mode === 'play') {
+      const w = this.anyKeyWaiters;
+      this.anyKeyWaiters = [];
+      w.forEach((r) => r());
+      e.preventDefault();
+      return;
+    }
+    if (this.overlay === 'reader') {
+      if (k === 'Escape' || k === 'e' || k === 'E' || k === 'Enter' || k === ' ') {
+        e.preventDefault();
+        this.ui.closeReader?.();
+        this.lockPointer();
+      }
+      return;
+    }
+    if (this.overlay === 'keypad') {
+      e.preventDefault();
+      if (/^\d$/.test(k)) this.ui.keypadKey?.(k);
+      else if (k === 'Backspace' || k === 'Delete') this.ui.keypadKey?.('clear');
+      else if (k === 'Escape') {
+        this.ui.keypadKey?.('close');
+        this.lockPointer();
+      }
+      return;
+    }
+    if (this.mode === 'paused' && k === 'Escape') {
+      e.preventDefault();
+      if (this.openPanel) this.panelBack();
+      else this.resume();
+      return;
+    }
+    if (this.mode !== 'play') return;
+
+    if (k === 'ArrowLeft') {
+      e.preventDefault();
+      if (!e.repeat) {
+        this.input.rewindHeld = true;
+        this.director.startRewind();
+      }
+      return;
+    }
+    const d = this.director;
+    if (d.input) {
+      const a = $('answer');
+      if (k === 'Enter') {
+        e.preventDefault();
+        d.typed(a.value);
+        d.submit();
+        return;
+      }
+      if (k === 'Escape') {
+        this.pause();
+        return;
+      }
+      if (document.activeElement !== a) a.focus({ preventScroll: true });
+      return;
+    }
+    if (k === 'Escape') {
+      this.pause();
+      return;
+    }
+    if (k === ' ') {
+      e.preventDefault();
+      if (d.togglePause() && d.paused) this.state.flags.pauses++;
+      return;
+    }
+    if (k === 'e' || k === 'E') this.interact(this.room.hover);
+    if (k === 'f' || k === 'F') this.room.setFocus(this.room.focusTarget < 0.5);
+  }
+
+  waitAnyKey(sec) {
+    return new Promise((resolve) => {
+      this.anyKeyWaiters.push(resolve);
+      setTimeout(resolve, sec * 1000);
+    });
+  }
+
+  // ===================================================================== oda etkileşimleri
+  label(id) {
+    const st = this.state;
+    const playing = this.director.active;
+    switch (id) {
+      case 'tapebox':
+        return st.stage === 0 && !st.inv && !this.playingTape ? 'Kaseti al' : 'Eski kaset kutuları';
+      case 'vcr':
+        return st.inv && !playing ? '<b>Kaseti tak</b>' : playing ? 'Kaseti çıkar' : 'Video oynatıcı';
+      case 'tv':
+        return this.room.focusTarget > 0.5 ? 'Geri çekil [F]' : 'Televizyona odaklan [F]';
+      case 'letter':
+        return 'Mektubu oku';
+      case 'newspaper':
+        return 'Gazete kupürünü oku';
+      case 'metalbox':
+        return !st.boxOpen ? 'Kilitli kutu' : !st.tape2Taken ? 'Kaseti al' : 'Okul kartına bak';
+      case 'plush':
+        return st.stage >= 2 && !st.tape3Taken ? '<b>Peluşa bak</b>' : 'Tonton peluşu';
+      case 'door':
+        return 'Kapı';
+      case 'window':
+        return 'Pencere';
+      case 'bulb':
+        return 'Ampul';
+      default:
+        return '';
+    }
+  }
+
+  async interact(id) {
+    if (!id || this.overlay || this.room.locked) return;
+    const st = this.state;
+    const ui = this.ui;
+    const au = this.audio;
+    switch (id) {
+      case 'tapebox':
+        if (st.stage === 0 && !st.inv && !this.playingTape) {
+          st.inv = 1;
+          au.sfx('pickup');
+          ui.inventory(TAPE_NAMES[1]);
+          ui.toast("Kutunun en üstünde etiketli bir kaset var: 'Beste 1 — Tanışalım'.");
+          this.room.applyStage(st);
+        } else ui.toast('Kutuda yalnızca boş kaset kapları var. Etiketlerin hepsi kazınmış.');
+        break;
+      case 'tv':
+        this.room.setFocus(this.room.focusTarget < 0.5);
+        break;
+      case 'vcr':
+        if (this.director.active) {
+          if (this.director.tryEject()) {
+            this.director.abort();
+            au.sfx('vcrEject', this.room.points.vcr);
+            st.inv = this.playingTape;
+            this.playingTape = null;
+            ui.inventory(TAPE_NAMES[st.inv]);
+            ui.toast('Kaseti çıkardın. Tekrar takarsan baştan başlar.');
+          } else {
+            au.sfx('vcrStuck', this.room.points.vcr);
+            ui.toast('EJECT tuşu tepki vermiyor.');
+          }
+        } else if (st.inv) this.playTape(st.inv);
+        else ui.toast('Eski bir video oynatıcı. Ekranında 12:00 yanıp sönüyor.');
+        break;
+      case 'letter':
+        await this.readDoc('letter');
+        break;
+      case 'newspaper':
+        await this.readDoc('news');
+        break;
+      case 'metalbox':
+        if (st.stage < 1 && !st.boxOpen) {
+          ui.toast('Kilitli bir metal kutu. Tuş takımının ekranı kapalı, sanki pili bitmiş.');
+        } else if (!st.boxOpen) {
+          this.releasePointer();
+          const ok = await ui.keypad((code) => code === '1405');
+          if (ok) {
+            st.boxOpen = true;
+            au.sfx('boxOpen', this.room.points.metalbox);
+            this.room.applyStage(st);
+            this.save();
+            ui.toast('Kutu açıldı. İçinde bir kaset ve küçük bir kart var.');
+            this.updateObjective();
+          }
+          this.lockPointer();
+        } else if (!st.tape2Taken) {
+          st.tape2Taken = true;
+          st.inv = 2;
+          au.sfx('pickup');
+          ui.inventory(TAPE_NAMES[2]);
+          this.room.applyStage(st);
+          this.save();
+          await this.readDoc('card');
+          this.updateObjective();
+        } else await this.readDoc('card');
+        break;
+      case 'plush':
+        if (st.stage >= 2 && !st.tape3Taken) {
+          st.tape3Taken = true;
+          st.inv = 3;
+          au.sfx('pickup');
+          ui.inventory(TAPE_NAMES[3]);
+          this.room.applyStage(st);
+          this.save();
+          ui.toast('Peluşun karnı yırtılmış. İçinden üçüncü kaset düştü. Etiketinde tek kelime var: SON.', 6);
+          this.updateObjective();
+        } else if (st.stage >= 2) ui.toast('Tonton peluşu. Kuyruğu yok. Kesik yerinden pamuk taşıyor.');
+        else ui.toast("Eski bir Tonton Kedi peluşu. Etiketinde 'Yıldız Çocuk Yapım 1998' yazıyor. Bir gözü kopmuş.", 5);
+        break;
+      case 'door':
+        ui.toast(st.stage >= 2 ? 'Kapı açılmıyor. Öbür taraftan biri nefes alıyor gibi.' : 'Kapı sıkışmış. Kolu çevirince öbür taraftan biri tutuyormuş gibi geliyor.');
+        break;
+      case 'window':
+        ui.toast(st.stage >= 2 ? 'Camda küçük el izleri var. İçeride değil, dışarıda.' : 'Dışarısı zifiri karanlık. Sokak lambaları bile yanmıyor.');
+        break;
+      case 'bulb':
+        ui.toast('Çıplak bir ampul. Hafifçe vızıldıyor.');
+        break;
+    }
+    this.updateObjective(true);
+  }
+
+  releasePointer() {
+    if (document.pointerLockElement) {
+      this.expectUnlock = true;
+      document.exitPointerLock();
+    }
+  }
+
+  async readDoc(key) {
+    this.audio.sfx('paper');
+    this.releasePointer();
+    await this.ui.read(key);
+    this.audio.sfx('paper');
+    this.lockPointer();
+  }
+
+  objectiveText() {
+    const st = this.state;
+    if (this.playingTape) return 'Kaseti izle. Beste soru sorarsa klavyeden cevap ver.';
+    if (st.inv) return 'Kaseti televizyonun altındaki video oynatıcıya tak.';
+    if (st.stage === 0) return 'Karton kutudaki kaseti bul.';
+    if (st.stage === 1 && !st.boxOpen) return 'Sehpadaki kilitli kutunun 4 haneli şifresini bul.';
+    if (st.stage === 1) return 'Kilitli kutudaki kaseti al.';
+    if (st.stage === 2 && !st.tape3Taken) return 'Arkandan gelen sesin kaynağına bak.';
+    return 'Buradan çık.';
+  }
+
+  updateObjective(quiet) {
+    const t = this.objectiveText();
+    if (quiet && t === this.lastObjective) return;
+    this.lastObjective = t;
+    this.ui.objective(t);
+  }
+
+  async playTape(n) {
+    const st = this.state;
+    st.inv = null;
+    this.playingTape = n;
+    this.ui.inventory(null);
+    this.audio.sfx('vcrInsert', this.room.points.vcr);
+    this.room.vcrText = 'LOAD';
+    this.room.setFocus(true);
+    this.updateObjective();
+    await sleep(1300);
+    this.room.vcrText = 'PLAY';
+    this.audio.sfx('tvOn');
+    this.ui.show('vcr-hint', true);
+    const res = await this.director.play(TAPES[n], 't' + n);
+    this.ui.show('vcr-hint', false);
+    this.audio.setHiss(false);
+    this.audio.setTapeFx('off', 0.5);
+    this.room.vcrText = '12:00';
+    if (res !== 'done' || this.mode === 'title') return;
+    this.playingTape = null;
+    this.onTapeDone(n);
+  }
+
+  async onTapeDone(n) {
+    const st = this.state;
+    const r = this.room;
+    st.stage = Math.max(st.stage, n);
+    this.save();
+    if (n < 3) {
+      this.audio.sfx('vcrEject', r.points.vcr);
+      this.ui.toast('Kaset bitti ve kendiliğinden dışarı çıktı.');
+    }
+    r.setFocus(false);
+    if (n === 1) {
+      await sleep(2500);
+      this.audio.sfx('boxClick', r.points.metalbox);
+      r.applyStage(st);
+      this.ui.toast("Sehpadaki kilitli kutudan bir 'tık' sesi geldi. Tuş takımının ışığı yandı.", 5);
+    } else if (n === 2) {
+      await sleep(2500);
+      r.applyStage(st);
+      this.audio.sfx('thud', new THREE.Vector3(-0.45, 0.2, 2.05));
+      this.ui.toast('Arkanda bir şey yere düştü.', 4);
+    } else if (n === 3) {
+      st.endings = [...new Set([...(st.endings || []), st.ending])];
+      this.save();
+      this.fade(1);
+      await sleep(2200);
+      this.releasePointer();
+      this.mode = 'ending';
+      this.ui.ending(st.ending, st.secrets);
+      this.fade(0);
+      $('btn-ending-menu').focus({ preventScroll: true });
+      return;
+    }
+    this.updateObjective();
+  }
+
+  foundSecret(id, text) {
+    if (!SECRETS[id] || this.state.secrets.includes(id)) return;
+    this.state.secrets.push(id);
+    this.save();
+    this.ui.secret(`GİZLİ KARE ${this.state.secrets.length}/${Object.keys(SECRETS).length} · ${SECRETS[id]}`);
+  }
+
+  fade(v) {
+    $('fade').classList.toggle('on', v > 0.5);
+  }
+
+  // ===================================================================== döngü
+  frame(now) {
+    const dt = Math.min(0.05, (now - this.last) / 1000);
+    this.last = now;
+    if (this.mode !== 'paused') this.update(dt);
+    this.composer.render();
+    requestAnimationFrame((t) => this.frame(t));
+  }
+
+  update(dt) {
+    this.clock += dt;
+    const r = this.room;
+    if (this.mode === 'title') {
+      // menüde kamera yavaşça süzülür
+      r.yaw = Math.sin(this.clock * 0.08) * 0.35;
+      r.pitch = -0.05 + Math.sin(this.clock * 0.11) * 0.04;
+    }
+    const ndc = this.free && this.mode === 'play' ? this.ndc : new THREE.Vector2(0, 0);
+    r.update(dt, ndc);
+    this.gazeOnTv = r.gaze;
+    // televizyona odaklanınca ekranın ortasına yazı basma
+    const tvFocus = r.hover === 'tv' && r.focusTarget > 0.5;
+    if (this.mode === 'play' && !this.overlay && !tvFocus && !r.locked) this.ui.hover(this.label(r.hover));
+    else this.ui.hover('');
+
+    if (!this.director.update(dt * (this.debug?.speed || 1))) this.drawIdleTv();
+    this.tv.update(dt, this.clock);
+    this.ambience.update(this.clock, r.bulbLevel);
+    const l = r.listener();
+    this.audio.setListener(l.pos, l.fwd, l.up);
+    this.grain.uniforms.time.value = this.clock;
+    // titreme efektini azalt ayarı
+    if (this.settings.flash) r.burst = Math.min(r.burst, 0.05);
+  }
+
+  drawIdleTv() {
+    const c = this.tv.ctx;
+    if (this.mode === 'title') {
+      S.titleCard(c, this.clock * 0.6, { decay: 0.15 });
+      return;
+    }
+    S.blueScreen(c, this.clock, { text: 'VİDEO 1', sub: this.state.inv ? 'KASET BEKLENİYOR' : '', clock: true });
+  }
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const game = new Game();
+game.boot().catch((e) => {
+  console.error(e);
+  const l = document.getElementById('loading');
+  if (l) l.textContent = 'Oyun başlatılamadı: ' + e.message;
+});

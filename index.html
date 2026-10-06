@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beste'nin Sihirli Dünyası</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect x=%221%22 y=%224%22 width=%2214%22 height=%229%22 rx=%221%22 fill=%22%23111%22/%3E%3Ccircle cx=%225%22 cy=%228.5%22 r=%222%22 fill=%22%23ffd23f%22/%3E%3Ccircle cx=%2211%22 cy=%228.5%22 r=%222%22 fill=%22%23ffd23f%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Baloo+2:wght@600;800&family=Special+Elite&family=Caveat:wght@500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<div id="game">
+  <canvas id="view" tabindex="-1" aria-label="Oyun ekranı"></canvas>
+
+  <div id="hud" hidden>
+    <div id="crosshair"></div>
+    <div id="hover-label"></div>
+    <div id="objective"></div>
+    <div id="inventory" hidden><div class="tape-icon"></div><span id="inventory-label"></span></div>
+    <div id="toast"></div>
+    <div id="secret-toast"></div>
+    <div id="subtitles" aria-live="polite"></div>
+    <div id="type-hint" hidden>Klavyeden yaz · <b>ENTER</b> ile gönder</div>
+    <div id="vcr-hint" hidden><b>BOŞLUK</b> duraklat · <b>◀ SOL OK</b> basılı tut: geri sar · <b>F</b> odak</div>
+    <button id="mobile-type" type="button" hidden>⌨ Yaz</button>
+  </div>
+
+  <input id="answer" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="24" aria-label="Cevabın">
+
+  <section id="title" class="screen">
+    <div class="title-inner">
+      <p class="vhs-label">VHS · SP · 1998</p>
+      <h1>Beste'nin<br>Sihirli Dünyası</h1>
+      <p class="tagline">Yıldız Çocuk Yapım sunar</p>
+      <nav class="menu" aria-label="Ana menü">
+        <button id="btn-continue" type="button" hidden>▶ DEVAM ET</button>
+        <button id="btn-new" type="button">▶ YENİ OYUN</button>
+        <button id="btn-controls" type="button">KONTROLLER</button>
+        <button id="btn-settings" type="button">AYARLAR</button>
+      </nav>
+      <p id="confirm-new" class="confirm" hidden>Kayıtlı oyun silinecek. <button id="btn-new-yes" type="button">Evet, baştan başla</button> <button id="btn-new-no" type="button">Vazgeç</button></p>
+      <p class="warn">Bu oyun korku öğeleri, ani sesler ve yanıp sönen ışıklar içerir. Kulaklıkla, karanlıkta oynayın.</p>
+      <p id="loading" class="loading">Kasetler sarılıyor… <span id="load-pct">0%</span></p>
+    </div>
+  </section>
+
+  <section id="controls" class="screen panel" hidden>
+    <div class="panel-inner">
+      <h2>KONTROLLER</h2>
+      <dl class="keys">
+        <dt>Fare</dt><dd>Etrafa bak (önce ekrana tıkla)</dd>
+        <dt>Sol tık / E</dt><dd>Etkileşim: al, oku, kaseti tak</dd>
+        <dt>Klavye</dt><dd>Beste soru sorduğunda cevabını yaz, <b>ENTER</b>'a bas</dd>
+        <dt>F</dt><dd>Televizyona odaklan / geri çekil</dd>
+        <dt>Boşluk</dt><dd>Kaseti duraklat (Beste fark edebilir)</dd>
+        <dt>Sol ok (basılı)</dt><dd>Kaseti geri sar. Gizli kareleri yakala</dd>
+        <dt>Esc</dt><dd>Duraklatma menüsü</dd>
+      </dl>
+      <button class="back" type="button" data-back>◀ GERİ</button>
+    </div>
+  </section>
+
+  <section id="settings" class="screen panel" hidden>
+    <div class="panel-inner">
+      <h2>AYARLAR</h2>
+      <label class="row"><span>Ana ses</span><input id="set-volume" type="range" min="0" max="1" step="0.05" value="0.9"></label>
+      <label class="row"><span>Fare hassasiyeti</span><input id="set-sens" type="range" min="0.3" max="2" step="0.1" value="1"></label>
+      <label class="row"><span>Altyazılar</span><input id="set-subs" type="checkbox" checked></label>
+      <label class="row"><span>Yanıp sönmeyi azalt</span><input id="set-flash" type="checkbox"></label>
+      <label class="row"><span>Grafik kalitesi</span>
+        <select id="set-quality"><option value="high">Yüksek</option><option value="low">Düşük</option></select>
+      </label>
+      <button class="back" type="button" data-back>◀ GERİ</button>
+    </div>
+  </section>
+
+  <section id="pause" class="screen panel" hidden>
+    <div class="panel-inner">
+      <h2>❚❚ DURAKLATILDI</h2>
+      <p id="pause-objective" class="objective-line"></p>
+      <p id="pause-secrets" class="objective-line"></p>
+      <nav class="menu">
+        <button id="btn-resume" type="button">▶ DEVAM</button>
+        <button id="btn-pause-settings" type="button">AYARLAR</button>
+        <button id="btn-pause-controls" type="button">KONTROLLER</button>
+        <button id="btn-quit" type="button">ANA MENÜ</button>
+      </nav>
+    </div>
+  </section>
+
+  <section id="reader" class="screen" hidden>
+    <article id="reader-doc"></article>
+    <p class="reader-close">Kapatmak için tıkla ya da <b>E</b> / <b>Esc</b></p>
+  </section>
+
+  <section id="keypad" class="screen" hidden>
+    <div class="keypad-box">
+      <p class="keypad-title">KİLİTLİ KUTU</p>
+      <div id="keypad-display">----</div>
+      <div class="keypad-grid">
+        <button type="button">1</button><button type="button">2</button><button type="button">3</button>
+        <button type="button">4</button><button type="button">5</button><button type="button">6</button>
+        <button type="button">7</button><button type="button">8</button><button type="button">9</button>
+        <button type="button" data-k="clear">C</button><button type="button">0</button><button type="button" data-k="close">✕</button>
+      </div>
+      <p class="keypad-help">Rakamları klavyeden de girebilirsin · Esc: kapat</p>
+    </div>
+  </section>
+
+  <section id="ending" class="screen" hidden>
+    <div class="ending-inner">
+      <p id="ending-kind"></p>
+      <h2 id="ending-title"></h2>
+      <p id="ending-text"></p>
+      <p id="ending-secrets"></p>
+      <div class="credits">
+        <p>BESTE'NİN SİHİRLİ DÜNYASI</p>
+        <p>Senaryo, oyun ve ses tasarımı: bu kaseti oynatan herkes</p>
+        <p>Yıldız Çocuk Yapım, 1998 · Kayıp kaset arşivi</p>
+      </div>
+      <button id="btn-ending-menu" type="button">ANA MENÜ</button>
+    </div>
+  </section>
+
+  <div id="fade"></div>
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

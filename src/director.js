@@ -1,0 +1,496 @@
+// Kaset oynatıcı: bant saati, replikler, klavyeyle cevaplar, duraklatma ve geri sarma.
+import { AbortTape, Tweens, clamp, rand, timeString } from './util.js';
+import { TV_W as W, TV_H as H, SCREEN_DEFAULT } from './tv.js';
+import * as S from './draw/scenes.js';
+import { drawBeste, drawTonton } from './draw/characters.js';
+
+const WHO = {
+  beste: { label: 'BESTE', cls: '' },
+  beste_cold: { label: 'BESTE', cls: '' },
+  beste_deep: { label: 'BESTE', cls: 'bilinmeyen' },
+  beste_digital: { label: 'BESTE', cls: 'bilinmeyen' },
+  beste_whisper: { label: 'BESTE', cls: 'bilinmeyen' },
+  beste_real: { label: '???', cls: 'bilinmeyen' },
+  tonton: { label: 'TONTON', cls: 'tonton' },
+  tonton_sad: { label: 'TONTON', cls: 'tonton' },
+  narrator: { label: 'ANLATICI', cls: 'anlatici' },
+  narrator_slow: { label: 'ANLATICI', cls: 'anlatici' },
+};
+
+function newChar(x, y, scale) {
+  return { x, y, scale, mouth: 0, look: { x: 0, y: 0 }, lookTarget: null, blink: 0, expr: 'happy', wave: 0, tilt: 0, nextBlink: 2, blinkT: -1, frozenMouth: false };
+}
+
+export class Director {
+  constructor(game) {
+    this.g = game;
+    this.audio = game.audio;
+    this.tv = game.tv;
+    this.lines = game.lines;
+    this.active = false;
+    this.reset();
+  }
+
+  reset() {
+    this.time = 0;
+    this.paused = false;
+    this.rewinding = false;
+    this.rw = null;
+    this.aborted = false;
+    this.tweens = new Tweens();
+    this.waiters = [];
+    this.rejects = new Set();
+    this.sceneFn = null;
+    this.sceneT0 = 0;
+    this.meta = null;
+    this.input = null;
+    this.voice = null;
+    this.speaker = null;
+    this.osdLabel = '';
+    this.osdUntil = 0;
+    this.eyeMode = 'viewer';
+    this.pauseCount = 0;
+    this.onResume = null;
+    this.onRewindHold = null;
+    this.ejectPolicy = 'allow';
+    this.baseFx = { ...SCREEN_DEFAULT };
+    this.chars = {
+      beste: newChar(320, 450, 1),
+      tonton: newChar(470, 450, 0.9),
+    };
+    this.chars.tonton.tail = true;
+  }
+
+  // ---------------------------------------------------------------- yaşam döngüsü
+  async play(tapeFn, tapeId) {
+    this.reset();
+    this.active = true;
+    this.tapeId = tapeId;
+    this.tv.clearBuffer();
+    this.showOsd('▶ OYNAT', 3);
+    try {
+      await tapeFn(this);
+      this.active = false;
+      return 'done';
+    } catch (e) {
+      if (e instanceof AbortTape) return 'aborted';
+      console.error(e);
+      this.active = false;
+      return 'error';
+    } finally {
+      this.cleanup();
+    }
+  }
+
+  abort() {
+    if (!this.active) return;
+    this.aborted = true;
+    for (const rej of this.rejects) rej(new AbortTape());
+    this.rejects.clear();
+  }
+
+  cleanup() {
+    this.active = false;
+    this.audio.stopVoices();
+    this.audio.music?.stop(0.3);
+    this.rw?.stopSfx?.();
+    this.rw = null;
+    this.rewinding = false;
+    this.paused = false;
+    this.endTyping();
+    this.g.ui.subtitle(null);
+  }
+
+  check() {
+    if (this.aborted) throw new AbortTape();
+  }
+
+  race(p) {
+    this.check();
+    return new Promise((resolve, reject) => {
+      this.rejects.add(reject);
+      p.then(
+        (v) => {
+          this.rejects.delete(reject);
+          resolve(v);
+        },
+        (e) => {
+          this.rejects.delete(reject);
+          reject(e);
+        },
+      );
+    });
+  }
+
+  // ---------------------------------------------------------------- güncelleme
+  update(dt) {
+    if (!this.active) return false;
+    if (this.rewinding) {
+      this.updateRewind(dt);
+      return true;
+    }
+    if (!this.paused) {
+      this.time += dt;
+      this.tweens.update(dt);
+      this.resolveWaiters();
+      this.updateChars(dt);
+      this.updateIdle();
+    }
+    this.drawFrame();
+    if (!this.paused) this.tv.record(dt, this.meta);
+    return true;
+  }
+
+  resolveWaiters() {
+    const done = this.waiters.filter((w) => this.time >= w.until);
+    if (!done.length) return;
+    this.waiters = this.waiters.filter((w) => this.time < w.until);
+    done.forEach((w) => w.resolve());
+  }
+
+  drawFrame() {
+    const ctx = this.tv.ctx;
+    ctx.save();
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    if (this.sceneFn) this.sceneFn(ctx, this.time - this.sceneT0, this);
+    ctx.restore();
+    if (this.input) {
+      if (this.input.options) S.optionsBar(ctx, this.input.options, { evil: this.input.evil });
+      S.promptBox(ctx, this.time, this.input.text, { evil: this.input.evil });
+    }
+    const label = this.paused ? '❚❚ DURAKLAT' : this.time < this.osdUntil ? this.osdLabel : '';
+    if (label) S.osd(ctx, { label, counter: this.counter() });
+  }
+
+  counter() {
+    return this.time + (this.tapeId === 't2' ? 1312 : this.tapeId === 't3' ? 2649 : 0);
+  }
+
+  showOsd(label, sec = 2.5) {
+    this.osdLabel = label;
+    this.osdUntil = this.time + sec;
+  }
+
+  // ---------------------------------------------------------------- karakterler
+  updateChars(dt) {
+    const level = this.audio.voiceLevel();
+    const gaze = this.g.gazeOnTv || { x: 0, y: 0 };
+    for (const [name, c] of Object.entries(this.chars)) {
+      // göz kırpma
+      if (this.time > c.nextBlink && c.blinkT < 0) c.blinkT = 0;
+      if (c.blinkT >= 0) {
+        c.blinkT += dt;
+        c.blink = Math.sin(clamp(c.blinkT / 0.16, 0, 1) * Math.PI);
+        if (c.blinkT > 0.16) {
+          c.blinkT = -1;
+          c.blink = 0;
+          c.nextBlink = this.time + rand(1.8, 4.5);
+        }
+      }
+      // ağız
+      const talking = this.speaker === name && !c.frozenMouth;
+      const target = talking ? level : 0;
+      c.mouth += (target - c.mouth) * Math.min(1, dt * 22);
+      // bakış
+      let lt = { x: 0, y: 0 };
+      if (c.lookTarget) lt = c.lookTarget;
+      else if (this.eyeMode === 'track' && name === 'beste') lt = { x: clamp(gaze.x, -1, 1), y: clamp(-gaze.y, -1, 1) };
+      else if (this.eyeMode === 'viewer') {
+        // ara sıra küçük göz hareketleri
+        const k = Math.floor(this.time / 2.3 + (name === 'tonton' ? 7 : 0));
+        lt = { x: (Math.sin(k * 12.9) * 0.5) * 0.4, y: (Math.cos(k * 7.1) * 0.5) * 0.25 };
+      }
+      const sp = this.eyeMode === 'track' ? 10 : 6;
+      c.look.x += (lt.x - c.look.x) * Math.min(1, dt * sp);
+      c.look.y += (lt.y - c.look.y) * Math.min(1, dt * sp);
+    }
+  }
+
+  beste(ctx, over = {}) {
+    drawBeste(ctx, { ...this.chars.beste, t: this.time, ...over });
+  }
+  tonton(ctx, over = {}) {
+    drawTonton(ctx, { ...this.chars.tonton, t: this.time, ...over });
+  }
+
+  // ---------------------------------------------------------------- senaryo API
+  scene(fn) {
+    this.sceneFn = fn;
+    this.sceneT0 = this.time;
+  }
+
+  tag(meta) {
+    this.meta = meta;
+  }
+
+  wait(sec) {
+    return this.race(new Promise((resolve) => this.waiters.push({ until: this.time + sec, resolve })));
+  }
+
+  fmt(text) {
+    const name = this.g.state.name || 'arkadaşım';
+    return text.replaceAll('{ad}', name).replaceAll('{saat}', timeString());
+  }
+
+  /** Repliği seslendirir, altyazıyı gösterir, bitince döner. */
+  async say(id, o = {}) {
+    this.check();
+    const line = this.lines[id];
+    if (!line) {
+      console.warn('replik yok', id);
+      return;
+    }
+    const who = o.who || (line.v.startsWith('tonton') ? 'tonton' : line.v.startsWith('beste') ? 'beste' : 'narrator');
+    const w = WHO[line.v] || WHO.beste;
+    this.voice?.stop();
+    const text = o.sub ?? this.fmt(line.s || line.t);
+    this.g.ui.subtitle(w.label, text, w.cls);
+    this.speaker = who;
+    // test kancası: sesleri atlayıp kısa bekle
+    const fast = this.g.debug?.fast;
+    const h = fast ? { promise: this.wait(0.2), pause() {}, resume() {}, stop() {} } : this.audio.playVoice(o.file || id, { rate: o.rate, gain: o.gain, detune: o.detune, dest: o.dest });
+    this.voice = h;
+    if (this.paused || this.rewinding) h.pause();
+    try {
+      await this.race(h.promise);
+    } finally {
+      if (this.voice === h) {
+        this.voice = null;
+        this.speaker = null;
+      }
+      if (this.aborted) h.stop();
+    }
+    if (!o.keep) this.g.ui.subtitle(null, null, null, 0.35);
+    if (o.after) await this.wait(o.after);
+  }
+
+  /** Beklemeden başlatılan replik (bekleme uyarıları vb.) */
+  sayAsync(id, o) {
+    this.say(id, o).catch(() => {});
+  }
+
+  music(mode, o) {
+    this.audio.music.play(mode, o);
+    if (this.paused || this.rewinding) this.audio.music.pause();
+  }
+  stopMusic(fade = 0.8) {
+    this.audio.music.stop(fade);
+  }
+
+  sfx(name, ...a) {
+    return this.audio.sfx(name, ...a);
+  }
+
+  /** Ekran shader parametrelerini yumuşakça değiştirir. */
+  fx(params, dur = 1) {
+    for (const [k, v] of Object.entries(params)) {
+      if (k in this.tv.p) this.tweens.add(this.tv.p, k, v, dur);
+    }
+  }
+
+  setBase(params, dur = 1) {
+    this.baseFx = { ...this.baseFx, ...params };
+    this.fx(this.baseFx, dur);
+  }
+
+  async glitch(amount = 1, dur = 0.4, sound = true) {
+    const p = this.tv.p;
+    p.glitch = amount;
+    p.jitter = Math.max(p.jitter, amount * 2);
+    p.noise = Math.max(p.noise, amount * 0.25);
+    if (sound) this.sfx('glitch', dur);
+    this.tweens.add(p, 'glitch', this.baseFx.glitch, dur);
+    this.tweens.add(p, 'jitter', this.baseFx.jitter, dur);
+    this.tweens.add(p, 'noise', this.baseFx.noise, dur);
+  }
+
+  // ---------------------------------------------------------------- klavye cevapları
+  ask(o = {}) {
+    this.check();
+    this.input = {
+      text: '',
+      options: o.options,
+      evil: o.evil,
+      idle: o.idle || [],
+      idleGap: o.idleGap || 13,
+      lastActivity: this.time,
+      idleIdx: 0,
+      maxLen: o.maxLen || 24,
+    };
+    this.g.ui.beginTyping();
+    return this.race(new Promise((resolve) => (this.input.resolve = resolve)));
+  }
+
+  typed(text) {
+    if (!this.input) return;
+    this.input.text = text.slice(0, this.input.maxLen);
+    this.input.lastActivity = this.time;
+  }
+
+  submit() {
+    const inp = this.input;
+    if (!inp) return;
+    const text = inp.text.trim();
+    if (!text) {
+      this.sfx('beep', false);
+      return;
+    }
+    this.sfx('click');
+    this.endTyping();
+    inp.resolve(text);
+  }
+
+  endTyping() {
+    this.input = null;
+    this.g.ui.endTyping();
+  }
+
+  updateIdle() {
+    const inp = this.input;
+    if (!inp || !inp.idle.length || this.voice) return;
+    if (this.time - inp.lastActivity > inp.idleGap) {
+      const id = inp.idle[Math.min(inp.idleIdx, inp.idle.length - 1)];
+      inp.idleIdx++;
+      inp.lastActivity = this.time;
+      this.sayAsync(id);
+      if (inp.idleIdx >= inp.idle.length) this.glitch(0.3, 0.3, false);
+    }
+  }
+
+  /**
+   * Cevap eşleşene kadar sorar. match(text) -> anahtar | null.
+   * Döner: { key, text }
+   */
+  async choose(o) {
+    for (let tries = 0; ; tries++) {
+      const text = await this.ask(o);
+      const key = o.match(text, tries);
+      if (key != null) return { key, text, tries };
+      if (o.maxTries && tries + 1 >= o.maxTries) return { key: null, text, tries };
+      if (o.unknown) await this.say(typeof o.unknown === 'function' ? o.unknown(tries) : o.unknown);
+    }
+  }
+
+  // ---------------------------------------------------------------- duraklat / geri sar
+  togglePause() {
+    if (!this.active || this.rewinding || this.input) return false;
+    this.paused = !this.paused;
+    this.sfx('click');
+    if (this.paused) {
+      this.pauseCount++;
+      this.audio.pauseVoices();
+      this.audio.music?.pause();
+      this.audio.setHiss(false);
+      this.tv.p.jitter = 0.6;
+      if (this.meta?.secret) this.g.foundSecret(this.meta.secret.id, this.meta.secret.text);
+    } else {
+      this.audio.resumeVoices();
+      this.audio.music?.resume();
+      this.audio.setHiss(true);
+      this.tv.p.jitter = this.baseFx.jitter;
+      this.showOsd('▶ OYNAT', 2);
+      this.onResume?.(this.pauseCount);
+    }
+    return true;
+  }
+
+  startRewind() {
+    if (!this.active || this.rewinding) return;
+    this.rewinding = true;
+    this.audio.pauseVoices();
+    this.audio.music?.pause();
+    this.rw = { n: 0, acc: 0, stick: 0, held: 0, seen: new Set(), stopSfx: this.sfx('rewind'), auto: false, release: false, revPlayed: false };
+    this.tv.p.jitter = 1.2;
+    this.tv.p.tracking = 1.4;
+    this.tv.p.noise = 0.12;
+  }
+
+  stopRewind(force = false) {
+    if (!this.rewinding) return;
+    if (this.rw.auto && !force) {
+      this.rw.release = true;
+      return;
+    }
+    this.rw.stopSfx?.();
+    const held = this.rw.held;
+    this.rw = null;
+    this.rewinding = false;
+    this.tv.p.jitter = this.baseFx.jitter;
+    this.tv.p.tracking = this.baseFx.tracking;
+    this.tv.p.noise = this.baseFx.noise;
+    if (!this.paused) {
+      this.audio.resumeVoices();
+      this.audio.music?.resume();
+    }
+    this.showOsd('▶ OYNAT', 2);
+    this.glitch(0.6, 0.35, false);
+    if (!force) this.onRewindEnd?.(held);
+  }
+
+  updateRewind(dt) {
+    const rw = this.rw;
+    rw.held += dt;
+    if (this.onRewindHold?.(rw.held)) return;
+    if (rw.stick > 0) rw.stick -= dt;
+    else {
+      rw.acc += dt * 18;
+      while (rw.acc >= 1) {
+        rw.acc -= 1;
+        rw.n++;
+      }
+    }
+    const ctx = this.tv.ctx;
+    const f = this.tv.frameAt(rw.n);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    if (f) {
+      ctx.save();
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(f.canvas, 0, 0, W, H);
+      ctx.restore();
+    }
+    const atEnd = !f || rw.n >= this.tv.count - 1;
+    if (atEnd) S.staticNoise(ctx, this.time, 0.55);
+    // geri sarma bantları
+    for (let i = 0; i < 3; i++) {
+      const y = (((this.g.clock * (180 + i * 70)) % (H + 60)) - 30) | 0;
+      ctx.fillStyle = 'rgba(255,255,255,.18)';
+      ctx.fillRect(0, y, W, 6 + i * 3);
+      ctx.fillStyle = 'rgba(0,0,0,.4)';
+      ctx.fillRect(0, y + 8, W, 3);
+    }
+    const meta = f?.meta;
+    if (meta?.secret && !rw.seen.has(meta.secret.id)) {
+      rw.seen.add(meta.secret.id);
+      rw.stick = 1.6;
+      this.sfx('warble');
+      this.g.foundSecret(meta.secret.id, meta.secret.text);
+    }
+    if (rw.stick > 0 && meta?.secret?.text) S.bigText(ctx, meta.secret.text, { font: `52px ${S.FONT_OSD}` });
+    if (meta?.rev && !rw.revPlayed) {
+      rw.revPlayed = true;
+      rw.auto = true;
+      rw.stick = 99;
+      const line = this.lines[meta.rev];
+      this.g.ui.subtitle('???', line.t, 'bilinmeyen');
+      this.g.foundSecret('ters-mesaj', null);
+      const h = this.audio.playVoice(meta.rev, { gain: 1.2 });
+      h.promise.then(() => {
+        this.g.ui.subtitle(null, null, null, 0.8);
+        if (!this.rw) return;
+        this.rw.auto = false;
+        this.rw.stick = 0;
+        if (this.rw.release || !this.g.input.rewindHeld) this.stopRewind();
+      });
+    }
+    if (rw.revPlayed && rw.auto) S.realGirl(ctx, this.g.clock, { alpha: 0.55 + Math.sin(this.g.clock * 7) * 0.15 });
+    S.osd(ctx, { label: '◀◀ GERİ SAR', counter: this.counter() - rw.n / 12 });
+  }
+
+  tryEject() {
+    if (!this.active) return true;
+    if (typeof this.ejectPolicy === 'function') return this.ejectPolicy();
+    return this.ejectPolicy === 'allow';
+  }
+}

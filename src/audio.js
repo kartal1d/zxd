@@ -380,7 +380,8 @@ export class AudioEngine {
   // ---------------------------------------------------------------- efektler
   sfx(name, ...args) {
     if (!this.ctx) return;
-    const fn = SFX[name];
+    // extraSfx: alt kat / bahçe efektleri (src/houseaudio.js)
+    const fn = SFX[name] || this.extraSfx?.[name];
     if (fn) return fn.call(this, this.now, ...args);
     console.warn('bilinmeyen efekt', name);
   }
@@ -683,6 +684,31 @@ class Music {
 }
 
 // ======================================================================== ses efektleri
+/**
+ * İleri/geri sarma sesinin gürültü yatağı: tuş basılı kaldığı sürece sürer. Gürültü tamponu 3 sn'dir;
+ * döngüye alınmazsa uzun basışta 1-3 sn sonra gürültü kesilir, zarf da yavaşça söner.
+ */
+function heldNoise(e, t, { freq, q, gain }) {
+  const n = e.noiseBurst(e.tvPan, t, 600, { freq, q, gain, attack: 0.05 });
+  n.src.loop = true;
+  n.g.gain.cancelScheduledValues(t);
+  n.g.gain.setValueAtTime(0, t);
+  n.g.gain.linearRampToValueAtTime(gain, t + 0.05);
+  return n;
+}
+
+/** heldNoise + osilatör sesini hemen (kısa bir sönümle) susturur; hızlı tıklamada geç kalan zarf geri açmaz. */
+function stopHeld(e, o, g, n) {
+  const now = e.now;
+  for (const p of [g.gain, n.g.gain]) {
+    if (p.cancelAndHoldAtTime) p.cancelAndHoldAtTime(now);
+    else p.cancelScheduledValues(now);
+    p.setTargetAtTime(0, now, 0.03);
+  }
+  o.stop(now + 0.2);
+  n.src.stop(now + 0.2);
+}
+
 const SFX = {
   click(t) {
     this.tone(this.room, t, 1800, 0.03, { type: 'square', gain: 0.05 });
@@ -733,15 +759,8 @@ const SFX = {
     g.gain.linearRampToValueAtTime(0.05, t + 0.1);
     o.connect(bp).connect(g).connect(this.tvPan);
     o.start(t);
-    const n = this.noiseBurst(this.tvPan, t, 60, { freq: 5000, q: 0.5, gain: 0.05, attack: 0.05 });
-    return () => {
-      const now = this.now;
-      g.gain.setTargetAtTime(0, now, 0.03);
-      n.g.gain.cancelScheduledValues(now);
-      n.g.gain.setTargetAtTime(0, now, 0.03);
-      o.stop(now + 0.2);
-      n.src.stop(now + 0.2);
-    };
+    const n = heldNoise(this, t, { freq: 5000, q: 0.5, gain: 0.05 });
+    return () => stopHeld(this, o, g, n);
   },
   ffwd(t) {
     // ileri sarma: geri sarmadan daha tiz, hızla yükselen motor sesi
@@ -759,15 +778,8 @@ const SFX = {
     g.gain.linearRampToValueAtTime(0.045, t + 0.1);
     o.connect(bp).connect(g).connect(this.tvPan);
     o.start(t);
-    const n = this.noiseBurst(this.tvPan, t, 60, { freq: 6500, q: 0.6, gain: 0.04, attack: 0.05 });
-    return () => {
-      const now = this.now;
-      g.gain.setTargetAtTime(0, now, 0.03);
-      n.g.gain.cancelScheduledValues(now);
-      n.g.gain.setTargetAtTime(0, now, 0.03);
-      o.stop(now + 0.2);
-      n.src.stop(now + 0.2);
-    };
+    const n = heldNoise(this, t, { freq: 6500, q: 0.6, gain: 0.04 });
+    return () => stopHeld(this, o, g, n);
   },
   warble(t) {
     this.tone(this.tvPan, t, 300, 0.9, { type: 'sine', gain: 0.15, endFreq: 140 });

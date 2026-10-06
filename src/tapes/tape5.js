@@ -22,6 +22,11 @@ const NIGHT_CLOSE = { x: 236, y: 250, z: 1.6 };
 const WORD = 'SÖYLEME';
 const IDLE = ['b1_idle1', 'b1_idle2'];
 
+/** Arka planda başlatılan sözün reddi (kaset iptali) yakalanmamış hata sayılmasın */
+const later = (p) => {
+  p.catch(() => {});
+  return p;
+};
 const plain = (txt) => String(txt ?? '').replace(/\s+/g, ' ').trim().slice(0, 16);
 const words = (txt) => norm(txt).split(' ').filter(Boolean);
 const backwards = (txt) => [...norm(txt)].reverse().join('');
@@ -30,7 +35,12 @@ const dontKnow = (txt) => !txt || has(txt, 'bilmiyo', 'bilmem', 'unuttum', 'unut
 
 /** Soyadı sorusunda reddetme */
 function refuses(txt) {
-  return has(txt, 'soyleme', 'soylemiyorum', 'soylemicem', 'soylemiycem', 'hayir', 'bilmiyorum', 'bilmem', 'gizli', 'asla', 'olmaz', 'demem', 'demeyecegim') || words(txt).some((w) => ['yok', 'sir', 'sirri', 'sirrim', 'pas'].includes(w));
+  // harf içermeyen cevap ("...", "?") da bir şey söylememek sayılır
+  if (!/\p{L}/u.test(String(txt))) return true;
+  return (
+    has(txt, 'soyleme', 'soylemiyorum', 'soylemicem', 'soylemiycem', 'hayir', 'bilmiyo', 'bilmem', 'unuttum', 'unutmusum', 'hatirlamiyo', 'hatirlamam', 'gizli', 'asla', 'olmaz', 'demem', 'demeyecegim') ||
+    words(txt).some((w) => ['yok', 'sir', 'sirri', 'sirrim', 'pas'].includes(w))
+  );
 }
 /** Gerçek Beste'nin sorusu: tersten yazılmış söz mü, düz yazılmış mı? */
 function classify(txt) {
@@ -71,7 +81,6 @@ export async function tape5(d) {
   const A = { solo: true, rs: 0.72, talk: false, lookX: 0, tilt: 0, fog: 0, ev: 0, writing: false, palm: 0, bx: 760, walk: false, stepT0: -9, stepDur: 0.34, cam: { ...WIDE } };
   // örnek, oyuncunun okuyabileceği yönde yazılır: gerçek kız, çizgi filmin aksine, bizim için tersten yazmayı bilir
   const EV = { text: 'EVET → TEVE', shown: 0, x: NM.cx, y: 292, size: 32, mirrored: false };
-  const loops = new Set();
   let saidNow = false;
   let caught = false;
 
@@ -358,8 +367,12 @@ export async function tape5(d) {
     g.room.flickerBurst(lowFlash ? 0.3 : 2.4);
     if (!lowFlash) g.room.setBulb(bulb0 * 0.35, 0.2);
     d.tweens.add(v.note, 'margin', 14, 2.4, (x) => x);
-    await d.wait(2.5);
-    if (!lowFlash) g.room.setBulb(bulb0, 1.2);
+    try {
+      await d.wait(2.5);
+    } finally {
+      // kaset burada kesilse de çatı katının ampulü eski hâline döner
+      if (!lowFlash) g.room.setBulb(bulb0, 1.2);
+    }
     v.note.focus = null;
     await d.wait(0.7);
     d.scene(prev);
@@ -413,7 +426,7 @@ export async function tape5(d) {
     d.promptLabel = 'BESTE:';
     d.sfx('whoosh');
     d.glitch(0.15, 0.2, false);
-    const r2 = d.say('k5_rules2');
+    const r2 = later(d.say('k5_rules2'));
     await d.wait(1.1);
     v.demoUntil = d.time + 2.0;
     d.sfx('cartoonPop');
@@ -431,12 +444,12 @@ export async function tape5(d) {
     d.sfx('talkShowSting');
     await d.wait(0.9);
     music();
-    const host = lower('SUNUCU', NAME, 'left', 3.4);
+    const host = later(lower('SUNUCU', NAME, 'left', 3.4));
     B.wave = 1;
     await d.say('k5_interview');
     B.wave = 0;
     await host;
-    const guest = lower('KONUK', 'BESTE', 'right', 3.0);
+    const guest = later(lower('KONUK', 'BESTE', 'right', 3.0));
     B.lookTarget = { x: 0.85, y: 0.2 };
     await d.wait(1.0);
     B.lookTarget = null;
@@ -452,7 +465,7 @@ export async function tape5(d) {
     v.ref.lag = 0.6;
     B.wave = 1;
     d.tweens.add(B, 'tilt', -0.14, 0.5);
-    const qa = d.say('k5_q_age');
+    const qa = later(d.say('k5_q_age'));
     await d.wait(0.9);
     B.wave = 0;
     d.tweens.add(B, 'tilt', 0.1, 0.6);
@@ -494,7 +507,7 @@ export async function tape5(d) {
       B.lookTarget = { x: 0, y: 0 };
       d.fx({ saturation: 0.4 }, 0.2);
       await d.wait(0.6);
-      const truth = d.say('k5_age_wrong');
+      const truth = later(d.say('k5_age_wrong'));
       await d.wait(2.4);
       B.expr = 'void';
       v.ref.over = { expr: 'void', look: { x: 0, y: 0 } };
@@ -520,7 +533,7 @@ export async function tape5(d) {
     v.ref.lag = 0;
     v.ref.over = { wave: 0 };
     B.wave = 1;
-    const qc = d.say('k5_q_color');
+    const qc = later(d.say('k5_q_color'));
     await d.wait(1.0);
     v.ref.realGirl = true;
     d.tag({ secret: { id: 'ayna', text: 'BEN BURADAYIM' } });
@@ -571,7 +584,7 @@ export async function tape5(d) {
     B.lookTarget = { x: 0.85, y: 0.2 };
     v.ref.over = { look: { x: 0, y: 0 } };
     await d.wait(0.6);
-    const qm = d.say('k5_q_mother');
+    const qm = later(d.say('k5_q_mother'));
     await d.wait(0.35);
     v.ref.over = { look: { x: 0, y: 0 }, expr: 'sad' };
     await qm;
@@ -629,7 +642,7 @@ export async function tape5(d) {
       d.scene(show);
       B.expr = 'frozen';
       d.fx({ tracking: 1.6, jitter: 0.9, roll: 0.03 }, 0.03);
-      const al = d.say('k5_almost');
+      const al = later(d.say('k5_almost'));
       await d.wait(1.0);
       d.fx({ tracking: BASE.tracking, jitter: BASE.jitter, roll: 0 }, 0.3);
       await al;
@@ -703,12 +716,14 @@ export async function tape5(d) {
 
     // ================================================================ SAHTE BİTİŞ: boşta bekleyen TV'nin birebir kopyası
     d.noFF = true;
-    d.stopFF();
+    d.stopFF?.();
     au.setHiss(false);
     au.setTapeFx('off', 0.5);
     // boştaki TV'nin olağan görüntüsü (soğuk ayna renkleri olmadan)
     d.fx({ ...SCREEN_DEFAULT, tintR: 1, tintG: 1, tintB: 1 }, 0.05);
-    d.scene((c) => S.blueScreen(c, g.clock, { text: 'VİDEO 1', sub: '', clock: true }));
+    // gerçek boştaki ekranın birebir kopyası (main.js drawIdleTv): sırada yeni kaset varsa "KASET BEKLENİYOR"
+    const idleSub = st.tapes.some((n) => n > Math.max(st.stage, 5)) ? 'KASET BEKLENİYOR' : '';
+    d.scene((c) => S.blueScreen(c, g.clock, { text: 'VİDEO 1', sub: idleSub, clock: true }));
     d.onPause = (paused) => {
       // gerçek boştaki TV duraklatılamaz: "❚❚" görünür, Beste fısıldar
       if (paused && d.fakeEnding && !caught) {
@@ -751,7 +766,7 @@ export async function tape5(d) {
     await d.wait(0.4);
     // buğuya örnek: EVET → TEVE (ayna harfleriyle)
     d.tweens.add(A, 'fog', 1, 1.0);
-    const ask1 = realSay('k5_real_ask');
+    const ask1 = later(realSay('k5_real_ask'));
     await d.wait(0.6);
     A.writing = true;
     const evn = [...EV.text].length;
@@ -841,8 +856,6 @@ export async function tape5(d) {
     await d.jumpscare({ sec: 0.42, room: true, draw: (c, t) => K.mirrorScare(c, t, { kind: 'grin' }) });
     await d.wait(1.3);
   } finally {
-    for (const stop of loops) stop?.();
-    loops.clear();
     d.onPause = null;
     d.noFF = false;
     B.tilt = 0;

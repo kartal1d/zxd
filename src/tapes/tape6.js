@@ -39,7 +39,7 @@ function classifyWho(txt, name) {
 /** "Benim doğum günüm ne zaman?" */
 function classifyDate(txt) {
   if (dontKnow(txt)) return 'wrong';
-  if (isFeb(txt)) return 'catch';
+  if (isFeb(txt) || has(txt, 'yalan', 'degil')) return 'catch';
   const dg = digits(txt);
   if (has(txt, 'bugun', 'bu gun', 'mayis', 'simdi') || dg.startsWith('14') || dg.includes('1405')) return 'today';
   return 'wrong';
@@ -100,6 +100,7 @@ export async function tape6(d) {
     tear: 0,
     red: 0,
     confettiT: null,
+    slide: 0,
   };
   let caught = false;
   let bulbKilled = false;
@@ -196,7 +197,12 @@ export async function tape6(d) {
     if (v.confettiT != null && !v.still) K.confetti(c, d.time, v.confettiT);
     if (v.red > 0) K.redEdge(c, v.red);
   };
-  const partyScene = (c, t) => (v.tear > 0.02 ? S.corrupt(c, (cc) => party(cc, t), v.tear, d.time) : party(c, t));
+  const partyScene = (c, t) => {
+    // "N sn hiçbir şey yazılmazsa": oyuncu yazdıkça süre uzar (ask'ın sabit zaman aşımı yerine)
+    const inp = d.input;
+    if (v.slide && inp && inp.deadline != null) inp.deadline = Math.max(inp.deadline, inp.lastActivity + v.slide);
+    return v.tear > 0.02 ? S.corrupt(c, (cc) => party(cc, t), v.tear, d.time) : party(c, t);
+  };
   const cakeScene = (c, t) => {
     K.cakeClose(c, t, { ...v.close, match: v.match });
     if (v.confettiT != null) K.confetti(c, d.time, v.confettiT);
@@ -459,7 +465,7 @@ export async function tape6(d) {
   await d.say('k6_wish');
   const wishTxt = await d.ask({ idle: ['b1_idle1', 'b1_idle2'], maxLen: 24 });
   const WISH = icing(wishTxt);
-  if (first) st.answers.wish = WISH;
+  if (first) st.answers.wish = String(wishTxt || '').trim().slice(0, 24);
   // pembe kremayla pastaya yazılır
   v.close.plaque = WISH;
   d.tweens.add(v.close, 'plaqueP', 1, 1.4, (x) => x);
@@ -497,7 +503,9 @@ export async function tape6(d) {
     await bl;
   }
   d.stopMusic(0.3);
+  v.slide = 25;
   const blowTxt = await d.ask({ options: ['ÜFLE'], idle: ['b1_idle1'], timeout: 25, maxLen: 16 });
+  v.slide = 0;
   v.countdown = null;
   if (blowTxt == null) {
     // 25 sn cevap yok: senin yerine o üfler, sonuç aynı
@@ -512,7 +520,7 @@ export async function tape6(d) {
   g.room.setFlicker(false);
   g.room.setBulb(0, 0.05);
   d.sfx('pop', P.bulb);
-  if (g.room.moon) g.room.tweens.add(g.room.moon, 'intensity', 0.3, 0.3);
+  if (g.room.moon) g.room.tweens.add(g.room.moon, 'intensity', Math.min(0.32, (moon0 ?? 0.5) * 0.6), 0.3);
   bulbKilled = true;
   if (first) (st.room = st.room || {}).bulbDead = true;
   // ekrandaki yedi mum hâlâ yanıyor; parti odası karanlık, Beste alttan aydınlanıyor
@@ -561,7 +569,10 @@ export async function tape6(d) {
 
   // ---- bozulmuş jenerik
   d.sfx('static', 0.3, 0.2);
-  d.scene((c, t) => S.endCard(c, t, { decay: true }));
+  d.scene((c, t) => {
+    S.endCard(c, t, { decay: true });
+    K.endDecay(c, t);
+  });
   d.music('box', { ...BOX, tempo: 66, detune: -320, gain: 0.08, loop: false });
   await d.say('n_outro2');
   await d.wait(2.2);
@@ -649,8 +660,10 @@ export async function tape6(d) {
     d.stopMusic(0.1);
     await d.wait(0.6);
     v.close.num8 = sceneT();
-    g.room.flickerBurst(1.0);
+    if (!lowFlash) g.room.flickerBurst(1.0);
+    else g.room.setBulb(0.35, 0.4);
     await d.sayRoom('k6_room_sekiz', { pos: 'behind', gain: 1.25, rate: 0.95 });
+    if (lowFlash && !bulbKilled) g.room.setBulb(st.room?.lightOff ? 0 : 1, 0.6);
     await d.wait(1.4);
     v.close.nums = 0;
     v.close.num8 = null;
@@ -704,7 +717,8 @@ export async function tape6(d) {
   /** "Ormanda." anında: kırmızı ton + bir an Çamlık (KORKUTMA 2) */
   async function revealLine(id) {
     const line = quiet(d.say(id));
-    await d.wait(Math.max(0.15, voiceDur(id) - 1.05));
+    // "Ormanda." anı: repliğin son ~1 sn'si (ses dosyası yoksa replik erken biter; o zaman hemen)
+    await Promise.race([d.wait(Math.max(0.15, voiceDur(id) - 1.05)), line]);
     d.fx(lowFlash ? RED_SOFT : RED, 0.04);
     v.red = 0.8;
     d.glitch(0.8, 0.5);
@@ -736,12 +750,16 @@ export async function tape6(d) {
     B.expr = 'frozen';
     B.wave = 0;
     B.lookTarget = { x: 0, y: 0 };
+    // renk çekilir: donmuş bir kare gibi
+    d.fx({ saturation: 0.28, brightness: 1.3 }, 0.5);
     await d.wait(2.0);
     await d.say(has(txt, 'subat') || febDigits(txt) ? 'k6_caught1' : 'k6_caught1_lie');
     await d.wait(0.6);
     await d.say('k6_caught2');
     // açık soru (kötü kutu, bekleme repliği yok; 20 sn sessizlikte kapanır)
+    v.slide = 20;
     const how = await d.ask({ evil: true, timeout: 20, maxLen: 24 });
+    v.slide = 0;
     if (how && has(how, 'kart', 'okul', 'kimlik', 'kutu', 'nermin', 'hala', 'hediye', 'etiket', 'yazi', 'kagit')) await d.say('k6_caught_card');
     else await d.say('k6_caught_any');
     await d.wait(0.5);
@@ -749,6 +767,7 @@ export async function tape6(d) {
     await d.wait(0.7);
     // gülümsemesi bir "tık" sesiyle geri gelir, hiçbir şey olmamış gibi devam eder
     d.sfx('click');
+    d.fx({ saturation: BASE.saturation, brightness: BASE.brightness }, 0.25);
     B.expr = 'happy';
     B.lookTarget = null;
     v.still = false;

@@ -372,3 +372,217 @@ export function girlSilhouette() {
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
+
+// ------------------------------------------------------------------ alt kat ve bahçe (src/house.js)
+
+/** Gri derzli kare fayans (mutfak ve banyo) */
+export function tiles({ size = 256, n = 4, base = [196, 196, 186], grout = [92, 90, 84], seed = 4 } = {}) {
+  const [c, ctx] = canvas(size, size);
+  const img = ctx.createImageData(size, size);
+  const cell = size / n;
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      const lx = x % cell, ly = y % cell;
+      const g = lx < 3 || ly < 3;
+      const ti = Math.floor(x / cell) + Math.floor(y / cell) * n;
+      const tone = 0.9 + hash(ti + seed) * 0.12;
+      const dirt = 0.82 + fbm(x * 0.02, y * 0.02, seed, 3) * 0.3;
+      const col = g ? grout : base;
+      const k = (g ? 1 : tone) * dirt;
+      img.data[i] = col[0] * k;
+      img.data[i + 1] = col[1] * k;
+      img.data[i + 2] = col[2] * k;
+      img.data[i + 3] = 255;
+    }
+  ctx.putImageData(img, 0, 0);
+  return tex(c);
+}
+
+/** Lekeli, eski sıva */
+export function plaster({ size = 256, base = [188, 180, 164], seed = 7 } = {}) {
+  const [c, ctx] = canvas(size, size);
+  const img = ctx.createImageData(size, size);
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      const n = fbm(x * 0.03, y * 0.03, seed, 4);
+      const stain = fbm(x * 0.008, y * 0.012, seed + 5, 3);
+      let k = 0.86 + n * 0.2 + (Math.random() - 0.5) * 0.04;
+      if (stain > 0.62) k *= 0.82 + (0.7 - stain);
+      img.data[i] = base[0] * k;
+      img.data[i + 1] = base[1] * k;
+      img.data[i + 2] = base[2] * k * 0.97;
+      img.data[i + 3] = 255;
+    }
+  ctx.putImageData(img, 0, 0);
+  return tex(c);
+}
+
+/** Gece çimi */
+export function grass({ size = 256, seed = 12 } = {}) {
+  const [c, ctx] = canvas(size, size);
+  const img = ctx.createImageData(size, size);
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      const n = fbm(x * 0.05, y * 0.05, seed, 4);
+      const blade = Math.random();
+      const k = 0.55 + n * 0.6 + (blade > 0.93 ? 0.35 : 0);
+      img.data[i] = 34 * k;
+      img.data[i + 1] = 52 * k;
+      img.data[i + 2] = 26 * k;
+      img.data[i + 3] = 255;
+    }
+  ctx.putImageData(img, 0, 0);
+  return tex(c);
+}
+
+/** Çam kabuğu (dikey yarıklar) */
+export function bark({ w = 128, h = 256, seed = 15 } = {}) {
+  const [c, ctx] = canvas(w, h);
+  const img = ctx.createImageData(w, h);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const ridge = Math.abs(Math.sin(x * 0.22 + fbm(x * 0.05, y * 0.02, seed, 3) * 6));
+      const k = 0.45 + ridge * 0.55 + (fbm(x * 0.1, y * 0.1, seed + 3, 2) - 0.5) * 0.3;
+      img.data[i] = 78 * k;
+      img.data[i + 1] = 56 * k;
+      img.data[i + 2] = 40 * k;
+      img.data[i + 3] = 255;
+    }
+  ctx.putImageData(img, 0, 0);
+  return tex(c);
+}
+
+/**
+ * Uzun, yüzsüz gri adam (şeffaf zeminli billboard, 256x1024). Üstteki %13 baş.
+ * arms: kollar yukarı kalkmış (bahçe çitindeki atılma).
+ */
+export function greyMan({ arms = false } = {}) {
+  const [c, ctx] = canvas(256, 1024);
+  ctx.clearRect(0, 0, 256, 1024);
+  const g = ctx.createLinearGradient(0, 0, 0, 1024);
+  g.addColorStop(0, 'rgba(150,150,156,1)');
+  g.addColorStop(0.5, 'rgba(96,97,104,1)');
+  g.addColorStop(1, 'rgba(40,42,48,.55)');
+  ctx.fillStyle = g;
+  ctx.strokeStyle = g;
+  // baş (üstte, 0..133)
+  ctx.beginPath();
+  ctx.ellipse(128, 70, 40, 58, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // boyun ve gövde
+  ctx.beginPath();
+  ctx.moveTo(116, 120);
+  ctx.lineTo(140, 120);
+  ctx.lineTo(150, 150);
+  ctx.quadraticCurveTo(200, 160, 196, 210);
+  ctx.lineTo(176, 560);
+  ctx.lineTo(160, 1010);
+  ctx.lineTo(140, 1010);
+  ctx.lineTo(130, 600);
+  ctx.lineTo(118, 1010);
+  ctx.lineTo(98, 1010);
+  ctx.lineTo(82, 560);
+  ctx.lineTo(60, 210);
+  ctx.quadraticCurveTo(56, 160, 106, 150);
+  ctx.closePath();
+  ctx.fill();
+  // çok uzun kollar
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 16;
+  ctx.beginPath();
+  if (arms) {
+    ctx.moveTo(66, 200);
+    ctx.quadraticCurveTo(20, 120, 26, 8);
+    ctx.moveTo(190, 200);
+    ctx.quadraticCurveTo(236, 120, 230, 8);
+  } else {
+    ctx.moveTo(64, 200);
+    ctx.quadraticCurveTo(30, 470, 44, 760);
+    ctx.moveTo(192, 200);
+    ctx.quadraticCurveTo(226, 470, 212, 760);
+  }
+  ctx.stroke();
+  // uzun parmaklar
+  ctx.lineWidth = 5;
+  const fingers = (x, y, dir) => {
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + i * 7, y + dir * 70);
+      ctx.stroke();
+    }
+  };
+  if (arms) {
+    fingers(26, 12, -0.15);
+    fingers(230, 12, -0.15);
+  } else {
+    fingers(44, 756, 1);
+    fingers(212, 756, 1);
+  }
+  // yüzün yerinde hafif bir çukurluk
+  ctx.fillStyle = 'rgba(30,30,34,.35)';
+  ctx.beginPath();
+  ctx.ellipse(128, 76, 22, 30, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** Aynada beliren Beste: soluk çizgi film başı ve omuzlar, oyuk gözler (şeffaf zemin) */
+export function besteGhost() {
+  const [c, ctx] = canvas(256, 384);
+  ctx.clearRect(0, 0, 256, 384);
+  // omuzlar ve sarı elbise
+  ctx.fillStyle = 'rgba(214,196,120,.9)';
+  ctx.beginPath();
+  ctx.moveTo(30, 384);
+  ctx.quadraticCurveTo(40, 280, 128, 270);
+  ctx.quadraticCurveTo(216, 280, 226, 384);
+  ctx.closePath();
+  ctx.fill();
+  // saç (arka)
+  ctx.fillStyle = 'rgba(200,170,70,.95)';
+  ctx.beginPath();
+  ctx.ellipse(128, 150, 96, 118, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // yüz
+  const fg = ctx.createRadialGradient(128, 160, 10, 128, 170, 90);
+  fg.addColorStop(0, '#f2efe6');
+  fg.addColorStop(1, '#c9c6bc');
+  ctx.fillStyle = fg;
+  ctx.beginPath();
+  ctx.ellipse(128, 172, 70, 84, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // kâkül
+  ctx.fillStyle = 'rgba(200,170,70,1)';
+  ctx.beginPath();
+  ctx.moveTo(56, 150);
+  ctx.quadraticCurveTo(128, 50, 200, 150);
+  ctx.quadraticCurveTo(160, 112, 128, 128);
+  ctx.quadraticCurveTo(96, 112, 56, 150);
+  ctx.fill();
+  // oyuk gözler
+  for (const x of [100, 156]) {
+    const eg = ctx.createRadialGradient(x, 176, 2, x, 176, 22);
+    eg.addColorStop(0, '#000');
+    eg.addColorStop(0.7, '#050304');
+    eg.addColorStop(1, 'rgba(40,20,20,0)');
+    ctx.fillStyle = eg;
+    ctx.beginPath();
+    ctx.ellipse(x, 176, 18, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // ağız: küçük, kapkara bir çizgi
+  ctx.fillStyle = '#120808';
+  ctx.beginPath();
+  ctx.ellipse(128, 222, 12, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}

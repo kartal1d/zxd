@@ -1342,6 +1342,54 @@ export function redEdge(ctx, a) {
   ctx.fillRect(0, 0, W, H);
 }
 
+/**
+ * Bozulmuş jenerik (S.endCard'ın üstüne): yıldızın tepesinde solgun bir parti şapkası,
+ * mum ışığı kadar karanlık, ara sıra yırtılan satırlar ve yazının altında eriyen tek bir mum.
+ */
+export function endDecay(ctx, t) {
+  ctx.save();
+  // soluk, karanlık
+  ctx.fillStyle = 'rgba(24,10,6,.42)';
+  ctx.fillRect(0, 0, W, H);
+  // yıldıza eğik, renksiz bir parti şapkası
+  ctx.save();
+  ctx.translate(W / 2 + 18, 200 - 70);
+  ctx.rotate(0.32 + Math.sin(t) * 0.1);
+  hatShape(ctx, 46, 60, ['#6d6670', '#8d8578', '#9a948a'], 0);
+  ctx.restore();
+  // ortada tek, sönük mum: alev yok, ince duman
+  const cx = W / 2, cy = 430;
+  ctx.fillStyle = '#b9b3a8';
+  ctx.fillRect(cx - 4, cy - 26, 8, 26);
+  ctx.strokeStyle = OUT;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(cx - 4, cy - 26, 8, 26);
+  ctx.strokeStyle = 'rgba(200,200,205,.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let k = 0; k <= 18; k++) {
+    const yy = cy - 30 - k * 3.4;
+    const xx = cx + Math.sin(k * 0.45 - t * 2.2) * (1 + k * 0.35);
+    k ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy);
+  }
+  ctx.stroke();
+  // yırtılan satırlar (görüntü kendi üstüne kayar)
+  const k = Math.floor(t * 7);
+  for (let i = 0; i < 3; i++) {
+    if (hash(k * 3.1 + i) < 0.45) continue;
+    const y = Math.floor(hash(k + i * 17.3) * (H - 14));
+    const dx = (hash(k * 1.7 + i) - 0.5) * 30;
+    ctx.drawImage(ctx.canvas, 0, y, W, 8, dx, y, W, 8);
+  }
+  // kenarlarda karanlık
+  const g = ctx.createRadialGradient(W / 2, H / 2, 150, W / 2, H / 2, 420);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(1, 'rgba(0,0,0,.7)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+}
+
 // ------------------------------------------------------------------ ani korkutma kareleri
 function scanlines(ctx, t, a = 0.25) {
   ctx.fillStyle = `rgba(0,0,0,${a})`;

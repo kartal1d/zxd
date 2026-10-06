@@ -1,0 +1,49 @@
+{
+  "k4_title": { "v": "narrator", "t": "Dördüncü bölüm. Kaybolursan ne yaparsın?" },
+
+  "k4_hello": { "v": "beste", "t": "Merhaba arkadaşım! Bugün çok önemli bir dersimiz var. Dikkatli dinle, olur mu?", "s": "Merhaba {ad}! Bugün çok önemli bir dersimiz var. Dikkatli dinle, olur mu?" },
+  "k4_lesson": { "v": "beste", "t": "Bazen çocuklar kaybolur. Ormanda, çarşıda, pazarda. Kaybolursan ne yapmalısın? Üç kuralımız var!" },
+  "k4_rule1": { "v": "beste", "t": "Bir! Olduğun yerde kal. Koşma, saklanma. Seni arayanlar seni bulsun." },
+  "k4_ters": { "v": "beste_real", "t": "Olduğum yerde kaldım. Kimse gelmedi. Evimi ara." },
+  "k4_rule2": { "v": "beste", "t": "İki! Yabancılarla asla gitme. Sana şeker verse bile. Oyun teklif etse bile." },
+  "k4_rule3": { "v": "beste", "t": "Üç! Evinin telefonunu ezberle. Sana kendi numaramı öğreteceğim. Hem de şarkıyla!" },
+
+  "k4_sing_intro": { "v": "beste", "t": "Şimdi şarkı zamanı! Sözler ekranda. Zıplayan yıldızı takip et, boşluğa gelince sen yaz!" },
+  "k4_v1": { "v": "beste", "t": "Ormanda bir amca gelse, gel saklambaç oynayalım dese, hiç düşünmem, hemen derim: Ben seninle...", "s": "Ormanda bir amca gelse, / 'Gel, saklambaç oynayalım' dese, / hiç düşünmem, hemen derim: / Ben seninle ______!" },
+  "k4_v1_ok": { "v": "beste", "t": "Gelmem! Ben seninle gelmem! Aferin sana!" },
+  "k4_v1_ok2": { "v": "beste_cold", "t": "Ben de öyle demiştim. Ama o, ağaçların arasında çok güzel saklanıyordu." },
+  "k4_v1_go": { "v": "beste_cold", "t": "Gelirsin, öyle mi? Ben de gitmiştim." },
+  "k4_v1_go2": { "v": "beste", "t": "Hihi! Yanlış cevap! Yabancılarla asla gitmiyoruz. Ben seninle gelmem!" },
+  "k4_v1_hint": { "v": "beste", "t": "Yabancı biri gel derse ne dersin? Ben seninle... gel... gel...?" },
+
+  "k4_song": { "v": "beste", "t": "Üç yüz altmış dört! Yirmi yedi, yirmi yedi! Kaybolursan ara bizi, burası Beste'nin evi!", "s": "364 · 27 · 27! Kaybolursan ara bizi, burası Beste'nin evi!" },
+  "k4_song_why": { "v": "beste", "t": "Yirmi yedi, iki kere! Çünkü yedi benim en sevdiğim sayı. Hadi bir daha!", "s": "27, iki kere! Çünkü 7 benim en sevdiğim sayı. Hadi bir daha!" },
+  "k4_ask_number": { "v": "beste", "t": "Şimdi sen yaz bakalım. Beste'nin evinin numarası kaç?" },
+  "k4_num_right": { "v": "beste", "t": "Mükemmel! Artık kaybolsam bile beni arayabilirsin." },
+  "k4_num_wrong": { "v": "beste", "t": "Az kaldı! Üç yüz altmış dört, yirmi yedi, yirmi yedi. Bir daha dene.", "s": "Az kaldı! 364 · 27 · 27. Bir daha dene." },
+  "k4_num_help": { "v": "beste", "t": "Bak, ekrana kocaman yazdım. Üç altı dört, iki yedi, iki yedi. Unutma, olur mu?", "s": "Bak, ekrana kocaman yazdım: 364 27 27. Unutma, olur mu?" },
+
+  "k4_song_last": { "v": "beste", "t": "Son bir kere, hep birlikte!" },
+  "k4_song_turn": { "v": "beste_cold", "t": "Üç yüz altmış dört. Elli bir. Seksen. Kaybolursan ben ararım. Burası artık senin evin.", "s": "364 · 51 · 80. Kaybolursan ben ararım. Burası artık senin evin." },
+  "k4_ask_whose": { "v": "beste", "t": "Bu numara kimin, arkadaşım?" },
+  "k4_whose": { "v": "beste_cold", "t": "Bakalım hâlâ çalışıyor mu?" },
+  "k4_whose_mine": { "v": "beste_cold", "t": "Evet. Halanın telefonu. Bakalım hâlâ çalışıyor mu?" },
+
+  "k4_call1": { "v": "beste", "t": "Alo? Alo? Arkadaşım, telefonun çalıyor. Duymuyor musun?", "s": "Alo? Alo? {ad}, telefonun çalıyor. Duymuyor musun?" },
+  "k4_call2": { "v": "beste_cold", "t": "Açsana." },
+  "k4_call_ask": { "v": "beste_cold", "t": "Neden açmıyorsun?" },
+  "k4_call_any": { "v": "beste_cold", "t": "Ben senin sesini duymak istiyorum. Yazını değil." },
+  "k4_call_scared": { "v": "beste_cold", "t": "Korkma. Ben de korkmuştum. Sonra geçti." },
+  "k4_call_whisper": { "v": "beste_whisper", "t": "Biliyorum oradasın. Nefesini duyuyorum." },
+  "k4_call_joke": { "v": "beste", "t": "Hihihi! Telefon şakası! Herkes bayılır!" },
+
+  "k4_poster": { "v": "beste", "t": "Bu afişi Tonton kaybolduğunda asmıştım. Altında bizim numaramız var. Tonton döndü ama afiş hâlâ burada." },
+  "k4_stay": { "v": "beste_cold", "t": "Birinci kural neydi? Olduğun yerde kal. Ben de kaldım. Burada. Hep burada kaldım." },
+  "k4_ask_find": { "v": "beste", "t": "Beni bulmaya gelecek misin, arkadaşım?", "s": "Beni bulmaya gelecek misin, {ad}?" },
+  "k4_find_yes": { "v": "beste", "t": "Söz mü? Söz verdin! Ben burada bekliyorum." },
+  "k4_find_no": { "v": "beste_cold", "t": "Olsun. Ben seni bulurum." },
+  "k4_find_other": { "v": "beste", "t": "Hihi! Bunu evet sayıyorum!" },
+
+  "k4_bye": { "v": "beste", "t": "Dersimiz bitti! Numarayı unutma. Belki bir gün ararsın." },
+  "k4_tonton_bye": { "v": "tonton", "t": "Belki bir gün ararsın. Ararsın. Ararsın." }
+}

@@ -1,0 +1,273 @@
+{
+ "k9_intro": {
+  "v": "nermin",
+  "t": "Ham kayıtlar. Yıldız Çocuk Yapım, kurgu odası. Bunları kimse görmesin."
+ },
+ "k9_intro2": {
+  "v": "nermin",
+  "t": "Rıza Bey jandarmaya kayıt arızalı dedi. Arızalı değil. Sadece kimse bakmaya dayanamadı."
+ },
+ "k9_menu_open": {
+  "v": "nermin",
+  "t": "Dört klip var. Numarasını yaz, ben açarım.",
+  "s": "4 klip var. Numarasını yaz, ben açarım."
+ },
+ "k9_menu_idle": {
+  "v": "beste_whisper",
+  "t": "Hangisini açacaksın?"
+ },
+ "k9_menu_idle2": {
+  "v": "beste_whisper",
+  "t": "Acele etme. Ben buradayım. Hep buradaydım."
+ },
+ "k9_menu_hint": {
+  "v": "nermin",
+  "t": "Listede ne yazıyorsa, başındaki numarayı yaz."
+ },
+ "k9_menu_t1": {
+  "v": "nermin",
+  "t": "Klip numarasını yaz. Bir, iki, üç ya da dört.",
+  "s": "Klip numarasını yaz: 1, 2, 3 ya da 4."
+ },
+ "k9_menu_t2": {
+  "v": "nermin",
+  "t": "Sadece rakam yaz. Bir ile dört arası. Başka bir şey yok.",
+  "s": "Sadece rakam yaz: 1 ile 4 arası. Başka bir şey yok."
+ },
+ "k9_menu_t3": {
+  "v": "nermin",
+  "t": "Bir ses kaydı, iki Çamlık, üç form, dört benim. Numarasını yaz.",
+  "s": "1 ses kaydı, 2 Çamlık, 3 form, 4 benim. Numarasını yaz."
+ },
+ "k9_menu_w1": {
+  "v": "beste_whisper",
+  "t": "Hepsini izle. Sonra seninle konuşacağım."
+ },
+ "k9_menu_w2": {
+  "v": "beste_whisper",
+  "t": "Arkandayım. Numarayı yaz."
+ },
+ "k9_c1_r1": {
+  "v": "riza",
+  "t": "Beste, kayıttayız. Merhaba arkadaşım de bakalım. Kocaman gülümse!"
+ },
+ "k9_c1_r2": {
+  "v": "riza",
+  "t": "Olmadı. Bir daha. Daha neşeli."
+ },
+ "k9_c1_take2": {
+  "v": "beste_cold",
+  "t": "Merhaba arkadaşım. Ben Beste."
+ },
+ "k9_c1_r3": {
+  "v": "riza",
+  "t": "Gülümse. Sesinden belli oluyor. Bir daha."
+ },
+ "k9_c1_take3": {
+  "v": "beste_kiz",
+  "t": "Merhaba arkadaşım... Ben Beste... Rıza amca, çok yoruldum. Annem ne zaman gelecek?"
+ },
+ "k9_c1_r4": {
+  "v": "riza",
+  "t": "Kayıt durmaz. Bir daha."
+ },
+ "k9_c1_r5": {
+  "v": "riza",
+  "t": "Şimdi bir de tam adınla söyle. Arşiv için."
+ },
+ "k9_c1_full": {
+  "v": "beste_kiz",
+  "t": "Ben Beste Ay",
+  "s": "Ben Beste Ay—"
+ },
+ "k9_c1_kiz1": {
+  "v": "beste_kiz",
+  "t": "Nermin abla, çizgi filmdeki kız neden bana bakıyor?"
+ },
+ "k9_c1_n1": {
+  "v": "nermin",
+  "t": "Sana bakmıyor canım. O sadece bir çizim."
+ },
+ "k9_c1_kiz2": {
+  "v": "beste_kiz",
+  "t": "Ama ben kıpırdayınca o da kıpırdıyor."
+ },
+ "k9_c1_n2": {
+  "v": "nermin",
+  "t": "Soyadını bütün kayıtlardan sildim. Hepsinden. Tek tek."
+ },
+ "k9_c2_riza": {
+  "v": "riza",
+  "w": "RIZA BEY",
+  "t": "Öğle arası! Yarım saat! Kâmil, kamera açık kalsın, ışığı kaçırmayalım."
+ },
+ "k9_c2_kiz1": {
+  "v": "beste_kiz",
+  "t": "Nermin abla, bak! Yirmi kere atladım, hiç takılmadım!",
+  "s": "Nermin abla, bak! 20 kere atladım, hiç takılmadım!"
+ },
+ "k9_c2_n1": {
+  "v": "nermin",
+  "t": "Aferin sana! Gel, bir şey ye önce."
+ },
+ "k9_c2_kiz2": {
+  "v": "beste_kiz",
+  "t": "Gri Amca da gelsin mi? O hiç yemek yemiyor ama."
+ },
+ "k9_c2_n2": {
+  "v": "nermin",
+  "t": "Hayali arkadaşlar yemek yemez zaten. Hadi gel, otur."
+ },
+ "k9_c2_kiz3": {
+  "v": "beste_kiz",
+  "t": "Ebe sensin, Nermin abla! Gözlerini açmak yok ama! Ona kadar sayacaksın!",
+  "s": "Ebe sensin, Nermin abla! Gözlerini açmak yok ama! 10'a kadar sayacaksın!"
+ },
+ "k9_c2_n3": {
+  "v": "nermin",
+  "t": "Tamam, tamam. Kurallara uyacağım. Bir... iki... üç... dört... beş... altı... yedi...",
+  "s": "Tamam, tamam. Kurallara uyacağım. 1... 2... 3... 4... 5... 6... 7..."
+ },
+ "k9_c2_kiz4": {
+  "v": "beste_kiz",
+  "t": "Gri Amca! Sen de mi oynuyorsun? Daha iyi bir saklanma yeri mi? Tamam!"
+ },
+ "k9_c2_n4": {
+  "v": "nermin",
+  "t": "Kâmil, sen mi saydın?"
+ },
+ "k9_c2_n5": {
+  "v": "nermin",
+  "t": "Önüm arkam sağım solum, sobe! Geliyorum Beste!"
+ },
+ "k9_c2_n6": {
+  "v": "nermin",
+  "t": "Beste! Beste, çık artık! Oyun bitti! Sobe! Sobe diyorum!"
+ },
+ "k9_c2_riza2": {
+  "v": "riza",
+  "w": "RIZA BEY",
+  "t": "Kâmil, kapat şu kamerayı! Kapat dedim!"
+ },
+ "k9_c2_n7": {
+  "v": "nermin",
+  "t": "Kapatma! Kayıt sürsün. Belki bir şey yakalamıştır."
+ },
+ "k9_c2_far1": {
+  "v": "nermin",
+  "t": "Beste! Be-ste!",
+  "s": "(uzaktan) Beste! Be-ste!"
+ },
+ "k9_c2_far2": {
+  "v": "riza",
+  "w": "RIZA BEY",
+  "t": "Beste! Kızım!",
+  "s": "(uzaktan) Beste! Kızım!"
+ },
+ "k9_c2_tree": {
+  "v": "nermin",
+  "t": "Kimse kazımadı. Bir kare önce yoktu, bir kare sonra vardı. Ağaç hatırlıyor."
+ },
+ "k9_c3_b1": {
+  "v": "beste_digital",
+  "t": "Bu benim formum. Hepsini sen doldurdun. Teşekkürler."
+ },
+ "k9_c3_b2": {
+  "v": "beste_digital",
+  "t": "Bir tek kutu boş kaldı."
+ },
+ "k9_c3_wait": {
+  "v": "beste_cold",
+  "t": "Acele etme. Son kasette yazarsın."
+ },
+ "k9_c3_typed": {
+  "v": "beste_digital",
+  "t": "Hihihi. Mürekkep tutmadı. Kasette söylemen lazım. Son kasette."
+ },
+ "k9_c3_other": {
+  "v": "beste_cold",
+  "t": "Bu onun soyadı değil. Ama not aldım."
+ },
+ "k9_c3_hint": {
+  "v": "beste_digital",
+  "t": "Kayıttaki kız söylemeye çalışmıştı. Ay ile başlıyor. Beş harf."
+ },
+ "k9_c3_dunno": {
+  "v": "beste_cold",
+  "t": "Hatırlamıyor musun? Ses kaydını dinle. Kız söylemişti."
+ },
+ "k9_c3_truth": {
+  "v": "beste_kiz",
+  "w": "???",
+  "t": "Aydın. Benim soyadım Aydın. Beste Aydın.",
+  "s": "Aydın. Benim soyadım Aydın. Beste Aydın."
+ },
+ "k9_c4_n1": {
+  "v": "nermin",
+  "t": "Ben Nermin. Bu kaseti tavan arasında kaydediyorum. Yanımda kimse yok. Sanırım."
+ },
+ "k9_c4_n2": {
+  "v": "nermin",
+  "t": "O gün ebe bendim. Yediye kadar saydım. Sekizden sonrasını ben saymadım."
+ },
+ "k9_c4_n3": {
+  "v": "nermin",
+  "t": "Ağaçların arasından biri saydı. O ses sonra bütün kasetlerin anlatıcısı oldu."
+ },
+ "k9_c4_n4": {
+  "v": "nermin",
+  "t": "Beste kaybolunca çizgi film kendi kendine konuşmaya başladı. Onun sesiyle."
+ },
+ "k9_c4_n5": {
+  "v": "nermin",
+  "t": "Sesini aldı, yaşını aldı, adını aldı. Bir tek soyadını alamadı. Soyadı, eve dönen yoldur."
+ },
+ "k9_c4_n6": {
+  "v": "nermin",
+  "t": "Bandı geri sararken onu duydum. Gerçek Beste'yi. Hâlâ saklanıyor. Kimse ona sobe demedi."
+ },
+ "k9_c4_n7": {
+  "v": "nermin",
+  "t": "Son kaseti yaktım. Geri gelecek. Gelirse, kapılarda geri sar. Bırakma. Ben hep ileri sardım."
+ },
+ "k9_c4_b": {
+  "v": "beste_deep",
+  "t": "Nermin abla. Arkana bak."
+ },
+ "k9_c4_n8": {
+  "v": "nermin",
+  "t": "Kim var orada?"
+ },
+ "k9_c7_giggle": {
+  "v": "beste_kiz",
+  "t": "Hihi! Bulamazsın beni!"
+ },
+ "k9_hijack1": {
+  "v": "beste_digital",
+  "t": "Bunları izlememen gerekiyordu."
+ },
+ "k9_hijack2": {
+  "v": "beste_digital",
+  "t": "Ama olsun. Artık her şeyi biliyorsun. Ben de senin hakkında her şeyi biliyorum."
+ },
+ "k9_ask_ready": {
+  "v": "beste_digital",
+  "t": "Son kaseti bu gece ben getireceğim. Hazır mısın?"
+ },
+ "k9_ready_any": {
+  "v": "beste_cold",
+  "t": "Hazır olmasan da."
+ },
+ "k9_light": {
+  "v": "beste_digital",
+  "t": "Işığını söndür. Karanlıkta daha kolay yürüyorum."
+ },
+ "k9_ters": {
+  "v": "beste_real",
+  "t": "Kaseti al ama kapıyı açma. Sakın kapıyı açma."
+ },
+ "k9_menu_auto": {
+  "v": "nermin",
+  "t": "Peki. Senin yerine ben seçeyim."
+ }
+}

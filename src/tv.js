@@ -110,6 +110,12 @@ export class TVScreen {
     this.count = 0;
     this.recT = 0;
 
+    // VCR modu görünümü (ileri/geri sarma, duraklatma): kasetin kendi ayarlarının (p) üstüne biner,
+    // onları değiştirmez; böylece mod bitince kasetin o anki görüntüsü (tween'ler dahil) aynen kalır.
+    this.over = null;
+    // geri sarma bitince kısa sarsıntı: gerçek zamanda söner (duraklatılmış görüntüde takılı kalmaz)
+    this.kickFx = null;
+
     this.avg = new THREE.Color(0, 0, 0);
     this.small = document.createElement('canvas');
     this.small.width = this.small.height = 4;
@@ -120,6 +126,18 @@ export class TVScreen {
   clearBuffer() {
     this.count = 0;
     this.head = 0;
+    this.recT = 0;
+    this.meta.fill(null);
+  }
+
+  /** VCR modu görünümü ({ jitter, tracking, noise } alt sınırları) ya da null. */
+  setOverlay(o) {
+    this.over = o;
+  }
+
+  /** Kısa glitch sarsıntısı (gerçek zamanda söner). */
+  kick(amount, dur) {
+    this.kickFx = { amount, dur: Math.max(dur, 0.01), t: 0 };
   }
 
   /** Mevcut kareyi geri sarma tamponuna yazar. */
@@ -149,7 +167,17 @@ export class TVScreen {
 
   update(dt, time) {
     const p = this.p;
-    for (const k of Object.keys(SCREEN_DEFAULT)) this.u[k].value = p[k];
+    const o = this.over;
+    for (const k of Object.keys(SCREEN_DEFAULT)) this.u[k].value = o && o[k] != null ? Math.max(p[k], o[k]) : p[k];
+    const kf = this.kickFx;
+    if (kf) {
+      kf.t += dt;
+      const a = kf.amount * Math.max(0, 1 - kf.t / kf.dur);
+      if (kf.t >= kf.dur) this.kickFx = null;
+      this.u.glitch.value = Math.max(this.u.glitch.value, a);
+      this.u.jitter.value = Math.max(this.u.jitter.value, a * 2);
+      this.u.noise.value = Math.max(this.u.noise.value, a * 0.25);
+    }
     this.u.power.value = p.power;
     this.u.time.value = time;
     this.u.tint.value.setRGB(p.tintR, p.tintG, p.tintB);

@@ -5,6 +5,14 @@ import * as S from './draw/scenes.js';
 import { drawBeste, drawTonton } from './draw/characters.js';
 
 const FF_SPEED = 5;
+// VCR modlarının ekran görünümü: kasetin kendi ayarlarının (tv.p) üstüne biner, onları değiştirmez
+const LOOK_FF = { jitter: 0.9, tracking: 1.1 };
+const LOOK_RW = { jitter: 1.2, tracking: 1.4, noise: 0.12 };
+const LOOK_PAUSE = { jitter: 0.6 };
+/** Ses dosyası olmayan replik bu kadar (bant zamanı) ekranda kalır. */
+const SILENT_LINE_SEC = 2.5;
+/** İleri sararken atlanan replik, bu kadar bant saniyesi içinde soru açılırsa yeniden okunur. */
+const REPLAY_WINDOW = 8;
 
 const WHO = {
   beste: { label: 'BESTE', cls: '' },
@@ -68,6 +76,9 @@ export class Director {
     this.onRewindEnd = null;
     this.noFF = false;
     this.ffSkipped = null;
+    this.sayCur = null; // { id, o, h, sub, tok }: şu an söylenen replik
+    this.subTok = 0; // altyazıyı en son kim yazdı (bir replik bitince başkasının altyazısını silmesin)
+    this.hissWas = true;
     this.ejectPolicy = 'deny'; // video oynarken kaset çıkarılamaz
     // --- 3-10. kasetlerin ortak araçları
     this.onKey = null; // (KeyboardEvent) => true ise tuş tüketilir (cevap kutusu açık değilken)
@@ -96,6 +107,7 @@ export class Director {
     this.tapeId = tapeId;
     this.firstViewing = opts.firstViewing ?? true;
     this.tv.clearBuffer();
+    this.tv.setOverlay(null);
     this.showOsd('▶ OYNAT', 3);
     try {
       await tapeFn(this);
@@ -132,6 +144,8 @@ export class Director {
     this.ffStop = null;
     this.ff = false;
     this.paused = false;
+    this.sayCur = null;
+    this.tv.setOverlay(null);
     this.endTyping();
     this.g.ui.subtitle(null);
   }
@@ -174,7 +188,9 @@ export class Director {
       this.updateIdle();
     }
     this.drawFrame();
+    // geri sarma tamponuna OSD'siz kare girer (yoksa geri sararken eski "▶ OYNAT"/sayaç yazıları üst üste biner)
     if (!this.paused) this.tv.record(dt, this.meta);
+    this.drawOsd();
     return true;
   }
 
@@ -228,6 +244,11 @@ export class Director {
    * Bu sırada F/E sessizce yutulur, onTapeDone çağrılmaz. Sahneyi kaset kendisi çizer.
    */
   async fakeEnd(sec = 7) {
+    // VCR "durdu": ileri sarma sürüyorsa biter (sahte bitiş hızla atlanamaz), OSD de görünmez
+    if (this.ff) {
+      this.stopFF();
+      this.osdUntil = 0;
+    }
     this.fakeEnding = true;
     this.g.fakeEnd?.(true);
     try {
@@ -261,6 +282,10 @@ export class Director {
       if (this.input.options) S.optionsBar(ctx, this.input.options, { evil: this.input.evil });
       S.promptBox(ctx, this.time, this.input.text, { evil: this.input.evil, label: this.input.label });
     }
+  }
+
+  drawOsd() {
+    const ctx = this.tv.ctx;
     const label = this.paused ? '❚❚ DURAKLAT' : this.ff ? '▶▶ İLERİ SAR' : this.time < this.osdUntil ? this.osdLabel : '';
     if (label) S.osd(ctx, { label, counter: this.counter() });
   }
@@ -364,14 +389,24 @@ export class Director {
     o = { ...this.voiceMods[line.v], ...this.voiceMods[who], ...o };
     this.voice?.stop();
     const text = o.sub ?? this.fmt(line.s || line.t);
-    this.g.ui.subtitle(w.label, text, w.cls);
+    const sub = [w.label, text, w.cls];
+    this.g.ui.subtitle(...sub);
+    const tok = ++this.subTok;
     this.speaker = who;
-    // ileri sarılırken (ve test kancasında) replik çalınmaz, kısa bir an altyazı görünür
-    const skip = this.ff || this.g.debug?.fast;
-    this.ffSkipped = this.ff ? { id, o } : null;
+    const fast = this.g.debug?.fast;
     const filter = o.filter === undefined ? STYLE_FILTER[line.v] : o.filter;
-    const h = skip ? { promise: this.wait(this.ff ? 0.6 : 0.2), pause() {}, resume() {}, stop() {} } : this.audio.playVoice(o.file || id, { rate: o.rate, gain: o.gain, detune: o.detune, dest: o.dest, filter: o.dest ? null : filter });
+    const file = o.file || id;
+    // ses dosyası yoksa replik bant zamanında bekler (duraklatma / geri sarma onu da durdurur)
+    const real = () =>
+      !this.audio.buffers.has(file)
+        ? this.skipVoice(SILENT_LINE_SEC, null)
+        : this.audio.playVoice(file, { rate: o.rate, gain: o.gain, detune: o.detune, dest: o.dest, filter: o.dest ? null : filter });
+    // ileri sarılırken (ve test kancasında) replik çalınmaz, kısa bir an altyazı görünür;
+    // ileri sarma replik bitmeden bırakılırsa replik baştan gerçekten çalınır
+    const h = this.ff || fast ? this.skipVoice(this.ff ? 0.6 : 0.2, this.ff && !fast ? real : null) : real();
+    this.ffSkipped = this.ff ? { id, o, at: this.time } : null;
     this.voice = h;
+    const cur = (this.sayCur = { id, o, h, sub, tok });
     if (this.paused || this.rewinding) h.pause();
     try {
       await this.race(h.promise);
@@ -380,10 +415,43 @@ export class Director {
         this.voice = null;
         this.speaker = null;
       }
+      if (this.sayCur === cur) this.sayCur = null;
       if (this.aborted) h.stop();
     }
-    if (!o.keep) this.g.ui.subtitle(null, null, null, 0.35);
+    // altyazı hâlâ bu repliğinse kalkar (araya başka replik girdiyse onunkine dokunulmaz)
+    if (!o.keep && this.subTok === cur.tok) this.g.ui.subtitle(null, null, null, 0.35);
     if (o.after) await this.wait(o.after);
+  }
+
+  /**
+   * Bant zamanında süren sessiz replik tutamacı (ileri sarma, test kancası, ses dosyası olmayan replik).
+   * real verilirse land() repliği baştan gerçek sesle çalar (ileri sarma bırakılınca).
+   */
+  skipVoice(sec, real) {
+    let resolve;
+    const h = { skip: true, inner: null, done: false, promise: new Promise((r) => (resolve = r)) };
+    const finish = () => {
+      if (h.done) return;
+      h.done = true;
+      this.waiters = this.waiters.filter((x) => x !== waiter);
+      resolve();
+    };
+    const waiter = { until: this.time + sec, resolve: () => !h.inner && finish() };
+    this.waiters.push(waiter);
+    h.pause = () => h.inner?.pause();
+    h.resume = () => h.inner?.resume();
+    h.stop = () => {
+      h.inner?.stop();
+      finish();
+    };
+    h.land = () => {
+      if (!real || h.done || h.inner) return false;
+      this.waiters = this.waiters.filter((x) => x !== waiter);
+      h.inner = real();
+      h.inner.promise.then(finish);
+      return true;
+    };
+    return h;
   }
 
   /** Beklemeden başlatılan replik (bekleme uyarıları vb.) */
@@ -409,6 +477,7 @@ export class Director {
       pos = { x: l.pos.x + 0.25, y: l.pos.y, z: l.pos.z + 0.15 };
     }
     const w = this.labelFor(line, o);
+    const tok = o.sub !== false ? ++this.subTok : -1;
     if (o.sub !== false) this.g.ui.subtitle(w.label, o.sub ?? this.fmt(line.s || line.t), w.cls);
     const h = this.g.debug?.fast
       ? { promise: new Promise((r) => setTimeout(r, 150)), stop() {} }
@@ -418,7 +487,7 @@ export class Director {
     } finally {
       if (this.aborted) h.stop();
     }
-    if (!o.keep && o.sub !== false) this.g.ui.subtitle(null, null, null, 0.35);
+    if (!o.keep && o.sub !== false && this.subTok === tok) this.g.ui.subtitle(null, null, null, 0.35);
   }
 
   music(mode, o) {
@@ -486,11 +555,10 @@ export class Director {
   ask(o = {}) {
     this.check();
     // soru gelince ileri sarma durur; atlanan soru repliği cevap kutusu açıkken tekrar okunur
-    let replay = null;
-    if (this.ff) {
-      this.stopFF();
-      replay = this.ffSkipped;
-    }
+    // (ileri sarma sorudan biraz önce bırakılmış olsa da: son replik atlanmışsa soru duyulmamıştır)
+    if (this.ff) this.stopFF();
+    const sk = this.ffSkipped;
+    const replay = sk && this.time - sk.at < REPLAY_WINDOW ? sk : null;
     this.ffSkipped = null;
     this.input = {
       text: '',
@@ -580,18 +648,19 @@ export class Director {
       this.pauseCount++;
       this.audio.pauseVoices();
       this.audio.music?.pause();
+      // cızırtı kaset kapattıysa (ör. sahte bitiş) devam edince de kapalı kalır
+      this.hissWas = this.audio.hissOn !== false;
       this.audio.setHiss(false);
-      this.tv.p.jitter = 0.6;
       if (this.meta?.secret) this.g.foundSecret(this.meta.secret.id, this.meta.secret.text);
     } else {
       this.pausedFor = this.g.clock - this.pausedAt;
       this.audio.resumeVoices();
       this.audio.music?.resume();
-      this.audio.setHiss(true);
-      this.tv.p.jitter = this.baseFx.jitter;
+      this.audio.setHiss(this.hissWas);
       this.showOsd('▶ OYNAT', 2);
       this.onResume?.(this.pauseCount);
     }
+    this.vcrLook();
     this.onPause?.(this.paused);
     return true;
   }
@@ -608,16 +677,23 @@ export class Director {
     return this.paused ? this.g.clock - this.pausedAt : this.pausedFor;
   }
 
+  /** Ekranın VCR modu görünümü: kasetin kendi ekran ayarlarına (tv.p, tween'ler) dokunmaz. */
+  vcrLook() {
+    this.tv.setOverlay(this.rewinding ? LOOK_RW : this.ff ? LOOK_FF : this.paused ? LOOK_PAUSE : null);
+  }
+
   /** Sağ ok basılıyken: bant hızlanır, replikler atlanır. Soru gelince kendiliğinden durur. */
   startFF() {
-    if (!this.active || this.noFF || this.rewinding || this.paused || this.input || this.ff) return;
+    if (!this.active || this.noFF || this.rewinding || this.paused || this.input || this.ff || this.fakeEnding) return;
     this.ff = true;
+    // yarıda kesilen replik de atlanmış sayılır: hemen ardından soru açılırsa yeniden okunur
+    const cur = this.sayCur;
+    if (cur && cur.h === this.voice && !cur.h.done) this.ffSkipped = { id: cur.id, o: cur.o, at: this.time };
     this.voice?.stop();
     this.audio.pauseVoices();
     this.audio.music?.pause();
     this.ffStop = this.sfx('ffwd');
-    this.tv.p.jitter = 0.9;
-    this.tv.p.tracking = 1.1;
+    this.vcrLook();
   }
 
   stopFF() {
@@ -625,59 +701,67 @@ export class Director {
     this.ff = false;
     this.ffStop?.();
     this.ffStop = null;
-    this.tv.p.jitter = this.baseFx.jitter;
-    this.tv.p.tracking = this.baseFx.tracking;
+    // bant bir repliğin ortasında bırakıldıysa o replik baştan çalınır (sessiz geçmez)
+    if (this.voice?.land?.()) {
+      this.ffSkipped = null;
+      if (this.paused || this.rewinding) this.voice.pause();
+    }
     if (!this.paused && !this.rewinding) {
       this.audio.resumeVoices();
       this.audio.music?.resume();
     }
+    this.vcrLook();
     this.showOsd('▶ OYNAT', 1.5);
   }
 
   startRewind() {
-    if (!this.active || this.rewinding) return;
+    // sahte bitişte VCR "durdu"; ekran kapalıyken (oda sahnesi gerçek zamanlı) geri sarılmaz
+    if (!this.active || this.rewinding || this.fakeEnding || this.tv.p.power < 0.05) return;
     if (this.ff) this.stopFF();
     this.rewinding = true;
     this.audio.pauseVoices();
     this.audio.music?.pause();
-    this.rw = { n: 0, acc: 0, stick: 0, held: 0, seen: new Set(), stopSfx: this.sfx('rewind'), auto: false, release: false, revPlayed: false };
-    this.tv.p.jitter = 1.2;
-    this.tv.p.tracking = 1.4;
-    this.tv.p.noise = 0.12;
+    this.rw = { n: 0, acc: 0, stick: 0, held: 0, seen: new Set(), stopSfx: this.sfx('rewind'), auto: false, release: false, revPlayed: false, revH: null };
+    this.vcrLook();
   }
 
   stopRewind(force = false) {
     if (!this.rewinding) return;
-    if (this.rw.auto && !force) {
-      this.rw.release = true;
+    const rw = this.rw;
+    if (rw.auto && !force) {
+      rw.release = true;
       return;
     }
-    this.rw.stopSfx?.();
-    const held = this.rw.held;
+    rw.stopSfx?.();
+    // kaset zorla devam ettiriliyorsa ters mesaj kasetin sesinin üstünde sürmesin
+    if (force && rw.revH && !rw.revH.done) rw.revH.stop();
     this.rw = null;
     this.rewinding = false;
-    this.tv.p.jitter = this.baseFx.jitter;
-    this.tv.p.tracking = this.baseFx.tracking;
-    this.tv.p.noise = this.baseFx.noise;
     if (!this.paused) {
       this.audio.resumeVoices();
       this.audio.music?.resume();
     }
+    this.vcrLook();
     this.showOsd('▶ OYNAT', 2);
-    this.glitch(0.6, 0.35, false);
-    if (!force) this.onRewindEnd?.(held);
+    this.tv.kick(0.6, 0.35);
+    if (force) return;
+    this.onRewindEnd?.(rw.held);
+    // sağ ok hâlâ basılıysa ileri sarmaya geçilir
+    if (this.g.input?.ffHeld) this.startFF();
   }
 
   updateRewind(dt) {
     const rw = this.rw;
     if (this.g.input?.rewindHeld !== false) rw.held += dt;
     if (this.onRewindHold?.(rw.held)) return;
+    // tamponun en eski karesinde durur (sayaç da orada kalır)
+    const last = Math.max(0, this.tv.count - 1);
     if (rw.stick > 0) rw.stick -= dt;
     else {
       rw.acc += dt * 18;
       while (rw.acc >= 1) {
         rw.acc -= 1;
-        rw.n++;
+        rw.n = Math.min(rw.n + 1, last);
       }
     }
     const ctx = this.tv.ctx;
@@ -690,8 +774,8 @@ export class Director {
       ctx.drawImage(f.canvas, 0, 0, W, H);
       ctx.restore();
     }
-    const atEnd = !f || rw.n >= this.tv.count - 1;
-    if (atEnd) S.staticNoise(ctx, this.time, 0.55);
+    const atEnd = !f || rw.n >= last;
+    if (atEnd) S.staticNoise(ctx, this.g.clock, 0.55);
     // geri sarma bantları
     for (let i = 0; i < 3; i++) {
       const y = (((this.g.clock * (180 + i * 70)) % (H + 60)) - 30) | 0;
@@ -708,24 +792,35 @@ export class Director {
       this.g.foundSecret(meta.secret.id, meta.secret.text);
     }
     if (rw.stick > 0 && meta?.secret?.text) S.bigText(ctx, meta.secret.text, { font: `52px ${S.FONT_OSD}` });
-    if (meta?.rev && !rw.revPlayed) {
-      rw.revPlayed = true;
-      rw.auto = true;
-      rw.stick = 99;
-      const line = this.lines[meta.rev];
-      this.g.ui.subtitle('???', line.t, 'bilinmeyen');
-      this.g.foundSecret('ters-' + meta.rev, null);
-      const h = this.audio.playVoice(meta.rev, { gain: 1.2 });
-      h.promise.then(() => {
-        this.g.ui.subtitle(null, null, null, 0.8);
-        if (!this.rw) return;
-        this.rw.auto = false;
-        this.rw.stick = 0;
-        if (this.rw.release || !this.g.input.rewindHeld) this.stopRewind();
-      });
-    }
+    if (meta?.rev && !rw.revPlayed) this.playReversed(rw, meta.rev);
     if (rw.revPlayed && rw.auto) S.realGirl(ctx, this.g.clock, { alpha: 0.55 + Math.sin(this.g.clock * 7) * 0.15 });
     S.osd(ctx, { label: '◀◀ GERİ SAR', counter: this.counter() - rw.n / 12 });
+  }
+
+  /** Geri sararken ters kaydedilmiş mesajın düz hâli çalınır; bitene kadar geri sarma sürer. */
+  playReversed(rw, id) {
+    rw.revPlayed = true;
+    rw.auto = true;
+    rw.stick = 99;
+    const line = this.lines[id];
+    const tok = ++this.subTok;
+    this.g.ui.subtitle('???', line?.t ?? '', 'bilinmeyen');
+    this.g.foundSecret('ters-' + id, null);
+    const h = (rw.revH = this.audio.playVoice(id, { gain: 1.2 }));
+    h.promise.then(() => {
+      // altyazı başkası yazmadıysa: kaset hâlâ aynı repliğin ortasındaysa onun altyazısı geri gelir
+      if (this.subTok === tok) {
+        const cur = this.sayCur;
+        if (this.active && cur && !cur.h.done) {
+          this.subTok = cur.tok;
+          this.g.ui.subtitle(...cur.sub);
+        } else this.g.ui.subtitle(null, null, null, 0.8);
+      }
+      if (this.rw !== rw) return;
+      rw.auto = false;
+      rw.stick = 0;
+      if (rw.release || !this.g.input?.rewindHeld) this.stopRewind();
+    });
   }
 
   tryEject() {

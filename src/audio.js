@@ -134,6 +134,7 @@ export class AudioEngine {
   }
 
   setHiss(on) {
+    this.hissOn = !!on;
     if (!this.ctx) return;
     this.hissGain.gain.setTargetAtTime(on ? this.fx.hiss : 0, this.now, 0.15);
   }
@@ -471,9 +472,13 @@ class VoiceHandle {
     this.src = s;
     this.playing = true;
   }
+  /** Tampondaki gerçek ilerleme hızı: playbackRate ve detune birlikte (detune de hızı değiştirir). */
+  get speed() {
+    return this.opts.rate * Math.pow(2, (this.opts.detune || 0) / 1200);
+  }
   pause() {
     if (!this.playing) return;
-    this.offset += (this.e.ctx.currentTime - this.startedAt) * this.opts.rate;
+    this.offset += (this.e.ctx.currentTime - this.startedAt) * this.speed;
     this.playing = false;
     const s = this.src;
     this.src = null;

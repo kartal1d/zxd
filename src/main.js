@@ -20,6 +20,8 @@ const $ = (id) => document.getElementById(id);
 const SAVE_KEY = 'beste-kayit-v1';
 const SETTINGS_KEY = 'beste-ayarlar-v1';
 const TAPES = { 1: tape1, 2: tape2, 3: tape3 };
+/** Son kaset: bitince oyun sona erer. */
+const FINAL = 3;
 const TAPE_NAMES = { 1: "Kaset 1 — 'Beste ile Tanışalım!'", 2: "Kaset 2 — 'Tonton Kedi'nin Kuyruğu'", 3: "Kaset 3 — 'SON'" };
 
 const GrainShader = {
@@ -746,12 +748,12 @@ class Game {
     this.refreshInventory();
     // ilk izlemede odadaki değişim (ışık, peluş) ses işaretiyle birlikte gelir
     if (!first) r.applyStage(st, this.playingTape);
-    if (n < 3) {
+    if (n < FINAL) {
       this.audio.sfx('vcrEject', r.points.vcr);
       this.ui.toast(first ? 'Kaset bitti ve kendiliğinden dışarı çıktı.' : 'Kaset bitti. Dolabın üstüne, diğer kasetlerin yanına koydun.');
     }
     r.setFocus(false);
-    if (n < 3 && !first) {
+    if (n < FINAL && !first) {
       this.updateObjective();
       return;
     }
@@ -767,7 +769,7 @@ class Game {
       r.applyStage(st, this.playingTape);
       this.audio.sfx('thud', new THREE.Vector3(-0.45, 0.2, 2.05));
       this.ui.toast('Arkanda bir şey yere düştü.', 4);
-    } else if (n === 3) {
+    } else if (n === FINAL) {
       st.endings = [...new Set([...(st.endings || []), st.ending])];
       this.save();
       this.fade(1);
@@ -798,7 +800,8 @@ class Game {
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
     if (this.mode !== 'paused') this.update(dt);
-    this.composer.render();
+    // test kancası: başsız testlerde 3D çizimi atla (TV tuvali yine güncellenir)
+    if (!this.debug?.noRender) this.composer.render();
     requestAnimationFrame((t) => this.frame(t));
   }
 

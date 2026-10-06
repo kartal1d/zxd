@@ -91,7 +91,7 @@
   "b2_after": { "v": "beste", "t": "Tonton Kedi uzun bir yolculuğa çıktı! Hadi, şimdi hep birlikte şarkı söyleyelim!" },
   "b2_song": { "v": "beste_cold", "t": "La la la, güneş doğar. La la la, herkes oynar. La la la, kapı kapanır. La la la, kimse duymaz." },
   "b2_real": { "v": "beste_real", "t": "Ben gerçek Beste'yim. Ekrandaki ben değilim. Ona soyadımı söyleme. Sıkışırsan, kaseti geri sar." },
-  "b2_bye": { "v": "beste_cold", "t": "Bir sonraki bölüm, son bölüm. Sakın kaçırma. Zaten kaçamazsın.", "s": "Bir sonraki bölüm, son bölüm, {ad}. Sakın kaçırma. Zaten kaçamazsın." },
+  "b2_bye": { "v": "beste_cold", "t": "Bir sonraki bölümde görüşürüz. Sakın kaçırma. Zaten kaçamazsın.", "s": "Bir sonraki bölümde görüşürüz, {ad}. Sakın kaçırma. Zaten kaçamazsın." },
 
   "b3_open": { "v": "beste_digital", "t": "Beni bu kutunun içine sen hapsettin. Kaseti ilk oynattığında kapıyı kapattın." },
   "b3_ask_outside": { "v": "beste_digital", "t": "Şimdi dışarısı nasıl? Orası da burası gibi karanlık mı?" },

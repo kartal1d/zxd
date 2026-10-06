@@ -175,7 +175,9 @@ export class Director {
   }
 
   counter() {
-    return this.time + (this.tapeId === 't2' ? 1312 : this.tapeId === 't3' ? 2649 : 0);
+    // her kaset bandın biraz daha ilerisinden başlar (VCR sayacı)
+    const n = parseInt(String(this.tapeId).slice(1), 10) || 1;
+    return this.time + (n - 1) * 1324;
   }
 
   showOsd(label, sec = 2.5) {

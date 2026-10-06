@@ -76,7 +76,7 @@ export const DOCS = {
     html: `<p class="paper-name"><span>EGE POSTASI</span><span>14 MAYIS 1999 · CUMA</span></p>
 <h3>Çamlık'ta bir yıl: Küçük Beste hâlâ kayıp</h3>
 <p>Karşıyaka'da çocuk programı çekimleri sırasında kaybolan 7 yaşındaki Beste Aydın'dan bir yıldır haber alınamıyor. Aydın ailesi geçen ay Karşıyaka'dan taşındı.</p>
-<p>Mesire alanındaki yaşlı bir çama kazınmış "B.A. 1405" yazısını kimin kazıdığı bilinmiyor. Her gün orada yürüyenler, yazının bir yıl önce orada olmadığını söylüyor.</p>
+<p>Mesire alanındaki yaşlı bir çama kazınmış "B.A. 14.05" yazısını kimin kazıdığı bilinmiyor. Her gün orada yürüyenler, yazının bir yıl önce orada olmadığını söylüyor.</p>
 <p>Jandarma, çekim ekibinin kamera kayıtlarının "teknik bir arıza nedeniyle incelenemediğini" açıkladı. Yapımcı R. Yıldız gazetemize yalnızca "Konuşacak bir şeyim yok." dedi.</p>
 <p>Annesi, evin eski telefonunu hiç kapatmadıklarını söylüyor.</p>`,
   },
@@ -174,6 +174,12 @@ export class UI {
   hover(text) {
     $('hover-label').innerHTML = text || '';
     $('crosshair').classList.toggle('active', !!text);
+  }
+
+  /** Fare kilidi için tıklama gerektiğinde ortada yanıp sönen ipucu */
+  clickHint(on) {
+    const el = $('click-hint');
+    if (el) el.hidden = !on;
   }
 
   toast(text, sec = 4) {

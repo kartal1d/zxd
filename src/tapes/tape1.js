@@ -288,7 +288,7 @@ export async function tape1(d) {
     // ağaç seçilmediyse oyma bir an araya girer (ipucu kaybolmasın)
     await d.wait(0.6);
     d.sfx('glitch', 0.3);
-    d.tag({ secret: { id: 'oyma', text: '1405' } });
+    d.tag({ secret: { id: 'oyma', text: '14.05' } });
     await showCarving(null, 3.5);
     d.tag(null);
   }

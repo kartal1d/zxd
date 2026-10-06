@@ -53,6 +53,8 @@ export class Director {
     this.rejects = new Set();
     this.sceneFn = null;
     this.sceneT0 = 0;
+    this.scareFn = null;
+    this.scareT0 = 0;
     this.meta = null;
     this.input = null;
     this.voice = null;
@@ -250,6 +252,11 @@ export class Director {
     ctx.fillRect(0, 0, W, H);
     if (this.sceneFn) this.sceneFn(ctx, this.time - this.sceneT0, this);
     ctx.restore();
+    if (this.scareFn) {
+      ctx.save();
+      this.scareFn(ctx, this.time - this.scareT0, this);
+      ctx.restore();
+    }
     if (this.input) {
       if (this.input.options) S.optionsBar(ctx, this.input.options, { evil: this.input.evil });
       S.promptBox(ctx, this.time, this.input.text, { evil: this.input.evil, label: this.input.label });
@@ -436,6 +443,32 @@ export class Director {
   setBase(params, dur = 1) {
     this.baseFx = { ...this.baseFx, ...params };
     this.fx(this.baseFx, dur);
+  }
+
+  /**
+   * Ani korkutma: sahnenin üstüne bir an korkunç bir kare + yüksek ses.
+   * o.face: 'beste' | 'man' | 'tonton' (hazır kareler), o.draw(ctx, t) kendi karen,
+   * o.sec ekranda kalma süresi (bant zamanı; duraklatılırsa kare donar), o.sfx ses adı ('scare'),
+   * o.room true ise ses arkadan, odadan gelir. İleri sarılırken atlanır (false döner).
+   */
+  async jumpscare(o = {}) {
+    if (this.ff || this.aborted) return false;
+    const sec = o.sec ?? 0.55;
+    this.scareT0 = this.time;
+    this.scareFn = o.draw || ((ctx, t) => S.scareFace(ctx, t, o.face || 'beste', o));
+    this.sfx(o.sfx || 'scare', o.room ? this.g.room?.points?.behind : null);
+    const p = this.tv.p;
+    p.jitter = Math.max(p.jitter, 0.6);
+    p.aberration = Math.max(p.aberration ?? 0, 0.012);
+    this.tweens.add(p, 'jitter', this.baseFx.jitter ?? 0, sec + 0.4);
+    this.tweens.add(p, 'aberration', this.baseFx.aberration ?? 0.002, sec + 0.4);
+    if (!this.g.settings?.flash) this.g.room?.flickerBurst?.(0.35);
+    try {
+      await this.wait(sec);
+    } finally {
+      this.scareFn = null;
+    }
+    return true;
   }
 
   async glitch(amount = 1, dur = 0.4, sound = true) {

@@ -1098,6 +1098,15 @@ const SFX = {
     this.noiseBurst(out, t, 1.8, { type: 'lowpass', freq: 1200, gain: 0.5, attack: 0.005 });
     this.tone(out, t, 90, 1.2, { gain: 0.6, endFreq: 30 });
   },
+  /** ani korkutma: keskin çığlık gibi tiz küme + gürültü patlaması + derin vuruş */
+  scare(t, pos) {
+    const out = pos ? this.at(pos.x, pos.y, pos.z, 0.2) : this.tvIn;
+    [1480, 1567, 1661, 2093, 2217].forEach((f, i) => this.tone(out, t, f, 0.9, { type: i % 2 ? 'sawtooth' : 'square', gain: 0.07, attack: 0.002, endFreq: f * 0.82 }));
+    [61.7, 65.4, 92.5, 130.8].forEach((f) => this.tone(out, t, f, 1.6, { type: 'sawtooth', gain: 0.12, attack: 0.002 }));
+    this.noiseBurst(out, t, 0.7, { type: 'highpass', freq: 900, gain: 0.7, attack: 0.001 });
+    this.noiseBurst(this.room, t, 1.4, { type: 'lowpass', freq: 160, gain: 0.8, attack: 0.002 });
+    this.tone(this.room, t, 70, 1.3, { gain: 0.9, endFreq: 22 });
+  },
   boom(t) {
     this.tone(this.room, t, 60, 1.6, { gain: 0.7, endFreq: 25 });
     this.noiseBurst(this.room, t, 1.2, { type: 'lowpass', freq: 220, gain: 0.6 });

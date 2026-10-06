@@ -118,7 +118,7 @@ export async function tape10(d) {
     {
       line: 'b3_q1',
       truth: 'b3_truth1',
-      answer: '1405',
+      answer: '14.05',
       ok: (txt) => {
         const dg = digits(txt);
         return dg.includes('1405') || dg.startsWith('145') || dg.includes('14598') || (dg.includes('14') && has(txt, 'mayis'));

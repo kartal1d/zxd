@@ -852,9 +852,9 @@ function bigTree(ctx, x, t, carving) {
     ctx.font = `800 17px ${FONT_CARTOON}`;
     ctx.lineWidth = 4;
     ctx.strokeStyle = '#3a1d0a';
-    ctx.strokeText('1405', 0, 4);
+    ctx.strokeText('14.05', 0, 4);
     ctx.fillStyle = '#ffe2b8';
-    ctx.fillText('1405', 0, 4);
+    ctx.fillText('14.05', 0, 4);
     ctx.restore();
   }
 }
@@ -882,7 +882,7 @@ export function treeCarving(ctx, t, o = {}) {
   ctx.lineWidth = 10;
   ctx.strokeStyle = '#2a1206';
   const top = o.top ?? 'B.A.';
-  const big = o.big ?? '1405';
+  const big = o.big ?? '14.05';
   ctx.strokeText(top, 0, -112);
   ctx.fillStyle = '#ffe2b8';
   ctx.fillText(top, 0, -112);
@@ -957,7 +957,7 @@ export function bgVoid(ctx, t, o = {}) {
     ctx.lineTo(x, H);
     ctx.stroke();
   }
-  const words = o.words || ['YARDIM', 'ÇIKIŞ', 'KAPI', 'BESTE', '1405'];
+  const words = o.words || ['YARDIM', 'ÇIKIŞ', 'KAPI', 'BESTE', '14.05'];
   ctx.font = `28px ${FONT_OSD}`;
   ctx.textAlign = 'center';
   for (let i = 0; i < 9; i++) {
@@ -1198,4 +1198,147 @@ export function mixHex(a, b, t) {
   const g = Math.round(((pa >> 8) & 255) * (1 - t) + ((pb >> 8) & 255) * t);
   const bl = Math.round((pa & 255) * (1 - t) + (pb & 255) * t);
   return `rgb(${r},${g},${bl})`;
+}
+
+/**
+ * Ani korkutma karesi: ekranı dolduran yakın plan bir yüz. kind: 'beste' | 'man' | 'tonton'.
+ * t saniye; ilk karelerde hafif büyüyüp titrer.
+ */
+export function scareFace(ctx, t, kind = 'beste', o = {}) {
+  const k = 1 + Math.min(t, 0.5) * 0.18;
+  const jx = (hash(Math.floor(t * 40)) - 0.5) * 18;
+  const jy = (hash(Math.floor(t * 40) + 7) - 0.5) * 14;
+  ctx.fillStyle = kind === 'man' ? '#050506' : '#120203';
+  ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(W / 2 + jx, H / 2 + 20 + jy);
+  ctx.scale(k, k);
+  if (kind === 'tonton') {
+    // dikişli kedi: düğme gözler, dikilmiş ağız yırtılmış
+    ctx.fillStyle = '#c96a24';
+    ctx.beginPath();
+    ctx.moveTo(-250, -120);
+    ctx.lineTo(-200, -330);
+    ctx.lineTo(-90, -200);
+    ctx.lineTo(90, -200);
+    ctx.lineTo(200, -330);
+    ctx.lineTo(250, -120);
+    ctx.ellipse(0, 20, 270, 230, 0, 0, Math.PI);
+    ctx.closePath();
+    ctx.fill();
+    for (const [x, c] of [[-110, '#b01818'], [110, '#111']]) {
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.arc(x, -40, 62, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#e8e0d0';
+      for (const [dx, dy] of [[-18, -18], [18, -18], [-18, 18], [18, 18]]) {
+        ctx.beginPath();
+        ctx.arc(x + dx, -40 + dy, 7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.moveTo(-170, 90);
+    ctx.quadraticCurveTo(0, 290, 170, 90);
+    ctx.quadraticCurveTo(0, 170, -170, 90);
+    ctx.fill();
+    ctx.strokeStyle = '#1a0a04';
+    ctx.lineWidth = 6;
+    for (let i = -6; i <= 6; i++) {
+      ctx.beginPath();
+      ctx.moveTo(i * 26, 110 + Math.abs(i) * -6);
+      ctx.lineTo(i * 26 + 6, 165 - Math.abs(i) * 4);
+      ctx.stroke();
+    }
+  } else if (kind === 'man') {
+    // yüzsüz gri adam, yüzünde Beste'nin çizilmiş yüzü kâğıttan bir maske gibi
+    ctx.fillStyle = '#6d6d70';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 230, 300, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.save();
+    ctx.rotate(-0.08);
+    ctx.fillStyle = '#efe4cf';
+    ctx.beginPath();
+    ctx.ellipse(10, 10, 150, 170, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#2b1d14';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(-50, -20, 26, Math.PI * 1.1, Math.PI * 1.9);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(70, -20, 26, Math.PI * 1.1, Math.PI * 1.9);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(10, 50, 70, 0.2, Math.PI - 0.2);
+    ctx.stroke();
+    // maskenin göz deliklerinden bakan karanlık
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(-50, -2, 16, 12, 0, 0, Math.PI * 2);
+    ctx.ellipse(70, -2, 16, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#d8d8d8';
+    ctx.beginPath();
+    ctx.arc(-46, 0, 3, 0, Math.PI * 2);
+    ctx.arc(74, 0, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  } else {
+    // Beste: soluk yüz, kapkara gözler, yırtılırcasına açık ağız
+    ctx.fillStyle = '#f2c84a';
+    ctx.beginPath();
+    ctx.ellipse(0, -60, 300, 260, 0, Math.PI, Math.PI * 2);
+    ctx.fill();
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(s * 290, 40, 70, 150, s * 0.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#d9cfc4';
+    ctx.beginPath();
+    ctx.ellipse(0, 20, 235, 255, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(60,20,20,.55)';
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 9; i++) {
+      ctx.beginPath();
+      const a = hash(i + 3) * Math.PI * 2;
+      ctx.moveTo(Math.cos(a) * 120, Math.sin(a) * 120);
+      ctx.lineTo(Math.cos(a) * 220 + (hash(i) - 0.5) * 60, Math.sin(a) * 230);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#000';
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(s * 85, -40, 62, 78, s * -0.15, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(-80, -30, 6, 0, Math.PI * 2);
+    ctx.arc(90, -30, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(0, 150, 95, 120 + Math.sin(t * 30) * 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#5a0c0c';
+    ctx.beginPath();
+    ctx.ellipse(0, 190, 50, 50, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+  // kırmızı kenar, tarama çizgileri
+  const g = ctx.createRadialGradient(W / 2, H / 2, 120, W / 2, H / 2, 420);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(1, 'rgba(120,0,0,.55)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  for (let y = (Math.floor(t * 60) % 4); y < H; y += 4) ctx.fillRect(0, y, W, 1);
+  if (o.text) bigText(ctx, o.text, { y: H - 60 });
 }

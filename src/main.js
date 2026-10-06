@@ -320,6 +320,9 @@ class Game {
   pause() {
     if (this.mode !== 'play') return;
     this.mode = 'paused';
+    this.ui.clickHint(false);
+    // menü tıklanabilsin: fare kilidi açıksa bırak (Esc'ye tarayıcı dışında basılmış olabilir)
+    this.releasePointer();
     this.audio.ctx?.suspend();
     $('pause-objective').textContent = 'Hedef: ' + this.objectiveText();
     const c = secretCounts(this.state.secrets);
@@ -348,6 +351,8 @@ class Game {
     this.show('hud', false);
     this.show('title', true);
     this.mode = 'title';
+    this.wantLock = false;
+    this.ui.clickHint(false);
     this.audio.resume();
     if (this.state.ending) {
       this.state = defaultState();
@@ -365,11 +370,22 @@ class Game {
       $('crosshair').classList.add('free');
       return;
     }
+    // Esc tuşu tarayıcıya göre "kullanıcı hareketi" sayılmaz: bu durumda kilit istenemez,
+    // bir sonraki tıklamada kilitlenir ve ekranda bunu söyleriz
+    if (navigator.userActivation && !navigator.userActivation.isActive) {
+      this.wantLock = true;
+      this.ui.clickHint?.(true);
+      return;
+    }
     try {
       const p = this.canvas.requestPointerLock?.();
-      p?.catch?.(() => this.setFree(true));
+      p?.catch?.(() => {
+        this.wantLock = true;
+        this.ui.clickHint?.(true);
+      });
     } catch {
-      this.setFree(true);
+      this.wantLock = true;
+      this.ui.clickHint?.(true);
     }
   }
 
@@ -382,17 +398,27 @@ class Game {
     window.addEventListener('resize', () => this.onResize());
     document.addEventListener('pointerlockchange', () => {
       const locked = document.pointerLockElement === this.canvas;
-      if (locked) this.setFree(false);
+      if (locked) {
+        this.setFree(false);
+        this.wantLock = false;
+        this.ui.clickHint?.(false);
+      }
       else if (this.mode === 'play' && !this.overlay && !this.expectUnlock) this.pause();
       this.expectUnlock = false;
     });
-    document.addEventListener('pointerlockerror', () => this.setFree(true));
+    document.addEventListener('pointerlockerror', () => {
+      this.wantLock = true;
+      this.ui.clickHint?.(true);
+    });
 
     let down = null;
     this.canvas.addEventListener('pointerdown', (e) => {
       if (this.mode !== 'play' || this.overlay) return;
+      // kilitliyken tıklama 'click' olayında işlenir; burada çift etkileşim olmasın
+      if (document.pointerLockElement === this.canvas) return;
       down = { x: e.clientX, y: e.clientY, moved: 0 };
-      if (!this.free && document.pointerLockElement !== this.canvas) {
+      if ((!this.free || this.wantLock) && !this.isTouch) {
+        this.wantLock = false;
         this.lockPointer();
         down = null;
       }
@@ -414,7 +440,7 @@ class Game {
       }
     });
     window.addEventListener('pointerup', () => {
-      if (down && down.moved < 6 && this.mode === 'play' && !this.overlay) this.interact(this.room.hover);
+      if (down && down.moved < 6 && this.mode === 'play' && !this.overlay && document.pointerLockElement !== this.canvas) this.interact(this.room.hover);
       down = null;
     });
     this.canvas.addEventListener('click', () => {
@@ -598,8 +624,13 @@ class Game {
     }
   }
 
+  /** şifre paneli, okuyucu, kaset seçici, duraklatma gibi bir ekran açık mı */
+  panelOpen() {
+    return !!this.overlay || this.mode !== 'play' || ['keypad', 'wordlock', 'reader', 'tapes', 'pause'].some((id) => !$(id)?.hidden);
+  }
+
   async interact(id) {
-    if (!id || this.overlay || this.room.locked || this.director.fakeEnding) return;
+    if (!id || this.panelOpen() || this.room.locked || this.director.fakeEnding) return;
     const st = this.state;
     const ui = this.ui;
     const au = this.audio;

@@ -11,6 +11,17 @@ npm start            # bağımlılık yok, sadece Node.js gerekir
 # tarayıcıda: http://localhost:8080
 ```
 
+### Windows için exe
+
+[Releases](https://github.com/kartal1d/zxd/releases) sayfasından indir:
+
+- `...-Tasinabilir.exe`: kurulum yok, çift tıkla ve oyna.
+- `...-Kurulum.exe`: oyunu kurar, masaüstüne kısayol koyar.
+
+Windows "Bilgisayarınız korundu" derse **Ek bilgi → Yine de çalıştır** (exe imzasız). **F11** tam ekran yapar.
+
+Exe'yi kendin derlemek için: `cd desktop && npm install && npm run dist` (Windows'ta). Commit mesajına `[exe]` yazınca GitHub Actions güncel sürümü, `[exe3]` yazınca 3 bölümlük sürümü derleyip Releases'a koyar.
+
 Kulaklıkla ve karanlıkta oynaman önerilir. Oyunda yanıp sönen ışıklar var; **Ayarlar → Yanıp sönmeyi azalt** ile kısılabilir.
 
 | Tuş | İşlev |
@@ -23,6 +34,7 @@ Kulaklıkla ve karanlıkta oynaman önerilir. Oyunda yanıp sönen ışıklar va
 | **◀ Sol ok** (basılı tut) | Kaseti geri sar, gizli kareleri yakala |
 | **▶ Sağ ok** (basılı tut) | Kaseti ileri sar (soru gelince kendiliğinden durur) |
 | **Esc** | Duraklatma menüsü |
+| **F11** | Tam ekran |
 
 İzlediğin kasetler dolabın üstünde durur. Video oynatıcıya tıklayıp istediğini **tekrar izleyebilirsin**, ipucunu unuttuysan geri dönüp bakmak için. Tekrar izlemek hikâyeyi ilerletmez. Beste adını sormaz, seni hatırlar.
 

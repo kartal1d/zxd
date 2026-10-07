@@ -902,6 +902,8 @@ class Game {
     this.room.vcrText = 'PLAY';
     this.audio.sfx('tvOn');
     this.ui.show('vcr-hint', true);
+    // sonraki kasetlerin sesleri arka planda çözülüyor olabilir
+    if (this.audio.allVoices && n > 3) await this.audio.allVoices;
     const res = await this.director.play(tapeFn, 't' + n, { firstViewing: n > st.stage });
     this.ui.show('vcr-hint', false);
     this.audio.setHiss(false);

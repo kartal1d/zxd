@@ -207,6 +207,8 @@ def main():
     with open(MANIFEST, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=1, sort_keys=True)
     print("tamam:", len(manifest), "replik")
+    # yayın paketi (assets/audio/pack) güncel kalsın
+    subprocess.run([sys.executable, os.path.join(ROOT, "tools", "pack_voices.py")], check=False)
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ const ITEMS = ['index.html', 'style.css', 'src', 'assets', 'vendor'];
 
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
+const hasPack = fs.existsSync(path.join(root, 'assets', 'audio', 'pack', 'pack.json'));
 let files = 0;
 let bytes = 0;
 for (const item of ITEMS) {
@@ -19,6 +20,8 @@ for (const item of ITEMS) {
   fs.cpSync(from, path.join(out, item), {
     recursive: true,
     filter: (src) => {
+      // sesler paketlenmişse tek tek mp3'ler gerekmez
+      if (hasPack && src.includes(path.join('assets', 'audio', 'voice')) && src.endsWith('.mp3')) return false;
       const st = fs.statSync(src);
       if (st.isFile()) {
         files++;

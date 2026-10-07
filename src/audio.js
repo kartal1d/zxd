@@ -1,6 +1,7 @@
 import { clamp, rand } from './util.js';
 
 const VOICE_DIR = 'assets/audio/voice/';
+const PACK_DIR = 'assets/audio/pack/';
 
 /** Bölümlere göre VHS ses zinciri ayarları. */
 export const TAPE_FX = {
@@ -166,6 +167,13 @@ export class AudioEngine {
 
   // ---------------------------------------------------------------- yükleme
   async loadVoices(onProgress) {
+    // yayın sürümleri: sesler birkaç paket dosyasında (tools/pack_voices.py)
+    try {
+      const res = await fetch(PACK_DIR + 'pack.json');
+      if (res.ok) return await this.loadVoicePacks(await res.json(), onProgress);
+    } catch {
+      /* paket yok: tek tek yükle */
+    }
     let manifest = {};
     try {
       manifest = await (await fetch(VOICE_DIR + 'manifest.json')).json();
@@ -195,6 +203,38 @@ export class AudioEngine {
       }
     };
     await Promise.all(Array.from({ length: 6 }, worker));
+  }
+
+  /**
+   * Paketlerden yükler. İlk kasetlerin sesleri çözülünce döner (oyun açılır);
+   * kalanlar arka planda çözülür, this.allVoices bitince tamamlanır.
+   */
+  async loadVoicePacks(pack, onProgress) {
+    const bins = await Promise.all(pack.files.map(async (name) => (await fetch(PACK_DIR + name)).arrayBuffer()));
+    const early = (id) => !/^(k\d+|ev)_/.test(id) || id.startsWith('k3_');
+    const entries = Object.entries(pack.items).sort((a, b) => early(b[0]) - early(a[0]));
+    const need = entries.filter(([id]) => early(id)).length;
+    let done = 0;
+    let markReady;
+    const ready = new Promise((r) => (markReady = r));
+    const queue = entries.slice();
+    const worker = async () => {
+      while (queue.length) {
+        const [id, [fi, off, len]] = queue.shift();
+        try {
+          const buf = await new Promise((ok, fail) => this.ctx.decodeAudioData(bins[fi].slice(off, off + len), ok, fail));
+          this.buffers.set(id, buf);
+        } catch (e) {
+          console.warn('Ses yüklenemedi:', id, e);
+        }
+        done++;
+        if (done <= need) onProgress?.(done / need);
+        if (done === need) markReady();
+      }
+    };
+    this.allVoices = Promise.all(Array.from({ length: 4 }, worker));
+    if (!need) markReady();
+    await ready;
   }
 
   duration(id) {

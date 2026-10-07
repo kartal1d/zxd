@@ -3,6 +3,7 @@ const $ = (id) => document.getElementById(id);
 
 export const SECRETS = {
   siluet: 'Ağaçların arasındaki adam',
+  oyma: 'Ağaçtaki oyma',
   ayakkabi: 'Çalının altındaki ayakkabı',
   yardim: 'Jenerikten sonraki kare',
   fotograf: 'Dolaptaki fotoğraf',

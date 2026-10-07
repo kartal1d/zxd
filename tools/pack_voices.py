@@ -31,7 +31,7 @@ def flush():
     global cur, n
     if not cur:
         return
-    name = f"voice-{n}.bin"
+    name = f"voice-{n}.mp3"
     open(os.path.join(OUT, name), "wb").write(cur)
     files.append(name)
     cur = bytearray()

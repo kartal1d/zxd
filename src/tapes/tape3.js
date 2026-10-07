@@ -384,15 +384,13 @@ export async function tape3(d) {
     await d.say('k3_dance');
     await d.wait(1.5);
     // JUMPSCARE: sahte sakinlik. Üçüncü donmada en yakındaki adam, müzik tam neşeliyken ekranı doldurur
-    d.stopMusic(0.02);
-    v.phase = 'scare';
+    if (!d.ff) d.stopMusic(0.02);
     if (await d.jumpscare({ draw: S3.scareGreyMan, sec: 0.55, room: true })) {
       // adam yok, Beste hiçbir şey olmamış gibi gülümsemeye devam eder
       B.expr = 'happy';
       await d.wait(0.9);
       d.music('box', { tempo: 126, gain: 0.15 });
     }
-    v.phase = 'dance';
     await d.wait(1.2);
   } finally {
     watchStop();

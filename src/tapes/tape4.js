@@ -358,25 +358,33 @@ export async function tape4(d) {
     B.tilt = 0;
     let typed = '';
     let key = null;
+    let truth = false;
     for (let unk = 0; ; unk++) {
       const pAsk = askKara({ idle: ['b1_idle1', 'b1_idle2'], maxLen: 20 });
       g.audio.music?.pause(); // soru ileri sarmayı durdurunca müzik geri açılmasın
       typed = await pAsk;
       key = strangerKey(typed);
       if (key) break;
-      if (unk >= 1) {
-        key = 'ok'; // ikinci anlaşılmayan cevap doğru sayılır
+      if (unk >= 2) {
+        key = 'ok'; // üçüncü anlaşılmayan (ya da "bilmiyorum") cevapta Beste gerçeği söyler, kapı vurulur
+        truth = true;
         break;
       }
       kara.slot = { mode: 'hint', t0: d.time };
-      await d.say('k4_v1_hint');
+      await d.say(unk === 0 ? 'k4_v1_hint' : 'k4_v1_hint2');
     }
     if (key === 'ok') {
+      if (truth) {
+        // OLAY: tavan arasının gerçek kapısı üç kez vurulur; Beste duymamış gibi bekler
+        kara.slot = { mode: 'hint', t0: d.time };
+        d.sfx('knock', P.door, 3, 0.45);
+        await d.wait(1.7);
+      }
       kara.slot = { mode: 'fill', text: 'GELMEM', t0: d.time };
       d.sfx('cartoonPop');
       g.audio.music?.resume();
       B.wave = 1;
-      await d.say('k4_v1_ok');
+      await d.say(truth ? 'k4_v1_truth' : 'k4_v1_ok');
       B.wave = 0;
       // çatlak: bir an soğuk
       d.stopMusic(0.1);
@@ -472,6 +480,12 @@ export async function tape4(d) {
       }
       wrong++;
       if (wrong >= 3) {
+        // OLAY: tavan arasının ampulü titrer, resim yırtılır, Beste'nin yüzü bir an boşalır
+        if (!lowFlash) g.room.flickerBurst(1.2);
+        d.glitch(1, 0.6);
+        B.expr = 'void';
+        await d.wait(0.7);
+        B.expr = 'happy';
         // üçüncü yanlışta cevap: rakamlar 4 sn kocaman kalır
         v.dig.hidden = false;
         v.dig.card = 1;
@@ -594,6 +608,16 @@ export async function tape4(d) {
     d.fx({ jitter: 0.03, tracking: 0.02, tintR: 0.9, tintG: 1.05, tintB: 0.9 }, 4);
     await d.wait(1.5);
     startPhone();
+    // JUMPSCARE: ilk zil çalarken resim kesilir (yalnızca zil kalır), sonra gerçek kızın yüzü ekrana yapışır
+    await d.wait(0.9);
+    d.scene((c) => {
+      c.fillStyle = '#000';
+      c.fillRect(0, 0, 640, 480);
+    });
+    d.sfx('static', 0.1, 0.2);
+    await d.wait(0.7);
+    await d.jumpscare({ draw: K.scareRealGirl, sec: 0.65, room: true });
+    d.scene(phoneSet);
     await untilRing(2);
     await d.say('k4_call1');
     await untilRing(4);
@@ -713,6 +737,9 @@ export async function tape4(d) {
     await d.wait(0.9);
     d.sfx('phoneRing', P.phone, 1);
     await d.wait(2.6);
+    // JUMPSCARE: zil susar, karanlıkta bir an sessizlik, sonra yüz
+    await d.wait(0.9);
+    await d.jumpscare({ face: 'beste', sec: 0.4, room: true });
     d.scene((c, t) => S.staticNoise(c, t, 1));
     d.sfx('static', 1.5, 0.25);
     await d.wait(1.6);

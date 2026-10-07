@@ -795,8 +795,27 @@ export class Director {
     }
     if (rw.stick > 0 && meta?.secret?.text) S.bigText(ctx, meta.secret.text, { font: `52px ${S.FONT_OSD}` });
     if (meta?.rev && !rw.revPlayed) this.playReversed(rw, meta.rev);
-    if (rw.revPlayed && rw.auto) S.realGirl(ctx, this.g.clock, { alpha: 0.55 + Math.sin(this.g.clock * 7) * 0.15 });
+    if (rw.revPlayed && rw.auto) ctx.drawImage(this.girlLayer(0.55 + Math.sin(this.g.clock * 7) * 0.15), 0, 0);
     S.osd(ctx, { label: '◀◀ GERİ SAR', counter: this.counter() - rw.n / 12 });
+  }
+
+  /**
+   * Ters mesaj çalarken ekrana binen soluk "gerçek Beste" kare. realGirl bulanık filtreyle çizilir (kare başına ~60 ms,
+   * zayıf ekran kartında takılma); saydamlık 0.04 adımlarına yuvarlanıp her adım bir kez çizilir, sonra önbellekten gelir.
+   */
+  girlLayer(alpha) {
+    const q = Math.round(alpha / 0.04) * 0.04;
+    const key = q.toFixed(2);
+    this.girlCache = this.girlCache || new Map();
+    let c = this.girlCache.get(key);
+    if (!c) {
+      c = document.createElement('canvas');
+      c.width = W;
+      c.height = H;
+      S.realGirl(c.getContext('2d'), 0, { alpha: q });
+      this.girlCache.set(key, c);
+    }
+    return c;
   }
 
   /** Geri sararken ters kaydedilmiş mesajın düz hâli çalınır; bitene kadar geri sarma sürer. */

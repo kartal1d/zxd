@@ -45,5 +45,7 @@
   "k4_find_other": { "v": "beste", "t": "Hihi! Bunu evet sayıyorum!" },
 
   "k4_bye": { "v": "beste", "t": "Dersimiz bitti! Numarayı unutma. Belki bir gün ararsın." },
-  "k4_tonton_bye": { "v": "tonton", "t": "Belki bir gün ararsın. Ararsın. Ararsın." }
+  "k4_tonton_bye": { "v": "tonton", "t": "Belki bir gün ararsın. Ararsın. Ararsın." },
+  "k4_v1_hint2": { "v": "beste", "t": "Son ipucu! Sana gel diyorlar ama sen gitmek istemiyorsun. O zaman ne dersin?" },
+  "k4_v1_truth": { "v": "beste", "t": "Cevap şu: gelmem! Ben seninle gelmem! Bak, ben yazıyorum.", "s": "Cevap şu: GELMEM! Ben seninle gelmem! Bak, ben yazıyorum." }
 }

@@ -1,6 +1,6 @@
 // 4. kaset sahneleri: güvenlik dersi sınıfı, karaoke paneli, büyük rakamlar, kırmızı çevirmeli telefon,
 // tavan arasının arkadan çekilmiş gizli karesi, alacakaranlıkta Çamlık ve kayıp kedi afişi.
-import { rr, fill, stroke, star, mixHex, bgForest, bgBedroom, staticNoise, OUT, FONT_CARTOON, FONT_OSD, FONT_HAND } from './scenes.js';
+import { rr, fill, stroke, star, mixHex, bgForest, bgBedroom, staticNoise, realGirl, OUT, FONT_CARTOON, FONT_OSD, FONT_HAND } from './scenes.js';
 import { drawTonton } from './characters.js';
 import { hash, clamp } from '../util.js';
 import { TV_W as W, TV_H as H } from '../tv.js';
@@ -1435,4 +1435,53 @@ export function starWipe(ctx, t, p, drawB) {
     star(ctx, W / 2, H / 2, r, p * 1.5);
     stroke(ctx, 8, '#ffd23f');
   }
+}
+
+/**
+ * JUMPSCARE: telefon çalarken resim kesilir; gerçek kızın bulanık yüzü ekrana yapışır, ağzı açık.
+ * t = saniye (d.jumpscare). Kenarlar kırmızı, ortada el yazısıyla AÇSANA.
+ */
+export function scareRealGirl(ctx, t) {
+  const k = 2.3 + Math.min(t, 0.6) * 0.9;
+  const jx = (hash(Math.floor(t * 40)) - 0.5) * 16;
+  const jy = (hash(Math.floor(t * 40) + 3) - 0.5) * 12;
+  ctx.save();
+  ctx.translate(W / 2 + jx, H * 0.46 + jy);
+  ctx.scale(k, k);
+  ctx.translate(-W / 2, -205);
+  realGirl(ctx, t, { alpha: 1 });
+  // göz çukurları ve açık ağız
+  ctx.fillStyle = '#000';
+  for (const dx of [-17, 17]) {
+    ctx.beginPath();
+    ctx.ellipse(W / 2 + dx, 199, 8, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.ellipse(W / 2, 228, 11, 16 + Math.sin(t * 40) * 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  if (Math.floor(t * 18) % 3 === 0) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'difference';
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+  const g = ctx.createRadialGradient(W / 2, H / 2, 120, W / 2, H / 2, 430);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(1, 'rgba(140,0,0,.6)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(W / 2, 410);
+  ctx.rotate(-0.06);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `700 92px ${FONT_HAND}`;
+  ctx.fillStyle = 'rgba(235,20,20,.9)';
+  ctx.fillText('AÇSANA', 0, 0);
+  ctx.restore();
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  for (let y = Math.floor(t * 60) % 4; y < H; y += 4) ctx.fillRect(0, y, W, 1);
 }

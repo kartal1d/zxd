@@ -382,7 +382,18 @@ export async function tape3(d) {
     v.waveMode = 'up';
     d.music('box', { tempo: 126, gain: 0.15 });
     await d.say('k3_dance');
-    await d.wait(2.6);
+    await d.wait(1.5);
+    // JUMPSCARE: sahte sakinlik. Üçüncü donmada en yakındaki adam, müzik tam neşeliyken ekranı doldurur
+    d.stopMusic(0.02);
+    v.phase = 'scare';
+    if (await d.jumpscare({ draw: S3.scareGreyMan, sec: 0.55, room: true })) {
+      // adam yok, Beste hiçbir şey olmamış gibi gülümsemeye devam eder
+      B.expr = 'happy';
+      await d.wait(0.9);
+      d.music('box', { tempo: 126, gain: 0.15 });
+    }
+    v.phase = 'dance';
+    await d.wait(1.2);
   } finally {
     watchStop();
     d.onKey = null;
@@ -487,7 +498,7 @@ export async function tape3(d) {
     if (tries < 2) {
       W.flash = 1;
       d.tweens.add(W, 'flash', 0, 2.2);
-      await d.say('k3_word_wrong');
+      await d.say(tries === 0 ? 'k3_word_wrong' : 'k3_word_wrong2');
     }
   }
   if (gotIt) {
@@ -509,8 +520,15 @@ export async function tape3(d) {
     await d.wait(0.3);
     d.sfx('beep', true);
     W.confetti = d.time;
+    // OLAY: son harf yazılınca tavan arasındaki ampul titrer, Beste'nin yüzü boşalır, arkadan fısıltı gelir
+    B.expr = 'void';
+    d.glitch(0.9, 0.5);
+    if (!g.settings?.flash) g.room?.flickerBurst?.(1.0);
     await p;
-    await d.wait(0.4);
+    await d.wait(0.2);
+    B.expr = 'happy';
+    await later(d.sayRoom('k3_word_whisper', { pos: 'behind', gain: 1.15 }));
+    await d.wait(0.3);
     W.typed = null;
   }
   st.clues.sobe = true;
@@ -589,7 +607,10 @@ export async function tape3(d) {
   d.scene((c, t) => S.endCard(c, t));
   d.music('jingle', { tempo: 152, gain: 0.22 });
   await d.say('n_outro');
-  await d.wait(2.4);
+  await d.wait(1.1);
+  // JUMPSCARE: neşeli jenerik ortasında dikişli Tonton tek kare yüzünü gösterir
+  if (await d.jumpscare({ face: 'tonton', sec: 0.4 })) await d.wait(0.9);
+  else await d.wait(1.3);
   d.stopMusic(0.4);
   d.scene((c, t) => S.staticNoise(c, t, 1));
   d.sfx('static', 2.0, 0.25);

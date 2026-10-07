@@ -1,55 +1,159 @@
 {
-  "k3_title": { "v": "narrator", "t": "Üçüncü bölüm. Tonton Kedi geri döndü!" },
+  "k3_title": {
+    "v": "narrator",
+    "t": "Üçüncü bölüm. Tonton Kedi geri döndü!"
+  },
   "k3_hello": {
     "v": "beste",
     "t": "Merhaba arkadaşım! Bugün harika bir gün! Güneş parlıyor, kuşlar cıvıl cıvıl!",
     "s": "Merhaba {ad}! Bugün harika bir gün! Güneş parlıyor, kuşlar cıvıl cıvıl!"
   },
-  "k3_surprise": { "v": "beste", "t": "Sana kocaman bir sürprizim var! Bil bakalım, uzun yolculuğundan kim döndü?" },
-  "k3_tonton_back": { "v": "tonton", "t": "Miyav! Ben döndüm! Ben hiç gitmedim!" },
-  "k3_tonton_tail": { "v": "beste", "t": "Bak, kuyruğu da yerinde! Yepyeni bir kuyruk. Kendi ellerimle diktim!" },
-
-  "k3_ask_welcome": { "v": "beste", "t": "Hadi, Tonton'a hoş geldin de! Klavyeden yaz bakalım." },
-  "k3_tonton_echo": { "v": "tonton", "t": "Hoş geldin. Hoş geldin. Hoş geldin.", "s": "{cevap}... {cevap}... {cevap}..." },
-  "k3_echo_laugh": { "v": "beste", "t": "Hihi! Tonton artık her şeyi tekrar ediyor. Çok tatlı, değil mi?" },
-  "k3_echo_cold": { "v": "beste_cold", "t": "Tonton artık öyle kelimeler bilmiyor." },
-
-  "k3_ask_tail": { "v": "beste", "t": "Peki, Tonton'un yeni kuyruğu ne renk? Dikkatli bak!" },
-  "k3_tail_wrong": { "v": "beste_cold", "t": "Hayır. Turuncu. Tonton'un kuyruğu her zaman turuncuydu." },
-  "k3_tail_again": { "v": "beste", "t": "Bir daha soruyorum! Tonton'un kuyruğu ne renk?" },
-  "k3_tail_right": { "v": "beste", "t": "Aferin! Bazen gözlerimiz bizi kandırır. Ama ben seni hiç kandırmam." },
-  "k3_tail_insist": { "v": "beste_deep", "t": "Turuncu." },
-  "k3_tail_moveon": { "v": "beste", "t": "Neyse! Gözlerin yorulmuş olmalı. Hadi bahçeye!" },
-
-  "k3_game_intro": { "v": "beste", "t": "Şimdi en sevdiğim oyun: Heykel! Müzik çalınca dans ederiz, müzik durunca herkes heykel olur!" },
-  "k3_game_rule": { "v": "beste", "t": "Sen de oynuyorsun! Müzik durunca hiç kıpırdama. Etrafına bile bakma. Ben görürüm!" },
-  "k3_ready": { "v": "beste", "t": "Hazır mısın?" },
-  "k3_ready_yes": { "v": "beste", "t": "Süper! Müzik başlasın!" },
-  "k3_ready_no": { "v": "beste_cold", "t": "Hazır olmasan da başlıyoruz." },
-  "k3_freeze": { "v": "beste", "t": "Heykel!" },
-  "k3_freeze_last": { "v": "narrator_slow", "t": "Heykel." },
-  "k3_dance": { "v": "beste", "t": "Ve dans!" },
-  "k3_moved": { "v": "beste_cold", "t": "Kıpırdadın. Gördüm." },
-  "k3_moved_last": { "v": "beste_deep", "t": "Kıpırdayan yanar." },
-  "k3_game_end": { "v": "beste", "t": "Oley! Ne güzel heykel olduk! Kimse kıpırdamadı. Değil mi?" },
-  "k3_ters": { "v": "beste_real", "t": "Kıpırdama. O sadece kıpırdayanı görür. Beni bulursan, sobe de." },
-
-  "k3_ask_behind": { "v": "beste", "t": "Bir şey soracağım. Heykel olduğumuzda arkamızda biri var mıydı?" },
-  "k3_behind_yes": { "v": "beste_cold", "t": "Arkamızda mı? Hayır. Arkamızda kimse yoktu." },
-  "k3_tonton_saw": { "v": "tonton_sad", "t": "Ben gördüm... Ben de gördüm..." },
-  "k3_tonton_hush": { "v": "beste_cold", "t": "Tonton. Heykeller konuşmaz." },
-  "k3_behind_no": { "v": "beste", "t": "Aferin! Burada sadece biz varız. Her zaman sadece biz." },
-  "k3_still": { "v": "beste_cold", "t": "Sen hiç kıpırdamadın. Tıpkı onun gibi." },
-  "k3_not_still": { "v": "beste_cold", "t": "Sen kıpırdadın. Bir dahaki sefere kıpırdama. O, kıpırdayanı görür." },
-
-  "k3_word_intro": { "v": "beste", "t": "Ve şimdi... Haftanın Sihirli Sözü!" },
+  "k3_surprise": {
+    "v": "beste",
+    "t": "Sana kocaman bir sürprizim var! Bil bakalım, uzun yolculuğundan kim döndü?"
+  },
+  "k3_tonton_back": {
+    "v": "tonton",
+    "t": "Miyav! Ben döndüm! Ben hiç gitmedim!"
+  },
+  "k3_tonton_tail": {
+    "v": "beste",
+    "t": "Bak, kuyruğu da yerinde! Yepyeni bir kuyruk. Kendi ellerimle diktim!"
+  },
+  "k3_ask_welcome": {
+    "v": "beste",
+    "t": "Hadi, Tonton'a hoş geldin de! Klavyeden yaz bakalım."
+  },
+  "k3_tonton_echo": {
+    "v": "tonton",
+    "t": "Hoş geldin. Hoş geldin. Hoş geldin.",
+    "s": "{cevap}... {cevap}... {cevap}..."
+  },
+  "k3_echo_laugh": {
+    "v": "beste",
+    "t": "Hihi! Tonton artık her şeyi tekrar ediyor. Çok tatlı, değil mi?"
+  },
+  "k3_echo_cold": {
+    "v": "beste_cold",
+    "t": "Tonton artık öyle kelimeler bilmiyor."
+  },
+  "k3_ask_tail": {
+    "v": "beste",
+    "t": "Peki, Tonton'un yeni kuyruğu ne renk? Dikkatli bak!"
+  },
+  "k3_tail_wrong": {
+    "v": "beste_cold",
+    "t": "Hayır. Turuncu. Tonton'un kuyruğu her zaman turuncuydu."
+  },
+  "k3_tail_again": {
+    "v": "beste",
+    "t": "Bir daha soruyorum! Tonton'un kuyruğu ne renk?"
+  },
+  "k3_tail_right": {
+    "v": "beste",
+    "t": "Aferin! Bazen gözlerimiz bizi kandırır. Ama ben seni hiç kandırmam."
+  },
+  "k3_tail_insist": {
+    "v": "beste_deep",
+    "t": "Turuncu."
+  },
+  "k3_tail_moveon": {
+    "v": "beste",
+    "t": "Neyse! Gözlerin yorulmuş olmalı. Hadi bahçeye!"
+  },
+  "k3_game_intro": {
+    "v": "beste",
+    "t": "Şimdi en sevdiğim oyun: Heykel! Müzik çalınca dans ederiz, müzik durunca herkes heykel olur!"
+  },
+  "k3_game_rule": {
+    "v": "beste",
+    "t": "Sen de oynuyorsun! Müzik durunca hiç kıpırdama. Etrafına bile bakma. Ben görürüm!"
+  },
+  "k3_ready": {
+    "v": "beste",
+    "t": "Hazır mısın?"
+  },
+  "k3_ready_yes": {
+    "v": "beste",
+    "t": "Süper! Müzik başlasın!"
+  },
+  "k3_ready_no": {
+    "v": "beste_cold",
+    "t": "Hazır olmasan da başlıyoruz."
+  },
+  "k3_freeze": {
+    "v": "beste",
+    "t": "Heykel!"
+  },
+  "k3_freeze_last": {
+    "v": "narrator_slow",
+    "t": "Heykel."
+  },
+  "k3_dance": {
+    "v": "beste",
+    "t": "Ve dans!"
+  },
+  "k3_moved": {
+    "v": "beste_cold",
+    "t": "Kıpırdadın. Gördüm."
+  },
+  "k3_moved_last": {
+    "v": "beste_deep",
+    "t": "Kıpırdayan yanar."
+  },
+  "k3_game_end": {
+    "v": "beste",
+    "t": "Oley! Ne güzel heykel olduk! Kimse kıpırdamadı. Değil mi?"
+  },
+  "k3_ters": {
+    "v": "beste_real",
+    "t": "Kıpırdama. O sadece kıpırdayanı görür. Beni bulursan, sobe de."
+  },
+  "k3_ask_behind": {
+    "v": "beste",
+    "t": "Bir şey soracağım. Heykel olduğumuzda arkamızda biri var mıydı?"
+  },
+  "k3_behind_yes": {
+    "v": "beste_cold",
+    "t": "Arkamızda mı? Hayır. Arkamızda kimse yoktu."
+  },
+  "k3_tonton_saw": {
+    "v": "tonton_sad",
+    "t": "Ben gördüm... Ben de gördüm..."
+  },
+  "k3_tonton_hush": {
+    "v": "beste_cold",
+    "t": "Tonton. Heykeller konuşmaz."
+  },
+  "k3_behind_no": {
+    "v": "beste",
+    "t": "Aferin! Burada sadece biz varız. Her zaman sadece biz."
+  },
+  "k3_still": {
+    "v": "beste_cold",
+    "t": "Sen hiç kıpırdamadın. Tıpkı onun gibi."
+  },
+  "k3_not_still": {
+    "v": "beste_cold",
+    "t": "Sen kıpırdadın. Bir dahaki sefere kıpırdama. O, kıpırdayanı görür."
+  },
+  "k3_word_intro": {
+    "v": "beste",
+    "t": "Ve şimdi... Haftanın Sihirli Sözü!"
+  },
   "k3_word_spell": {
     "v": "beste",
     "t": "Bu haftanın sihirli sözü: Sobe! Se, o, be, e. Saklambaçta birini bulunca bağırırız!",
     "s": "Bu haftanın sihirli sözü: SOBE! S-O-B-E. Saklambaçta birini bulunca bağırırız!"
   },
-  "k3_word_ask": { "v": "beste", "t": "Hadi, sen de yaz! Haftanın sihirli sözü neydi?" },
-  "k3_word_right": { "v": "beste", "t": "Süper! Sihirli sözümüzü hiç unutma, tamam mı?" },
+  "k3_word_ask": {
+    "v": "beste",
+    "t": "Hadi, sen de yaz! Haftanın sihirli sözü neydi?"
+  },
+  "k3_word_right": {
+    "v": "beste",
+    "t": "Süper! Sihirli sözümüzü hiç unutma, tamam mı?"
+  },
   "k3_word_wrong": {
     "v": "beste",
     "t": "Hayır, hayır! Se, o, be, e. Sobe! Bir daha dene.",
@@ -60,9 +164,30 @@
     "t": "Neyse! Ben senin yerine yazarım. Sobe. Unutma!",
     "s": "Neyse! Ben senin yerine yazarım: SOBE. Unutma!"
   },
-  "k3_word_cold": { "v": "beste_cold", "t": "Ama sakın yüksek sesle söyleme. Yoksa o da duyar. Ve sobelenen kişi..." },
-
-  "k3_bye": { "v": "beste", "t": "Bugünlük bu kadar! Tonton, arkadaşımıza hoşça kal de!" },
-  "k3_tonton_bye": { "v": "tonton", "t": "Hoşça kal de. Hoşça kal de." },
-  "k3_bye_next": { "v": "beste", "t": "Gelecek bölümde çok önemli bir şey öğreneceğiz: Kaybolursan ne yapmalısın?" }
+  "k3_word_cold": {
+    "v": "beste_cold",
+    "t": "Ama sakın yüksek sesle söyleme. Yoksa o da duyar. Ve sobelenen kişi..."
+  },
+  "k3_bye": {
+    "v": "beste",
+    "t": "Bugünlük bu kadar! Tonton, arkadaşımıza hoşça kal de!"
+  },
+  "k3_tonton_bye": {
+    "v": "tonton",
+    "t": "Hoşça kal de. Hoşça kal de."
+  },
+  "k3_bye_next": {
+    "v": "beste",
+    "t": "Gelecek bölümde çok önemli bir şey öğreneceğiz: Kaybolursan ne yapmalısın?"
+  },
+  "k3_word_wrong2": {
+    "v": "beste",
+    "t": "Bir daha söylüyorum, çok dikkatli dinle. Sobe. Sobe. Sobe. Son şansın!",
+    "s": "Bir daha söylüyorum, çok dikkatli dinle: SOBE. SOBE. SOBE. Son şansın!"
+  },
+  "k3_word_whisper": {
+    "v": "beste_whisper",
+    "t": "Sobe. Sobe. Sobe.",
+    "s": "sobe... sobe... sobe..."
+  }
 }

@@ -61,7 +61,7 @@ const ZONES = {
   montaj: { bulb: 0, moon: 0.06, hemi: 0.14, fog: 0x030304, dens: 0.065, zl: [-4.4, -1.6, 1.8, 0.3] },
   mutfak: { bulb: 0, moon: 0.1, hemi: 0.18, fog: 0x030304, dens: 0.06, zl: [0.95, -1.3, -2.9, 0.6] },
   banyo: { bulb: 0, moon: 0.06, hemi: 0.14, fog: 0x030304, dens: 0.06, zl: [2.1, -1.0, 9.0, 0.35] },
-  bahce: { bulb: 0, moon: 0.8, hemi: 0.45, fog: 0x0b0f18, dens: 0.07, zl: null },
+  bahce: { bulb: 0, moon: 3.0, hemi: 3.0, fog: 0x0b0f18, dens: 0.07, zl: null },
 };
 const GROUND = ['giris', 'hol', 'salon', 'montaj', 'mutfak', 'banyo'];
 
@@ -1526,6 +1526,9 @@ export class House {
     // gri adam billboardları (koridordaki ve çitteki)
     this.man = this.makeMan(false);
     this.manArms = this.makeMan(true);
+    // bahçedeki mutfak penceresi: iç mekân çizilmediğinde de soluk mavi parlasın
+    const kw = this.mesh(new THREE.PlaneGeometry(1.1, 1.0), new THREE.MeshBasicMaterial({ color: 0x1a2a48 }), this.chunks.bahce, 0.95, -1.35, -3.24);
+    kw.rotation.y = Math.PI;
   }
 
   /** 2.30 m boyunda billboard: gövde + ayrı baş (başı eğilebilir) */
@@ -1600,7 +1603,7 @@ export class House {
     const C = this.chunks;
     const ground = GROUND.includes(z);
     C.ust.visible = z === 'cati' ? this.room.doorPivot.rotation.y > 0.02 : z !== 'bahce';
-    C.zemin.visible = z !== 'cati';
+    C.zemin.visible = z !== 'cati' && (z !== 'bahce' || this.arkaOpen());
     C.bahce.visible = z === 'bahce' || z === 'mutfak';
     this.shell.visible = z === 'banyo';
     const showAttic = z === 'cati' || z === 'sahanlik' || z === 'merdiven';
@@ -1608,6 +1611,12 @@ export class House {
     this.room.sky.visible = z !== 'bahce';
     this.litWindow.visible = z === 'bahce';
     this.visZone = z;
+  }
+
+  /** Arka kapı aralıksa bahçeden içerisi görünür (bahçede iç mekân yalnız o zaman çizilir) */
+  arkaOpen() {
+    const d = this.doors.arka;
+    return !!d && Math.abs(d.pivot.rotation.y) > 0.05;
   }
 
   /** Çarpışma kutuları (düzey başına sabitler + kapı kanatları) */
@@ -1979,6 +1988,7 @@ export class House {
       r.doors = { ...(r.doors || {}), [n]: open };
       if (n === 'arka') {
         this.ambience.setOutdoor(open);
+        setTimeout(() => this.applyVisibility(), open ? 0 : 950);
         if (open && firstTime) ui.toast('Arka kapı gıcırdayarak açıldı. Dışarıda sis, ıslak toprak ve çam kokusu.', 5);
       }
       g.save();

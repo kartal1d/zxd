@@ -382,7 +382,7 @@ export async function tape9(d) {
           rope: cs.rope ? { x: 362, y: 402 } : null,
           cat: cs.cat,
           yellow: cs.yel,
-          figure: cs.fig > 0.01 ? { x: 520, y: 224, h: 100, alpha: cs.fig } : null,
+          figure: cs.fig > 0.01 ? { x: 498, y: 226, h: 104, alpha: cs.fig } : null,
         });
       }
       c.restore();
@@ -446,7 +446,7 @@ export async function tape9(d) {
     // ip ağacın dibine düşer, kız dalların arasına koşar
     cs.rope = true;
     cs.gpose = 'stand';
-    d.sfx('thud');
+    d.sfx('thud', P.tv);
     await d.wait(0.5);
     cs.gpose = 'run';
     cs.glean = -0.2;
@@ -457,7 +457,7 @@ export async function tape9(d) {
     cs.running = false;
     cs.gvis = false;
     cs.yel = { x: 138, y: 242, h: 36, alpha: 1 };
-    d.tweens.add(cs, 'fig', 0.4, 3.0);
+    d.tweens.add(cs, 'fig', 0.55, 3.0);
     await d.wait(1.6);
     await d.say('k9_c2_n3');
     await d.wait(0.5);
@@ -522,7 +522,7 @@ export async function tape9(d) {
     await d.wait(0.7);
     cs.jolt = 1;
     d.tweens.add(cs, 'hand', 1, 0.2);
-    d.sfx('thud');
+    d.sfx('thud', P.tv);
     d.glitch(0.6, 0.4, false);
     await d.wait(0.35);
     d.tweens.add(cs, 'hand', 0, 0.6);
@@ -733,16 +733,20 @@ export async function tape9(d) {
     loopOn('wind', 0.045);
     await d.wait(0.8);
     // uzakta Nermin yediye kadar sayıyor (kendi söziyle karışmasın diye ayrı kanaldan)
-    const far = !g.debug?.fast && g.audio.buffers?.has('k9_c2_n3') ? g.audio.playVoice('k9_c2_n3', { gain: 0.2, filter: 'camcorder' }) : null;
-    g.ui.subtitle('NERMİN', '(çok uzaktan) 1... 2... 3... 4...', 'anlatici');
-    await d.wait(1.2);
-    pv.giggle = 1;
-    await d.say('k9_c7_giggle', { gain: 0.8, keep: false });
-    pv.giggle = 0;
-    d.tweens.add(pv, 'step', 1, 2.2);
-    await d.wait(2.4);
-    far?.stop();
-    g.ui.subtitle(null, null, null, 0.2);
+    let far = null;
+    try {
+      far = !g.debug?.fast && g.audio.buffers?.has('k9_c2_n3') ? g.audio.playVoice('k9_c2_n3', { gain: 0.2, filter: 'camcorder' }) : null;
+      g.ui.subtitle('NERMİN', '(çok uzaktan) 1... 2... 3... 4...', 'anlatici');
+      await d.wait(1.2);
+      pv.giggle = 1;
+      await d.say('k9_c7_giggle', { gain: 0.8, keep: false });
+      pv.giggle = 0;
+      d.tweens.add(pv, 'step', 1, 2.2);
+      await d.wait(2.4);
+    } finally {
+      far?.stop();
+      g.ui.subtitle(null, null, null, 0.2);
+    }
     d.tag(null);
     d.scene((c) => {
       c.fillStyle = '#000';

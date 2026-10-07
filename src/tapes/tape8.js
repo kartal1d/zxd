@@ -543,7 +543,10 @@ export async function tape8(d) {
           return k && !picked.has(k) ? k : null;
         },
         unknown: 'k8_seek_unknown',
+        maxTries: 4,
       });
+      // sabırsız / bilmeyen oyuncu: fener kendiliğinden bir sonraki yere gider
+      if (!r.key) r.key = ['tree', 'bush', 'stump', 'basket'].find((k) => !picked.has(k));
       picked.add(r.key);
       await visit(r.key);
       if (n === 0) await stumpGlimpse();
@@ -641,11 +644,7 @@ export async function tape8(d) {
     await d.wait(2.2);
     d.scene(() => {});
     await d.wait(0.6);
-    // kasetten sonra: sandığın kapağı açık, dibi bir kenarından kalkmış (sayım sırasında açılmıştı)
-    if (first) {
-      st.room = { ...(st.room || {}), chestOpen: true, falseBottom: true };
-      if (!st.room.fbOpen) g.room.attic?.raiseFalseBottom?.();
-    }
+    // kasetten sonra sandığın kapağı açık, dibi kalkık kalır: bunu oyun (finds.js, 8. kaset çıkışı) kurar
     return ejectTries;
   } finally {
     d.onPause = null;
@@ -656,6 +655,7 @@ export async function tape8(d) {
     if (d.aborted) {
       // kaset yarıda kalırsa oda ışığı ve ekran eski hâline döner
       if (bulbOn) g.room.setBulb(bulb0, 0.6);
+      g.room.attic?.apply?.(st); // sayım sırasında açılan sandık kapağı, kaset yarıda kalırsa kapanır
       for (const [k, val] of Object.entries(SCREEN_DEFAULT)) if (k in d.tv.p) d.tv.p[k] = val;
     }
   }

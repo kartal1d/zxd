@@ -1068,45 +1068,67 @@ export function doors(ctx, t, o = {}) {
   }
 }
 
+const girlLayers = new Map();
+/**
+ * Bulanık "gerçek Beste" katmanı (şeffaf zemin). ctx.filter blur her karede çizilirse çok pahalı (kare başına ~60 ms,
+ * zayıf/yazılım GPU'da ekran takılır); saydamlık ve göz kırpma adımlara yuvarlanıp her adım bir kez çizilir.
+ * Kaynak-üstü birleştirme birleşmeli olduğundan zemin üstüne çizim, doğrudan çizimle aynı sonucu verir.
+ */
+function girlLayer(a, blink) {
+  const key = a.toFixed(2) + '/' + blink.toFixed(2);
+  let c = girlLayers.get(key);
+  if (c) return c;
+  c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const g2 = c.getContext('2d');
+  g2.filter = 'blur(3px)';
+  g2.globalAlpha = a;
+  const g = g2.createRadialGradient(W / 2, 200, 10, W / 2, 220, 260);
+  g.addColorStop(0, '#6f7a74');
+  g.addColorStop(1, '#0b0d0c');
+  g2.fillStyle = g;
+  g2.fillRect(0, 0, W, H);
+  g2.fillStyle = '#1c1612';
+  g2.beginPath();
+  g2.arc(W / 2, 190, 62, 0, Math.PI * 2);
+  g2.fill();
+  g2.beginPath();
+  g2.ellipse(W / 2 - 70, 210, 18, 40, 0.3, 0, Math.PI * 2);
+  g2.ellipse(W / 2 + 70, 210, 18, 40, -0.3, 0, Math.PI * 2);
+  g2.fill();
+  g2.fillStyle = '#9c8c78';
+  g2.beginPath();
+  g2.ellipse(W / 2, 205, 46, 52, 0, 0, Math.PI * 2);
+  g2.fill();
+  g2.fillStyle = '#1c1612';
+  for (const dx of [-17, 17]) {
+    g2.beginPath();
+    g2.ellipse(W / 2 + dx, 200, 6, 4 + blink, 0, 0, Math.PI * 2);
+    g2.fill();
+  }
+  g2.fillStyle = '#8a7a3a';
+  g2.beginPath();
+  g2.moveTo(W / 2 - 70, 290);
+  g2.lineTo(W / 2 + 70, 290);
+  g2.lineTo(W / 2 + 120, 480);
+  g2.lineTo(W / 2 - 120, 480);
+  g2.closePath();
+  g2.fill();
+  if (girlLayers.size > 40) girlLayers.clear();
+  girlLayers.set(key, c);
+  return c;
+}
+
 /** Gerçek Beste'nin bulanık görüntüsü (gizli son ve ters mesaj) */
 export function realGirl(ctx, t, o = {}) {
   ctx.fillStyle = '#0b0d0c';
   ctx.fillRect(0, 0, W, H);
   ctx.save();
-  ctx.filter = 'blur(3px)';
-  const a = o.alpha ?? 1;
-  ctx.globalAlpha = a;
-  const g = ctx.createRadialGradient(W / 2, 200, 10, W / 2, 220, 260);
-  g.addColorStop(0, '#6f7a74');
-  g.addColorStop(1, '#0b0d0c');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#1c1612';
-  ctx.beginPath();
-  ctx.arc(W / 2, 190, 62, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(W / 2 - 70, 210, 18, 40, 0.3, 0, Math.PI * 2);
-  ctx.ellipse(W / 2 + 70, 210, 18, 40, -0.3, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#9c8c78';
-  ctx.beginPath();
-  ctx.ellipse(W / 2, 205, 46, 52, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#1c1612';
-  for (const dx of [-17, 17]) {
-    ctx.beginPath();
-    ctx.ellipse(W / 2 + dx, 200, 6, 4 + Math.max(0, Math.sin(t * 0.7)) * 1, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.fillStyle = '#8a7a3a';
-  ctx.beginPath();
-  ctx.moveTo(W / 2 - 70, 290);
-  ctx.lineTo(W / 2 + 70, 290);
-  ctx.lineTo(W / 2 + 120, 480);
-  ctx.lineTo(W / 2 - 120, 480);
-  ctx.closePath();
-  ctx.fill();
+  ctx.globalAlpha = 1;
+  const a = Math.round((o.alpha ?? 1) * 25) / 25;
+  const blink = Math.round(Math.max(0, Math.sin(t * 0.7)) * 4) / 4;
+  ctx.drawImage(girlLayer(a, blink), 0, 0);
   ctx.restore();
   if (o.flip) {
     ctx.save();

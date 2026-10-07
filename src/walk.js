@@ -1,4 +1,4 @@
-// Serbest yürüyüş denetleyicisi (8. kasetten sonra): WASD / Shift, fare bakışı (room.js ile birlikte), daire-kutu çarpışma,
+// Serbest yürüyüş denetleyicisi (3. kasetten sonra, tavan arası kapısı açılınca): WASD / Shift, fare bakışı (room.js ile birlikte), daire-kutu çarpışma,
 // merdiven rampası, kafa sallanması, ayak sesleri, ayağa kalkma / oturma geçişleri, el feneri, titreme ve ışık kırpması.
 // Kasetler hep oturarak izlenir; paneller, kaset ve kilitli kamera hareketi engeller (bkz. docs/ev-tasarim.md §3).
 import * as THREE from 'three';
@@ -267,10 +267,10 @@ export class Walk {
 
   // ================================================================== ışık, titreme
   /** pattern: [[seviye, sn], ...]. 'Titreşimi azalt' açıksa tek yumuşak çöküşe dönüşür. Bitince çözülür. */
-  flicker(pattern) {
+  flicker(pattern, softDip = false) {
     const g = this.g;
     let list = pattern;
-    let soft = false;
+    let soft = softDip;
     if (g.settings.flash) {
       list = [[0.12, pattern.reduce((a, p) => a + p[1], 0)]];
       soft = true;

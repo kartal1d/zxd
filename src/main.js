@@ -13,6 +13,8 @@ import { Finds } from './finds.js';
 import { House } from './house.js';
 import { Walk } from './walk.js';
 import { Scares } from './scares.js';
+import { Flow } from './flow.js';
+import { Perf } from './perf.js';
 import { UI, SECRETS, REVERSED, secretCounts } from './ui.js';
 import * as S from './draw/scenes.js';
 import { storage, clamp } from './util.js';
@@ -94,7 +96,12 @@ class Game {
     this.ui = new UI(this);
     this.audio = new AudioEngine();
     this.tv = new TVScreen();
-    this.settings = { volume: 0.9, sens: 1, subs: true, flash: false, quality: 'high', ...storage.get(SETTINGS_KEY, {}) };
+    this.settings = { volume: 0.9, sens: 1, subs: true, flash: false, quality: 'auto', ...storage.get(SETTINGS_KEY, {}) };
+    // eski kayıtlardaki varsayılan 'Yüksek' yeni varsayılan 'Otomatik' olur (kullanıcı 'Düşük' seçtiyse kalır)
+    if (!this.settings.qv) {
+      if (this.settings.quality === 'high') this.settings.quality = 'auto';
+      this.settings.qv = 2;
+    }
     // varsayılan boş liste eski kaydın üstüne yazılmasın: tapes yoksa migrate() yeniden kursun
     const raw = storage.get(SAVE_KEY, {}) || {};
     this.state = migrate({ ...defaultState(), ...raw, tapes: raw.tapes, v: raw.v });
@@ -119,6 +126,7 @@ class Game {
     this.house = new House(this);
     this.walk = new Walk(this);
     this.scares = new Scares(this);
+    this.flow = new Flow(this);
     this.room.applyStage(this.state);
     this.ambience = new Ambience(this.audio);
     this.audio.setTvPosition(this.room.points.tv.x, this.room.points.tv.y, this.room.points.tv.z);
@@ -144,7 +152,9 @@ class Game {
   }
 
   setupRenderer() {
-    const r = (this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: 'high-performance' }));
+    const r = (this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: false, powerPreference: 'high-performance' }));
+    // sahne efekt zincirinin (composer) kendi hedefine çizilir; tuvalin MSAA'sı yalnızca son tam ekran kareye uygulanırdı (boşa)
+    this.perf = new Perf(this);
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.toneMappingExposure = 1.15;
@@ -155,9 +165,11 @@ class Game {
   setupComposer() {
     const r = this.renderer;
     this.composer?.dispose?.();
+    this.bloom?.dispose?.();
     const c = (this.composer = new EffectComposer(r));
     c.addPass(new RenderPass(this.room.scene, this.room.camera));
-    if (this.settings.quality === 'high') {
+    this.bloom = null;
+    if (this.settings.quality !== 'low') {
       this.bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), 0.5, 0.55, 0.75);
       c.addPass(this.bloom);
     }
@@ -170,10 +182,14 @@ class Game {
     const s = this.settings;
     this.audio.setVolume(s.volume);
     const low = s.quality === 'low';
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, low ? 1 : 2) * (low ? 0.75 : 1));
-    this.renderer.shadowMap.enabled = !low;
-    this.room.scene.traverse((o) => o.material && (o.material.needsUpdate = true));
+    if (this.renderer.shadowMap.enabled === low) {
+      this.renderer.shadowMap.enabled = !low;
+      this.room.scene.traverse((o) => o.material && (o.material.needsUpdate = true));
+    }
     this.setupComposer();
+    // çözünürlük: Yüksek = ekranın piksel oranı (en çok 2), Otomatik = en çok 1 ve kare süresine göre uyarlanır
+    this.perf.setQuality(s.quality);
+    this.tv.avgSampler = () => !this.debug?.noRender && this.perf.sampleTv();
     this.onResize();
     $('set-volume').value = s.volume;
     $('set-sens').value = s.sens;
@@ -338,20 +354,56 @@ class Game {
     this.lockPointer();
   }
 
-  /** Ev bölümü: oyuncu hep koltukta başlar; eski kayıtların 9. kasetini koru, mühürlenmemişse sessizce mühürle */
+  /**
+   * Ev bölümü: oyuncu hep koltukta başlar. Eski kayıtlar bir kez yeni akışa taşınır (docs/ev-akisi.md §6):
+   * 4. aşama ve sonrası (ya da sandığı açılmış 3. aşama) yürüyüş ve açık tavan arası kapısı alır, kasetler olduğu gibi kalır.
+   */
   enterHouse() {
     const st = this.state;
     const r = (st.room = st.room || {});
-    const has9 = st.tapes.includes(9);
+    const has = (n) => st.tapes.includes(n);
     this.scares.cancelAll();
     this.walk.resetSeated();
-    if (r.fbOpen && has9 && !r.walk) {
-      r.walk = true;
-      r.atticSealed = true;
-      r.doors = r.doors || { montaj: true, banyo: true, arka: false, dolap: false };
+    this.flow.reset();
+    if (r.flow !== 2) {
+      const s = st.stage;
+      const defDoors = { montaj: false, banyo: true, arka: false, dolap: false };
+      let moved = false;
+      if (s === 3 && r.chestOpen) {
+        r.walk = r.key = true;
+        if (!has(4)) r.t4Chest = true;
+        moved = true;
+      }
+      if (s >= 4) {
+        if (!r.walk) {
+          r.walk = true;
+          r.doorOpen = false;
+          moved = true;
+        }
+        r.key = true;
+        r.doors = r.doors || defDoors;
+        if (s === 5 && !r.boxToppled && !has(6)) r.koliDown = true;
+        if (s >= 7) r.arkaUnlocked = true;
+        if (s === 7 && !has(8)) r.hotcold = true;
+        if (s === 8 && r.fbOpen) {
+          r.montajOpen = true;
+          r.doors = { ...r.doors, montaj: true };
+        }
+        if (s >= 9) r.montajOpen = true;
+      }
+      // eski akışta (9. kaset evde bulunmuşsa) yürüyüş zaten açıktı: montaj odası da açıktı
+      if (has(9) && r.fbOpen) r.montajOpen = true;
+      r.flow = 2;
+      if (moved && s >= 3) r.flowNote = false;
+      this.save();
     }
-    if (r.fbOpen || st.stage >= 8) this.house.ensureBuilt();
-    if (has9 && r.walk && !r.atticSealed) this.scares.seal(true);
+    if (r.walk) this.house.ensureBuilt();
+    if (has(9) && r.walk && !r.atticSealed) this.scares.seal(true);
+    if (r.flowNote === false) {
+      r.flowNote = true;
+      this.save();
+      setTimeout(() => this.mode === 'play' && this.ui.toast('Güncelleme: Artık W A S D ile yürüyebilirsin. Tavan arası kapısının kilidi açık; kasetler artık evin içinde saklı.', 8), 4500);
+    }
   }
 
   pause() {
@@ -363,6 +415,11 @@ class Game {
     this.releasePointer();
     this.audio.ctx?.suspend();
     $('pause-objective').textContent = 'Hedef: ' + this.objectiveText();
+    const ph = $('pause-hint');
+    if (ph) {
+      ph.textContent = this.lastHint ? 'Son ipucu: ' + this.lastHint : '';
+      ph.hidden = !this.lastHint;
+    }
     const c = secretCounts(this.state.secrets);
     $('pause-secrets').textContent = `Gizli kareler: ${c.frames} / ${c.framesTotal} · Ters mesajlar: ${c.rev} / ${c.revTotal}`;
     this.show('pause', true);
@@ -386,6 +443,8 @@ class Game {
     this.loadSeq = (this.loadSeq || 0) + 1;
     this.ui.closeTapes?.(null);
     this.finds.reset();
+    this.house.stopLead();
+    this.flow.reset();
     this.save();
     this.show('pause', false);
     this.show('ending', false);
@@ -856,27 +915,39 @@ class Game {
   objectiveText() {
     const st = this.state;
     if (this.playingTape) return 'Kaseti izle. Beste soru sorarsa klavyeden cevap ver.';
-    if (this.newTape() === 9 && st.room?.fbOpen && !st.room.atticSealed) return 'Kaseti tavan arasına götür.';
+    const fo = this.flow.objective();
+    if (fo) return fo;
     if (this.newTape()) return 'Kaseti televizyonun altındaki video oynatıcıya tak.';
     if (st.stage === 0) return 'Karton kutudaki kaseti bul.';
     if (st.stage === 1 && !st.boxOpen) return 'Sehpadaki kilitli kutunun 4 haneli şifresini bul.';
     if (st.stage === 1) return 'Kilitli kutudaki kaseti al.';
-    const fo = this.finds.objective();
-    if (fo) return fo;
     return 'Buradan çık.';
   }
 
   updateObjective(quiet) {
     const t = this.objectiveText();
     if (quiet && t === this.lastObjective) return;
+    // adım değişince hedef satırı bir kez nabız gibi atar
+    const stepId = this.flow.step();
+    const pulse = t !== this.lastObjective && stepId !== this.lastStep && !!stepId;
+    this.lastStep = stepId;
     this.lastObjective = t;
-    this.ui.objective(t);
+    this.ui.objective(t, pulse);
   }
 
   async playTape(n) {
     if (this.walk.standing) await this.walk.sitDown();
     if (this.loadingTape || this.director.active) return;
     const st = this.state;
+    // kaset izlenirken korkutma yok; kasetlerdeki kapı vuruşları inandırıcı olsun diye tavan arası kapısı kapanır
+    this.scares.cancelAll();
+    this.house.stopLead();
+    const rm = st.room || {};
+    if (this.room.doorPivot.rotation.y > 0.02 && !this.director.fakeEnding) {
+      this.room.tweens.add(this.room.doorPivot.rotation, 'y', 0, 0.6);
+      setTimeout(() => this.audio.sfx('latch', this.room.points.door), 550);
+      rm.doorOpen = false;
+    }
     const tok = (this.loadSeq = (this.loadSeq || 0) + 1);
     this.loadingTape = true;
     this.playingTape = n;
@@ -1006,11 +1077,15 @@ class Game {
 
   // ===================================================================== döngü
   frame(now) {
-    const dt = Math.min(0.05, (now - this.last) / 1000);
+    const raw = now - this.last;
+    const dt = Math.min(0.05, raw / 1000);
     this.last = now;
     if (this.mode !== 'paused') this.update(dt);
     // test kancası: başsız testlerde 3D çizimi atla (TV tuvali yine güncellenir)
-    if (!this.debug?.noRender) this.composer.render();
+    if (!this.debug?.noRender) {
+      this.perf.beforeRender(raw);
+      this.composer.render();
+    }
     requestAnimationFrame((t) => this.frame(t));
   }
 
@@ -1022,7 +1097,7 @@ class Game {
       r.yaw = Math.sin(this.clock * 0.08) * 0.35;
       r.pitch = -0.05 + Math.sin(this.clock * 0.11) * 0.04;
     }
-    const ndc = this.free && this.mode === 'play' ? this.ndc : new THREE.Vector2(0, 0);
+    const ndc = this.free && this.mode === 'play' ? this.ndc : ZERO2;
     this.walk.update(dt);
     r.update(dt, ndc);
     this.house.update(dt, this.clock);
@@ -1033,8 +1108,10 @@ class Game {
     if (this.mode === 'play' && !this.overlay && !tvFocus && !r.locked) this.ui.hover(this.label(r.hover));
     else this.ui.hover('');
 
-    if (!this.director.update(dt * (this.debug?.speed || 1))) this.drawIdleTv();
+    // ev katlarındayken televizyon görünmez: boştaki ekranı çizme
+    if (!this.director.update(dt * (this.debug?.speed || 1)) && this.perf.tvVisible) this.drawIdleTv();
     this.finds.update(dt);
+    this.flow.update(dt);
     this.tv.update(dt, this.clock);
     this.ambience.update(this.clock, r.bulbLevel);
     const l = r.listener();
@@ -1056,6 +1133,7 @@ class Game {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const ZERO2 = new THREE.Vector2(0, 0);
 
 const game = new Game();
 game.boot().catch((e) => {

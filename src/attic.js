@@ -96,47 +96,23 @@ export class Attic {
       x.fillRect(0, 0, w, h);
       x.fillStyle = '#2b241b';
       x.font = '22px "Caveat", cursive';
-      x.fillText('Aşağının anahtarı burada.', 12, 34);
+      x.fillText('Montaj odasının anahtarı burada.', 12, 34);
       x.fillText('Kilidi, onun adını öğrenen açsın. — N.', 12, 70);
     });
     const note = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.11), new THREE.MeshStandardMaterial({ map: noteTex, roughness: 0.9 }));
     note.rotation.x = Math.PI / 2;
     note.position.set(0.15, -0.012, 0.13);
     this.falseBottom.add(note);
-    // altına bantlı: "ALT KAT" anahtarı, kâğıt etiketi ve küçük bir el feneri (9. kaset artık aşağıda)
-    this.chestKey = new THREE.Group();
-    this.chestKey.position.set(-0.12, -0.014, 0.26);
-    this.chestKey.rotation.x = Math.PI;
-    this.falseBottom.add(this.chestKey);
-    const brass = new THREE.MeshStandardMaterial({ color: 0xb08a38, roughness: 0.35, metalness: 0.8 });
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.07, 8), brass);
-    shaft.rotation.z = Math.PI / 2;
-    shaft.position.set(0.035, 0, 0);
-    const bow = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.005, 8, 16), brass);
-    bow.rotation.x = Math.PI / 2;
-    bow.position.set(-0.016, 0, 0);
-    const bit = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.003, 0.016), brass);
-    bit.position.set(0.064, 0, 0.008);
-    const tagTex = labelTex(128, 64, (x, w, h) => {
-      x.fillStyle = '#e4d6a4';
-      x.fillRect(0, 0, w, h);
-      x.fillStyle = '#2b241b';
-      x.font = '700 30px "Caveat", cursive';
-      x.fillText('ALT KAT', 10, 42);
-    });
-    const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.03), new THREE.MeshStandardMaterial({ map: tagTex, roughness: 0.9, side: THREE.DoubleSide }));
-    tag.rotation.x = -Math.PI / 2;
-    tag.position.set(0.0, -0.004, 0.032);
-    const torch = new THREE.Group();
-    const tb = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.14, 12), new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.5, metalness: 0.4 }));
-    tb.rotation.z = Math.PI / 2;
-    const lens = new THREE.Mesh(new THREE.CircleGeometry(0.016, 12), new THREE.MeshStandardMaterial({ color: 0xcfe0ff, emissive: 0x405070, roughness: 0.2 }));
-    lens.rotation.y = Math.PI / 2;
-    lens.position.set(0.0705, 0, 0);
-    torch.add(tb, lens);
-    torch.position.set(0.12, 0, 0.07);
-    torch.rotation.y = 0.4;
-    this.chestKey.add(shaft, bow, bit, tag, torch);
+    // SOBE ile açılan ana bölmede: "ALT KAT" anahtarı, kâğıt etiketi ve küçük bir el feneri (docs/ev-akisi.md §2.1)
+    this.chestKey = this.makeKey('ALT KAT', true);
+    this.chestKey.position.set(-0.1, 0.375, 0.04);
+    this.chestKey.rotation.y = 0.25;
+    chest.add(this.chestKey);
+    // sahte dibin altına bantlı: "MONTAJ" anahtarı (9. kaset yolu)
+    this.fbKey = this.makeKey('MONTAJ', false);
+    this.fbKey.position.set(-0.12, -0.014, 0.26);
+    this.fbKey.rotation.x = Math.PI;
+    this.falseBottom.add(this.fbKey);
     const tapeStrip = new THREE.MeshStandardMaterial({ color: 0xd8d0b0, roughness: 0.5, transparent: true, opacity: 0.7 });
     for (const [x, z, ry] of [[-0.06, 0.26, 0.2], [0.02, 0.33, -0.3]]) {
       const strip = r.box(0.03, 0.002, 0.13, tapeStrip, x, -0.038, z, this.falseBottom);
@@ -159,6 +135,44 @@ export class Attic {
     this.sheet.castShadow = this.sheet.receiveShadow = true;
     g.add(this.sheet);
     r.tag(this.sheet, 'sheet');
+  }
+
+  /** Pirinç anahtar + kâğıt etiket (+ isteğe bağlı küçük el feneri) */
+  makeKey(label, withTorch) {
+    const k = new THREE.Group();
+    const brass = new THREE.MeshStandardMaterial({ color: 0xb08a38, roughness: 0.35, metalness: 0.8 });
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.07, 8), brass);
+    shaft.rotation.z = Math.PI / 2;
+    shaft.position.set(0.035, 0, 0);
+    const bow = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.005, 8, 16), brass);
+    bow.rotation.x = Math.PI / 2;
+    bow.position.set(-0.016, 0, 0);
+    const bit = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.003, 0.016), brass);
+    bit.position.set(0.064, 0, 0.008);
+    const tagTex = labelTex(128, 64, (x) => {
+      x.fillStyle = '#e4d6a4';
+      x.fillRect(0, 0, 128, 64);
+      x.fillStyle = '#2b241b';
+      x.font = `700 ${label.length > 7 ? 26 : 30}px "Caveat", cursive`;
+      x.fillText(label, 10, 42);
+    });
+    const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.03), new THREE.MeshStandardMaterial({ map: tagTex, roughness: 0.9, side: THREE.DoubleSide }));
+    tag.rotation.x = -Math.PI / 2;
+    tag.position.set(0.0, -0.004, 0.032);
+    k.add(shaft, bow, bit, tag);
+    if (withTorch) {
+      const torch = new THREE.Group();
+      const tb = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.14, 12), new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.5, metalness: 0.4 }));
+      tb.rotation.z = Math.PI / 2;
+      const lens = new THREE.Mesh(new THREE.CircleGeometry(0.016, 12), new THREE.MeshStandardMaterial({ color: 0xcfe0ff, emissive: 0x405070, roughness: 0.2 }));
+      lens.rotation.y = Math.PI / 2;
+      lens.position.set(0.0705, 0, 0);
+      torch.add(tb, lens);
+      torch.position.set(0.12, 0.018, 0.07);
+      torch.rotation.y = 0.4;
+      k.add(torch);
+    }
+    return k;
   }
 
   // ------------------------------------------------------------------ telefon
@@ -316,8 +330,15 @@ export class Attic {
     hit.position.set(-0.1, 0.32, 0.45);
     this.chairHit = hit;
     this.scene.add(hit);
+    // ayaktayken: oturağın ön kenarına yukarıdan bakılınca da bulunsun (yalnız ayaktayken görünür, finds.update)
+    const hit2 = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.75, 0.7), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+    hit2.position.set(0, 0.375, 0.65);
+    hit2.visible = false;
+    this.chairHit2 = hit2;
+    this.scene.add(hit2);
     r.tag(this.chairTape, 'chairleg');
     r.tag(hit, 'chairleg');
+    r.tag(hit2, 'chairleg');
   }
 
   // ------------------------------------------------------------------ dış pervazdaki kaset (8)
@@ -387,10 +408,12 @@ export class Attic {
       this.sheet.scale.set(1, 1, 1);
     }
     this.chestLid.rotation.x = room.chestOpen || room.falseBottom ? -1.7 : 0;
-    this.chestTape4.visible = !has(4);
+    // yeni akışta 4. kaset salonda; sandıkta yalnız eski kayıtlarda (t4Chest) kalır
+    this.chestTape4.visible = !!room.t4Chest && !has(4);
     this.falseBottom.rotation.x = room.fbOpen ? FB_UP : room.falseBottom ? FB_AJAR : 0;
     this.chestTail.position.y = room.fbOpen ? 0.2 : 0.39;
-    this.chestKey.visible = !room.fbOpen;
+    this.chestKey.visible = !!room.chestOpen && !room.key;
+    this.fbKey.visible = !room.fbOpen;
     // telefon: ahize, sesli arama sonrası yerinde
     // kilim ve tahta
     this.kilimFlap.visible = !!room.kilimLifted;
@@ -416,8 +439,9 @@ export class Attic {
     const chairLive = st.stage === 6 && !has(7);
     this.chairTape.visible = chairLive;
     this.chairHit.visible = chairLive;
-    // pencere
-    this.windowTape.visible = !!room.hotcold && !has(8);
+    if (!chairLive) this.chairHit2.visible = false;
+    // pencere: 8. kaset artık bahçedeki salıncakta
+    this.windowTape.visible = false;
     // zincir ve kapı altı
     this.chain.visible = !!room.chain;
     this.showDoorTape(!!room.ritualDone && !has(10));

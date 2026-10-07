@@ -115,7 +115,7 @@ export const DOCS = {
 <p><b>21.05.98</b> — Bölüm 3 için ses yok. Rıza: "Eskilerden kes, yapıştır." Beste'nin kelimelerinden yeni cümleler kurdum. Hiçbirini o söylemedi.</p>
 <p><b>02.06.98</b> — Gece montajda yalnızdım. Monitörde Beste, benim kurmadığım bir cümle söyledi: "Nermin abla, sıra sende." Geri sardım. O kare bantta yok.</p>
 <p><b>19.06.98</b> — Rıza bütün kasetleri istiyor. Vermeyeceğim.</p>
-<p><b>03.02.99</b> — Bugün sekiz yaşına girecekti. Hediyesini tavan arasına kaldırdım.</p>
+<p><b>03.02.99</b> — Bugün sekiz yaşına girecekti. Hediyesini kolilerin arkasına sakladım. Açmaya kıyamadım.</p>
 <p><b>14.05.99</b> — Bir yıl. Ham kaydın yerini buraya yazmıyorum. Bahçedeki ağacın dibindeki kutuya yazdım. Ağaç her şeyi hatırlıyor.</p>` },
   teneke: { cls: 'letter', html: `<p class="doc-kind">Paslı bir bisküvi kutusu · içinde bir Polaroid ve bir not</p>
 <p class="small">Polaroid: Büyük çamın önünde sarı elbiseli küçük bir kız kameraya el sallıyor. Arkasındaki ağaçların arasında, odak dışında, çok uzun, gri bir leke. Altında: 14.05.98 · 13.40</p>
@@ -234,7 +234,7 @@ export class UI {
     this.secretT = setTimeout(() => el.classList.remove('show'), 4500);
   }
 
-  objective(text) {
+  objective(text, pulse = false) {
     const el = $('objective');
     if (!text) {
       el.classList.remove('show');
@@ -242,6 +242,13 @@ export class UI {
     }
     el.textContent = text;
     el.classList.add('show');
+    if (pulse) {
+      el.classList.remove('pulse');
+      void el.offsetWidth;
+      el.classList.add('pulse');
+      clearTimeout(this.objPulseT);
+      this.objPulseT = setTimeout(() => el.classList.remove('pulse'), 1200);
+    }
     clearTimeout(this.objT);
     this.objT = setTimeout(() => el.classList.remove('show'), 7000);
   }

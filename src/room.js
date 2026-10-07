@@ -828,7 +828,7 @@ export class Room {
     // perde görevi gören duvarlar (extra) etkileşimleri örter; ilk görünür çarpışma kazanır
     const hit = hits.find((h) => h.object.visible !== false && isVisible(h.object) && (h.object.userData.interact || h.object.userData.occ));
     this.hover = hit ? hit.object.userData.interact || null : null;
-    const pt = new THREE.Vector3();
+    const pt = (this._pt ||= new THREE.Vector3());
     const ray = this.raycaster.ray;
     let gx = 0, gy = 0;
     if (ray.intersectPlane(this.screenPlane, pt) && ray.direction.z < 0) {
@@ -842,10 +842,11 @@ export class Room {
   }
 
   listener() {
-    const fwd = new THREE.Vector3();
-    this.camera.getWorldDirection(fwd);
-    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(this.camera.quaternion);
-    return { pos: this.camera.position, fwd, up };
+    // her kare çağrılır: geçici vektörler yeniden kullanılır
+    const L = (this._lis ||= { pos: this.camera.position, fwd: new THREE.Vector3(), up: new THREE.Vector3() });
+    this.camera.getWorldDirection(L.fwd);
+    L.up.set(0, 1, 0).applyQuaternion(this.camera.quaternion);
+    return L;
   }
 }
 

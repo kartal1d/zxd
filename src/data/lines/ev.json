@@ -2,5 +2,6 @@
   "_info": "Ev (serbest yürüyüş) replikleri.",
   "ev_tel1": { "v": "riza", "t": "Nermin Hanım, ben Rıza. Jandarmayla konuşmayın. Yarın sabah kasetleri bana getirin.", "w": "TELESEKRETER" },
   "ev_tel2": { "v": "beste_kiz", "t": "Nermin abla? Neredesin? Ben saklandım ama kimse gelmedi.", "w": "TELESEKRETER" },
-  "ev_dolap": { "v": "beste_whisper", "t": "Burası dolu. Başka yere saklan.", "w": "???" }
+  "ev_dolap": { "v": "beste_whisper", "t": "Burası dolu. Başka yere saklan.", "w": "???" },
+  "ev_buldun": { "v": "beste_whisper", "t": "Buldun. Şimdi sıra sende.", "w": "???" }
 }

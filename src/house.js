@@ -1,4 +1,4 @@
-// Halanın evi: tavan arasının altındaki kat, merdiven ve arka bahçe (8. kasetten sonra serbest yürüyüş).
+// Halanın evi: tavan arasının altındaki kat, merdiven ve arka bahçe (3. kasetten sonra serbest yürüyüş, docs/ev-akisi.md).
 // Geometri, malzemeler, ışıklar, el feneri, aranabilir eşyalar (ev:*), 9. kaset bulmacası (ARŞİV rafı),
 // kapılar, çarpışma kutuları, oda (bölge) bilgisi ve kayıttan durum uygulama. Korkutmalar: src/scares.js.
 import * as THREE from 'three';
@@ -7,6 +7,7 @@ import * as TX from './textures.js';
 import * as S from './draw/scenes.js';
 import { drawSilhouette } from './draw/characters.js';
 import { HOUSE_SFX, HouseAmbience } from './houseaudio.js';
+import * as HF from './houseflow.js';
 import { clamp, lerp, rand, hash } from './util.js';
 
 export const YA = 0;
@@ -25,6 +26,7 @@ const EV_LINES = {
   ev_tel1: { v: 'riza', t: 'Nermin Hanım, ben Rıza. Jandarmayla konuşmayın. Yarın sabah kasetleri bana getirin.', w: 'TELESEKRETER' },
   ev_tel2: { v: 'beste_kiz', t: 'Nermin abla? Neredesin? Ben saklandım ama kimse gelmedi.', w: 'TELESEKRETER' },
   ev_dolap: { v: 'beste_whisper', t: 'Burası dolu. Başka yere saklan.', w: '???' },
+  ev_buldun: { v: 'beste_whisper', t: 'Buldun. Şimdi sıra sende.', w: '???' },
 };
 
 /** ARŞİV rafı: satır A..D (yukarıdan aşağı), sütun 1..6 (soldan sağa) */
@@ -47,7 +49,7 @@ const RACK_SPECIAL = {
 };
 const RACK_HINTS = [
   "Nermin'in notu: hiç kutlanmayan bir gün. Hediyesi o gün açılacaktı.",
-  "Tavan arasındaki hediye kutusunun etiketi: 'Sekizinci yaş gününde açılsın.'",
+  "Hediye kutusunun etiketi: 'Sekizinci yaş gününde açılsın.'",
   "Beste'nin sekizinci doğum günü: 03.02.99. C rafı, dördüncü kutu.",
 ];
 
@@ -64,32 +66,6 @@ const ZONES = {
   bahce: { bulb: 0, moon: 3.0, hemi: 3.0, fog: 0x0b0f18, dens: 0.07, zl: null },
 };
 const GROUND = ['giris', 'hol', 'salon', 'montaj', 'mutfak', 'banyo'];
-
-/** Hedef ve ipuçları (bkz. §8) */
-const OBJ9 = {
-  kapi: 'Tavan arası kapısını anahtarla aç.',
-  montaj: "Aşağı in. Nermin'in montaj odasını bul.",
-  bahce: 'Ham kaydın yerini ağaç biliyor. Bahçeye çık.',
-  raf: 'Montaj odasındaki arşiv rafında doğru kaseti bul.',
-  don: 'Kaseti tavan arasına götür.',
-};
-const HINTS9 = {
-  kapi: [[25, 'Anahtarın etiketinde ALT KAT yazıyor. Arkandaki kapı.']],
-  montaj: [
-    [20, (h) => !h.g.walk.everStood && h.g.ui.walkHint?.(true, 6)],
-    [90, 'Nermin kurgucuydu. Montaj odası aşağıda olmalı.'],
-    [180, 'Merdivenden in, koridor boyunca mutfağa doğru yürü. Montaj odası solda.'],
-  ],
-  bahce: [
-    [60, 'Mutfağın arka kapısı bahçeye açılıyor.'],
-    [150, 'Bahçedeki yaşlı çamın dibine bak.'],
-  ],
-  raf: [
-    [90, 'Raftaki etiketler tarih. Nermin hangi günden söz ediyordu?'],
-    [180, 'Tavan arasındaki hediye kutusundaki mektubun tarihi: 3 Şubat 1999.'],
-  ],
-  don: [[60, 'Kaseti oynatabileceğin tek yer tavan arası.']],
-};
 
 // ===================================================================== geometri yardımcıları
 function ctex(w, h, draw) {
@@ -173,10 +149,12 @@ export class House {
     this.statics = { ust: [], zemin: [], bahce: [] };
     this.doors = {};
     this.screens = [];
-    this.hintT = 0;
-    this.hintStep = null;
-    this.hintsDone = new Set();
     this.busy = {};
+    this.fp = {}; // akış eşyaları (houseflow.js)
+    this.visited = new Set();
+    this.lead = null;
+    this.ringing = false;
+    this.swingHold = false;
     const r = this.room;
     // ışıklar açılışta kurulur, sonra hiç eklenip çıkarılmaz (gölgelendiriciler yeniden derlenmesin)
     r.scene.add(r.camera);
@@ -218,6 +196,10 @@ export class House {
       tin: V(2.0, YB + 0.06, -6.85),
       swing: V(-3.0, YB + 1.5, -8.5),
       rack: V(-2.6, -1.9, -2.95),
+      hallPhone: V(0.72, -2.0, 8.48),
+      rugCorner: V(0.45, YG + 0.02, 7.2),
+      gift: V(4.0, -2.2, -2.95),
+      swingSeat: V(-3.0, YB + 0.45, -8.5),
     };
     this.ambience = new HouseAmbience(au, this.points);
   }
@@ -269,6 +251,7 @@ export class House {
     this.buildDolap();
     this.buildGarden();
     this.buildExterior();
+    HF.buildFlowProps(this);
     const merged = this.B.flush();
     this.occluders = { ust: [], zemin: [], bahce: [] };
     for (const m of merged) {
@@ -282,12 +265,8 @@ export class House {
     this.shell.visible = false;
     this.setZone(this.zone, true);
     this.apply(this.st);
-    // gölgelendiricileri önceden derle (ilk inişte takılma olmasın)
-    try {
-      this.g.renderer.compileAsync?.(sc, room.camera)?.catch?.(() => {});
-    } catch {
-      /* eski sürücü */
-    }
+    // gölgelendiricileri önceden derle (ilk inişte takılma olmasın): tavan arası ve ev ışık düzenleri için
+    this.g.perf?.precompile();
   }
 
   buildMaterials() {
@@ -832,6 +811,16 @@ export class House {
       S.staticNoise(x, t, 1);
       x.fillStyle = 'rgba(40,60,140,.25)';
       x.fillRect(0, 0, 640, 480);
+    } else if (mode === 'title') {
+      // 3. aşama ipucu: dizinin açılış kartı, köşede ▶ OYNAT
+      x.fillStyle = '#1838b8';
+      x.fillRect(0, 0, 640, 480);
+      S.bigText(x, 'SİHİRLİ DÜNYA', { color: '#ffd23f', font: `78px ${S.FONT_OSD}`, y: 230 });
+      if (Math.floor(t * 1.5) % 2 === 0) S.bigText(x, '▶ OYNAT', { color: '#ffffff', font: `40px ${S.FONT_OSD}`, x: 120, y: 60 });
+      for (let i = 0; i < 480; i += 4) {
+        x.fillStyle = 'rgba(0,0,0,.12)';
+        x.fillRect(0, i, 640, 1);
+      }
     } else if (mode === 'face') S.scareFace(x, t, 'beste');
     else if (mode === 'glow') {
       x.fillStyle = '#000';
@@ -921,6 +910,7 @@ export class House {
     nb.rotation.x = -HALF;
     nb.rotation.z = -HALF + 0.1;
     this.tag(nb, 'ev:defter');
+    this.deskNote = nb;
     // sandalye
     const ch = new THREE.Group();
     ch.position.set(-3.4, YG, -0.2);
@@ -1144,9 +1134,8 @@ export class House {
     this.box('zemin', 'mutfak', M.tileWall, -0.65, 2.45, -2.0, -1.4, -3.2, -3.19, 0.6);
     this.col('zemin', -0.65, 2.45, -3.2, -2.58);
     // buzdolabı ve üstündeki çocuk resmi
-    this.box('zemin', 'mutfak', M.cream, 3.95, 4.6, YG, YG + 1.6, -0.95, -0.25);
-    this.add('zemin', 'mutfak', M.metal, rodGeo(V(3.93, -1.7, -0.32), V(3.93, -1.25, -0.32), 0.012));
-    this.box('zemin', 'mutfak', M.dark, 3.948, 3.952, -2.0, -1.99, -0.94, -0.26);
+    this.box('zemin', 'mutfak', M.cream, 4.03, 4.6, YG, YG + 1.6, -0.95, -0.25);
+    const fridgeDoor = HF.buildFridgeDoor(this, Z);
     this.col('zemin', 3.93, 4.6, -0.97, -0.23);
     const dtex = ctex(128, 160, (x, w, h) => {
       x.fillStyle = '#f2eee2';
@@ -1183,16 +1172,18 @@ export class House {
       x.font = 'bold 14px "Caveat", cursive';
       x.fillText('NERMİN ABLAMA', 10, 140);
     });
-    const draw = this.mesh(new THREE.PlaneGeometry(0.22, 0.28), std({ map: dtex, roughness: 0.9 }), Z, 3.94, -1.6, -0.6);
+    // resim buzdolabı kapağında (kapak korkutmada açılır)
+    const draw = this.mesh(new THREE.PlaneGeometry(0.22, 0.28), std({ map: dtex, roughness: 0.9 }), fridgeDoor, -0.032, 1.3, 0.35);
     draw.rotation.y = -HALF;
     draw.rotation.x = 0.04;
-    this.mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.01, 8), std({ color: 0xc02020 }), Z, 3.935, -1.47, -0.6).rotation.z = HALF;
+    this.mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.01, 8), std({ color: 0xc02020 }), fridgeDoor, -0.037, 1.43, 0.35).rotation.z = HALF;
     this.tag(draw, 'ev:buzdolabi');
     // masa ve sandalyeler
     this.box('zemin', 'mutfak', M.wood, 1.2, 2.4, YG + 0.72, YG + 0.76, -1.1, -0.3);
     for (const [x, z] of [[1.25, -1.05], [2.35, -1.05], [1.25, -0.35], [2.35, -0.35]]) this.box('zemin', 'mutfak', M.wood, x - 0.025, x + 0.025, YG, YG + 0.72, z - 0.025, z + 0.025);
     this.col('zemin', 1.2, 2.4, -1.1, -0.3);
-    for (const [x, z, r] of [[1.55, -1.35, 0], [2.1, -0.02, Math.PI + 0.3]]) {
+    // ikinci sandalye (2.1, -0.02) korkutma için ayrı ağ: houseflow.js
+    for (const [x, z, r] of [[1.55, -1.35, 0]]) {
       const c = boxGeo(-0.2, 0.2, YG + 0.42, YG + 0.46, -0.2, 0.2);
       const b = boxGeo(-0.2, 0.2, YG + 0.46, YG + 0.9, -0.22, -0.19);
       for (const g of [c, b]) {
@@ -1591,11 +1582,16 @@ export class House {
       } else this.zoneLevel = 0;
     }
     if (this.built) this.applyVisibility();
+    // tavan arası ışıkları evde kapalı (her ışık her yüzeyin gölgelendiricisine yük bindirir)
+    this.g.perf?.setZoneLights(z);
     this.ambience.setZone(z);
     const g = this.g;
     if (GROUND.includes(z) || z === 'merdiven') g.ambience?.setDrone(this.droneHold ?? 0.04, 1.5);
     else if (!this.droneHold) g.ambience?.setDrone(0, 1.5);
     g.ambience?.setWind(z === 'bahce' ? 0.01 : z === 'cati' || z === 'sahanlik' ? 0.05 : 0.015);
+    this.visited.add(z);
+    // bazı hedefler bulunulan odaya göre yazılır
+    if (g.mode === 'play' && prev !== z) g.updateObjective?.(true);
   }
 
   applyVisibility() {
@@ -1649,6 +1645,7 @@ export class House {
         if (level === 'bahce' && d.name !== 'arka') continue;
         out.push(this.leafBox(d.hinge[0], d.hinge[1], d.d0, d.w, a));
       }
+      if (level === 'zemin') HF.flowColliders(this, out);
     }
     return out;
   }
@@ -1722,6 +1719,27 @@ export class House {
     this.man.visible = this.manArms.visible = false;
     this.winGirl.visible = false;
     if (this.drawer) this.drawer.position.z = -2.59;
+    HF.applyFlow(this, st);
+    this._titleT = 0; // salon ekranı (ipucu sürerken) hemen yeniden çizilsin
+  }
+
+  toppleKoli(live) {
+    if (this.built) HF.toppleKoli(this, live);
+  }
+  stopRing() {
+    try {
+      this.ringStopFn?.();
+    } catch {
+      /* bitti */
+    }
+    this.ringStopFn = null;
+    this.ringing = false;
+  }
+  stopLead() {
+    HF.stopLead(this);
+  }
+  debugFind(n) {
+    return HF.debugFind(this, n);
   }
 
   // ================================================================== her kare
@@ -1741,7 +1759,11 @@ export class House {
     // salıncak (A4)
     if (this.chunks.bahce.visible && this.swing) {
       const sc = g.scares;
-      if (!sc?.swingStop) {
+      if (sc?.swingStop || this.swingHold) {
+        // sıcak-soğuk yakınken ya da korkutmada salıncak yavaşça durur
+        this.swing.rotation.x -= this.swing.rotation.x * Math.min(1, dt * 2);
+        this.swingV = 0;
+      } else {
         this.swingT = (this.swingT || 0) + dt;
         const a = Math.sin(this.swingT * Math.PI * 2 * 0.45) * 0.12;
         const prev = this.swing.rotation.x;
@@ -1752,7 +1774,7 @@ export class House {
     }
     // billboardlar kameraya döner
     const cam = this.room.camera.position;
-    for (const m of [this.man, this.manArms]) if (m.visible) m.rotation.y = Math.atan2(cam.x - m.position.x, cam.z - m.position.z);
+    for (const m of [this.man, this.manArms, this.fp.ghost2]) if (m.visible) m.rotation.y = Math.atan2(cam.x - m.position.x, cam.z - m.position.z);
     // telesekreter ekranı
     if (this.zone === 'giris' || this.zone === 'hol') {
       const blink = Math.floor(clock * 1.6) % 2;
@@ -1781,43 +1803,7 @@ export class House {
     const fl = w ? w.flickerK : 1;
     this.zoneLight.intensity = this.zoneLevel * (this.zoneBoost ?? 1) * (this.flickerZone ? fl : 1);
     this.ambience.update(clock);
-    this.updateHints(dt);
-  }
-
-  // ================================================================== hedef ve ipuçları
-  step9() {
-    const r = this.r;
-    if (!r.fbOpen) return 'anahtar';
-    if (this.has(9)) return r.atticSealed ? null : 'don';
-    if (!r.walk) return 'kapi';
-    if (r.tinOpen) return 'raf';
-    if (r.deskRead) return 'bahce';
-    return 'montaj';
-  }
-
-  objective9() {
-    return OBJ9[this.step9()] || null;
-  }
-
-  updateHints(dt) {
-    const g = this.g;
-    if (g.mode !== 'play' || g.panelOpen() || g.director.active || g.loadingTape) return;
-    const st = this.st;
-    const step = st.stage === 8 || (this.has(9) && st.stage < 9) ? this.step9() : null;
-    if (step !== this.hintStep) {
-      this.hintStep = step;
-      this.hintT = 0;
-      this.hintsDone.clear();
-    }
-    if (!step || !HINTS9[step]) return;
-    this.hintT += dt;
-    for (const [sec, h] of HINTS9[step]) {
-      if (this.hintT >= sec && !this.hintsDone.has(sec)) {
-        this.hintsDone.add(sec);
-        if (typeof h === 'function') h(this);
-        else g.ui.toast(h, 6);
-      }
-    }
+    HF.updateLeads(this, dt);
   }
 
   // ================================================================== etiketler
@@ -1838,7 +1824,7 @@ export class House {
     const r = this.r;
     const st = this.st;
     if (id === 'door') {
-      if (!r.fbOpen) return null;
+      if (!r.key) return null;
       if (r.atticSealed) return 'Kapı (kilitli)';
       if (!r.walk) return '<b>Kapıyı anahtarla aç</b>';
       return this.room.doorPivot.rotation.y > 0.6 ? 'Kapıyı kapat' : 'Kapıyı aç';
@@ -1852,9 +1838,13 @@ export class House {
     if (id.startsWith('ev:kapi:')) {
       const n = id.slice(8);
       const open = Math.abs(this.doors[n].pivot.rotation.y) > 0.6;
+      if (n === 'montaj' && !r.montajOpen) return r.fbOpen ? '<b>Kapıyı anahtarla aç</b>' : 'Montaj odası (kilitli)';
+      if (n === 'arka' && !r.arkaUnlocked) return 'Arka kapı (sürgülü)';
       if (n === 'arka' && !this.seen('ev:kapi:arka')) return 'Arka kapı';
       return open ? 'Kapıyı kapat' : 'Kapıyı aç';
     }
+    const fl = HF.flowLabel(this, id);
+    if (fl !== undefined) return fl;
     switch (id) {
       case 'ev:portmanto':
         return this.bold(id, 'Portmanto');
@@ -1879,7 +1869,7 @@ export class House {
       case 'ev:cam':
         return 'Yaşlı çam';
       case 'ev:teneke':
-        return r.tinOpen ? 'Paslı kutu' : '<b>Paslı kutu</b>';
+        return r.tinOpen || st.stage < 8 ? 'Paslı kutu' : '<b>Paslı kutu</b>';
       case 'ev:saat':
         return 'Duvar saati';
       case 'ev:diskapi':
@@ -1888,7 +1878,7 @@ export class House {
         return 'Işık düğmesi';
       case 'ev:nermin':
         if ((r.scares || []).includes('delik')) return "Nermin'in odası (kilitli)";
-        return this.seen('ev:nermin') ? '<b>Anahtar deliğinden bak</b>' : "Nermin'in odası (kilitli)";
+        return this.seen('ev:nermin') && st.stage >= 5 ? '<b>Anahtar deliğinden bak</b>' : "Nermin'in odası (kilitli)";
       case 'ev:salontv':
         return 'Televizyon';
       case 'ev:monitor':
@@ -1918,7 +1908,7 @@ export class House {
     const au = g.audio;
     const ui = g.ui;
     if (id === 'door') {
-      if (!r.fbOpen) return false;
+      if (!r.key) return false;
       if (g.director.active || g.loadingTape) {
         ui.toast('Önce kaset bitsin.', 2.5);
         return true;
@@ -1937,14 +1927,14 @@ export class House {
         this.room.openDoor(1, 2.5);
         r.walk = true;
         r.doorOpen = true;
-        r.doors = r.doors || { montaj: true, banyo: true, arka: false, dolap: false };
+        r.doors = r.doors || { montaj: false, banyo: true, arka: false, dolap: false };
         this.apply(st);
         this.room.doorPivot.rotation.y = 0;
         this.room.openDoor(1, 2.5);
-        ui.toast('Anahtar zorlanarak döndü. Kapı kendiliğinden aralandı. Aşağıdan nemli, soğuk bir hava geliyor.', 6);
+        ui.toast('Anahtar zorlanarak döndü. Kapı kendiliğinden aralandı. Aşağıdan çok kısık bir müzik geliyor.', 6);
         g.save();
         g.updateObjective();
-        setTimeout(() => g.mode === 'play' && ui.walkHint?.(true, 8), 1500);
+        setTimeout(() => g.mode === 'play' && ui.walkHint?.(true, 10), 1500);
         return true;
       }
       const open = this.room.doorPivot.rotation.y > 0.6;
@@ -1974,6 +1964,35 @@ export class House {
     this.markSeen(id);
     if (id.startsWith('ev:arsiv:')) {
       await this.pullBox(id.slice(9));
+      g.save();
+      return true;
+    }
+    if (id === 'ev:kapi:montaj' && !r.montajOpen) {
+      const p = this.points.montajDoor;
+      if (!r.fbOpen) {
+        au.sfx('handle', p, 2);
+        ui.toast("Kapı kilitli. Üstüne bantlanmış bir kâğıt: 'MONTAJ — GİRMEYİN — N.'", 5);
+        return true;
+      }
+      au.sfx('keyTurn', p);
+      await sleep(550);
+      this.setDoor('montaj', true, 1.6);
+      au.sfx('creak', p, 1.6);
+      r.montajOpen = true;
+      r.doors = { ...(r.doors || {}), montaj: true };
+      this.stopLead();
+      this.fp.strip.visible = false;
+      ui.toast('Kilit döndü. Montaj odasında monitörlerin fanı uğulduyor.', 5);
+      g.save();
+      g.updateObjective();
+      return true;
+    }
+    if (id === 'ev:kapi:arka' && !r.arkaUnlocked) {
+      au.sfx('handle', this.points.backDoor, 2);
+      ui.toast('Arka kapının sürgüsü paslanmış, kıpırdamıyor. Camından bahçedeki sis görünüyor.', 5);
+      return true;
+    }
+    if (await HF.flowInteract(this, id)) {
       g.save();
       return true;
     }
@@ -2011,6 +2030,10 @@ export class House {
         ui.toast("Mayıs 1998'de kalmış bir takvim. 14'ün kutusuna 'ÇAMLIK DIŞ ÇEKİM 09.00' yazılmış. Sonraki bütün günlere küçük harflerle aynı soru yazılmış: 'bulundu mu?'", 7);
         break;
       case 'ev:buzdolabi':
+        if ((r.scares || []).includes('buzdolabi')) {
+          ui.toast('Buzdolabının kapağı açık. İçi boş ve ılık. Fişi prizde değil.', 5);
+          break;
+        }
         ui.toast('Mıknatısla tutturulmuş bir çocuk resmi: el ele bir kadın ve sarı elbiseli bir kız. Altında: NERMİN ABLAMA. Kenara sonradan, kurşun kalemle, çok uzun, gri bir adam eklenmiş. Çizgiler çocuk eli değil.', 8);
         break;
       case 'ev:cekmece':
@@ -2040,6 +2063,10 @@ export class House {
         ui.toast('Yaşlı bir çam. Kabuğuna taze bir yazı kazınmış: 14.05. Reçine hâlâ akıyor.' + (r.tinOpen ? '' : ' Köklerin arasında paslı bir kutu var.'), 6);
         break;
       case 'ev:teneke':
+        if (st.stage < 8 && !r.tinOpen) {
+          ui.toast('Ağacın köklerinin arasında paslı bir bisküvi kutusu. Kapağı paslanıp yapışmış.', 5);
+          break;
+        }
         au.sfx('paper');
         await g.readDoc('teneke');
         if (!r.tinOpen) {
@@ -2062,7 +2089,7 @@ export class House {
         break;
       case 'ev:nermin': {
         const done = (r.scares || []).includes('delik');
-        if (!firstTime && !done && !g.debug?.noScares) {
+        if (!firstTime && !done && !g.debug?.noScares && st.stage >= 5) {
           await g.scares?.keyhole();
           break;
         }
@@ -2230,8 +2257,8 @@ export class House {
       if (g.overlay === 'reader') g.ui.closeReader?.();
       await sleep(100);
     };
-    if (!r.walk) {
-      await this.interact('door');
+    if (!r.montajOpen) {
+      await this.interact('ev:kapi:montaj');
       await sleep(300);
     }
     const p1 = this.interact('ev:defter');

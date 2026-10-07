@@ -78,7 +78,7 @@
       <label class="row"><span>Altyazılar</span><input id="set-subs" type="checkbox" checked></label>
       <label class="row"><span>Yanıp sönmeyi azalt</span><input id="set-flash" type="checkbox"></label>
       <label class="row"><span>Grafik kalitesi</span>
-        <select id="set-quality"><option value="high">Yüksek</option><option value="low">Düşük</option></select>
+        <select id="set-quality"><option value="auto">Otomatik</option><option value="high">Yüksek</option><option value="low">Düşük</option></select>
       </label>
       <button class="back" type="button" data-back>◀ GERİ</button>
     </div>
@@ -88,6 +88,7 @@
     <div class="panel-inner">
       <h2>❚❚ DURAKLATILDI</h2>
       <p id="pause-objective" class="objective-line"></p>
+      <p id="pause-hint" class="objective-line hint-line" hidden></p>
       <p id="pause-secrets" class="objective-line"></p>
       <nav class="menu">
         <button id="btn-resume" type="button">▶ DEVAM</button>

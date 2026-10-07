@@ -1,50 +1,22 @@
-// Kasetler arası tavan arası bulmacaları: her kasetin nerede bulunduğu, kilitler, ipuçları,
-// ilk izlemeden sonraki oda olayları, sıcak-soğuk oyunu ve kapı ritüeli.
+// Kasetler arası bulmacalar (tavan arası tarafı): sandık, kilitler, ilk izlemeden sonraki olaylar,
+// yürüyerek sıcak-soğuk oyunu, sandalye altındaki kaset ve kapı ritüeli. Evdeki buluntular: houseflow.js.
+// Adımlar ve hedef yazıları: flow.js (docs/ev-akisi.md).
 import * as THREE from 'three';
 import * as S from './draw/scenes.js';
 import { has as hasWord } from './util.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/** Aranan kasete göre hedef yazısı */
-const OBJECTIVES = {
-  3: 'Arkandan gelen sesin kaynağına bak.',
-  4: 'Arkanda bir şey yer değiştirdi.',
-  5: 'Telefonla birini ara.',
-  6: 'Kutuların arkasına bak.',
-  7: 'Karanlıkta bant hışırtısının kaynağını bul.',
-  8: 'Televizyonun sıcak-soğuk ipuçlarını izle.',
-  9: 'Oyuncak sandığına bak.',
-  10: 'Beste ışığı söndürmeni istedi.',
-};
-
-/** Süreye bağlı ipuçları: [saniye, metin | fonksiyon] */
-const TIME_HINTS = {
-  3: [[40, 'Raftaki peluş yerinde değil.']],
-  4: [[60, 'Sağ tarafta, çarşafın altından mavi bir sandık görünüyor.']],
-  7: [
-    [20, (f) => f.hiss()],
-    [45, 'Ses aşağıdan geliyor. Oturduğun yerden.'],
-    [75, (f) => f.setObjective('Sandalyenin altına bak.')],
-  ],
-  8: [
-    [60, 'Televizyon, baktığın yere göre konuşuyor.'],
-    [120, 'Sıcak... pencereye doğru.'],
-  ],
-  10: [
-    [60, 'Ampul vızıldıyor. Karanlık olmadan kimse gelmeyecek.'],
-    [120, (f) => f.setObjective('Ampulü söndür.')],
-  ],
-};
-
-const HOTCOLD = [
-  // [en fazla açı (derece), söz, replik]
-  [12, 'Yandın!', 'k8_room_burn'],
-  [28, 'Sıcak', 'k8_room_hot'],
-  [55, 'Ilık', 'k8_room_warm'],
-  [100, 'Soğuk', 'k8_room_cold'],
-  [181, 'Buz gibi', 'k8_room_ice'],
-];
+/** Yürüyerek sıcak-soğuk (docs/ev-akisi.md §2.5): bölge -> söz */
+const HC_ZONE = { cati: 'Buz gibi', salon: 'Buz gibi', banyo: 'Buz gibi', sahanlik: 'Uzaksın', merdiven: 'Uzaksın', giris: 'Uzaksın', hol: 'Isınıyorsun', mutfak: 'Isınıyorsun', montaj: 'Isınıyorsun' };
+const HC_LINE = { 'Buz gibi': 'k8_room_ice', 'Uzaksın': 'k8_room_cold', 'Isınıyorsun': 'k8_room_warm', 'Sıcak!': 'k8_room_hot', 'Yandın!': 'k8_room_burn' };
+export function hotColdBand(zone, distToSwing) {
+  if (zone === 'bahce') {
+    const d = distToSwing;
+    return d <= 2.2 ? 'Yandın!' : d <= 5 ? 'Sıcak!' : d <= 9 ? 'Isınıyorsun' : d <= 13 ? 'Uzaksın' : 'Buz gibi';
+  }
+  return HC_ZONE[zone] || 'Buz gibi';
+}
 
 export class Finds {
   constructor(game) {
@@ -55,10 +27,8 @@ export class Finds {
   reset() {
     this.t = 0;
     this.seekingFor = null;
-    this.hintsDone = new Set();
-    this.objectiveOverride = null;
     this.wrong = {};
-    this.hc = { band: null, pending: null, since: 0, lastSaid: -10 };
+    this.hc = { band: null, pending: null, since: 0, lastSaid: -10, sameT: 0, start: 0 };
     this.ritual = null;
     this.stopRing?.();
     this.stopRing = null;
@@ -84,22 +54,8 @@ export class Finds {
     return this.has(n) ? null : n;
   }
 
-  setObjective(text) {
-    this.objectiveOverride = text;
-    this.g.updateObjective();
-  }
-
   objective() {
-    const n = this.seeking();
-    if (n == null) return null;
-    if (this.objectiveOverride) return this.objectiveOverride;
-    const r = this.room;
-    if (n === 4 && r.chestOpen) return 'Sandıktaki kaseti al.';
-    if (n === 5 && r.kilimLifted) return 'Halının altına bak.';
-    if (n === 6 && r.giftOpen) return 'Hediye kutusundaki kaseti al.';
-    if (n === 10 && r.ritualDone) return 'Kapının önündeki kaseti al.';
-    if (n === 9 && r.fbOpen) return this.g.house?.objective9() || OBJECTIVES[9];
-    return OBJECTIVES[n];
+    return this.g.flow?.objective() ?? null;
   }
 
   toast(text, sec = 5) {
@@ -129,11 +85,12 @@ export class Finds {
       case 'chest':
         if (!r.furnitureMoved) return 'Örtülü eşya';
         if (s >= 3 && !r.chestOpen) return '<b>Sandığın harf kilidi</b>';
-        if (r.chestOpen && !this.has(4)) return '<b>Kaseti al</b>';
+        if (r.chestOpen && !r.key) return '<b>Anahtarı al</b>';
+        if (r.t4Chest && !this.has(4)) return '<b>Kaseti al</b>';
         if (r.falseBottom && !r.fbOpen) return '<b>Sahte dibin kilidi</b>';
         return 'Oyuncak sandığı';
       case 'phone':
-        return s >= 4 && !this.has(5) && !r.kilimLifted ? '<b>Telefonu çevir</b>' : 'Telefon';
+        return 'Telefon';
       case 'floorboard':
         if (!r.kilimLifted || this.has(5)) return '';
         return r.boardOpen ? '<b>Kaseti al</b>' : '<b>Gevşek tahta</b>';
@@ -145,9 +102,6 @@ export class Finds {
         return '<b>Zinciri çek</b>';
       case 'doortape':
         return '<b>Kaseti al</b>';
-      case 'window':
-        if (r.hotcold && !this.has(8)) return this.hc.band === 'Yandın!' ? '<b>Mandalı aç</b>' : 'Pencere';
-        return null;
       default:
         return null;
     }
@@ -183,17 +137,24 @@ export class Finds {
             r.chestOpen = true;
             g.room.attic.openChest();
             au.sfx('boxOpen', g.room.points.chest);
-            this.toast('Sandık açıldı.');
             g.save();
             g.updateObjective();
+            // ev şimdi kurulur: kurulum takılması bir sonraki okuyucunun arkasında kalsın
+            g.house?.ensureBuilt();
+            await sleep(1200);
+            await this.takeKey();
           }
           return true;
         }
-        if (r.chestOpen && !this.has(4)) {
+        if (r.chestOpen && !r.key) {
+          await this.takeKey();
+          return true;
+        }
+        if (r.t4Chest && !this.has(4)) {
+          // eski kayıt: 4. kaset hâlâ sandıkta
           au.sfx('pickup');
           g.addTape(4);
-          this.toast('İçinde bir kaset, mum boya bir resim ve turuncu, kesik bir peluş kuyruğu var.', 6);
-          await g.readDoc('resim');
+          this.toast('Sandıkta bir kaset duruyordu. Etiketinde "Beste 4 — Kaybolursan Ne Yaparsın?" yazıyor.', 6);
           g.updateObjective();
           return true;
         }
@@ -209,9 +170,10 @@ export class Finds {
             au.sfx('boxOpen', g.room.points.chest);
             await sleep(1400);
             au.sfx('pickup');
-            g.room.attic.apply(this.st); // anahtar ve fener sandıktan alındı
+            g.room.attic.apply(this.st); // MONTAJ anahtarı sandıktan alındı
             g.house?.ensureBuilt();
-            this.toast("Sahte dibin altına bantlanmış eski bir anahtar var. Kâğıt etiketinde 'ALT KAT' yazıyor. Yanında küçük bir el feneri ve iki kâğıt.", 7);
+            g.house?.apply(this.st);
+            this.toast("Sahte dibin altına bantlanmış bir anahtar var. Kâğıt etiketinde 'MONTAJ' yazıyor. Yanında iki kâğıt.", 7);
             g.save();
             g.updateObjective();
             await g.readDoc('memo');
@@ -233,54 +195,10 @@ export class Finds {
         return true;
       }
       case 'phone': {
-        if (s < 4) {
-          this.toast('Eski, krem rengi, çevirmeli bir telefon. Kadranın ortasında 364 51 80 yazıyor. Kablosu duvara bağlı değil.', 5);
-          return true;
-        }
-        if (this.has(5) || r.kilimLifted) {
-          this.toast('Telefon sessiz. Kablosu hâlâ duvara bağlı değil.');
-          return true;
-        }
-        this.stopRing?.();
-        this.stopRing = null;
-        au.sfx('phonePickup', g.room.points.phone);
-        g.releasePointer();
-        const hints = ["Beste'nin şarkıdaki ev numarası. Yedi rakam.", '364 ile başlıyordu. Sonra iki kere en sevdiği sayı.', '364 27 27.'];
-        const ok = await g.ui.keypad(
-          (code) => {
-            if (code === '3642727') return true;
-            if (code === '3645180') {
-              au.sfx('busy', 6);
-              return 'Hat meşgul. Hat sanki başka bir yerde de açık.';
-            }
-            return 'Aradığınız numaraya şu anda ulaşılamıyor.';
-          },
-          {
-            len: 7,
-            mask: '___ __ __',
-            title: 'ÇEVİR',
-            help: 'Numarayı rakamlarla çevir · Esc: kapat',
-            onDigit: (k) => au.sfx('rotaryDial', +k, au.room),
-            onWrong: () => this.wrongHint('phone', hints),
-          },
-        );
-        g.lockPointer();
-        if (ok) {
-          const p = g.room.points.phone;
-          const dur = au.sfx('ringback', 2) || 8;
-          await sleep(Math.min(dur, 8) * 1000 * 0.5);
-          au.sfx('phonePickup', p);
-          await sleep(600);
-          await this.roomSay('k5_room_real1', p);
-          await this.roomSay('k5_room_real2', p);
-          au.sfx('hangup', p);
-          r.kilimLifted = true;
-          g.room.attic.liftKilim();
-          au.sfx('clothSlide', g.room.points.floorboard, 1.2);
-          this.toast('Sandalyenin arkasında, kilimin köşesi kendiliğinden kalktı.', 5);
-          g.save();
-          g.updateObjective();
-        }
+        // tavan arası telefonu artık yalnız bir eşya: çalan telefon aşağıda, girişte
+        if (s < 4) this.toast('Eski, krem rengi, çevirmeli bir telefon. Kadranın ortasında 364 51 80 yazıyor. Kablosu duvara bağlı değil.', 5);
+        else if (s === 4 && !r.holCall && !r.kilimLifted && !this.has(5)) this.toast('Bu telefonun kablosu duvara bağlı değil. Çalan telefon aşağıda, girişte.', 5);
+        else this.toast('Telefon sessiz. Kablosu hâlâ duvara bağlı değil.');
         return true;
       }
       case 'floorboard': {
@@ -303,19 +221,9 @@ export class Finds {
           await g.readDoc('dogumgunu');
           return true;
         }
+        if (!r.boxToppled) return true;
         if (!r.giftOpen) {
-          g.releasePointer();
-          const ok = await g.ui.keypad(
-            (code) => (code === '0302' ? true : code === '0203' ? 'Neredeyse. Önce gün, sonra ay.' : false),
-            {
-              len: 4,
-              mask: '__/__',
-              title: 'GG/AA',
-              help: 'Gün ve ay · Esc: kapat',
-              onWrong: () => this.wrongHint('gift', ['Etikete göre doğum gününde açılacak...', 'Metal kutudaki okul kartına bak.', 'Gün ve ay: 03 02.']),
-            },
-          );
-          g.lockPointer();
+          const ok = await this.giftKeypad();
           if (!ok) return true;
           r.giftOpen = true;
           g.room.attic.openGift();
@@ -337,21 +245,7 @@ export class Finds {
         g.addTape(7);
         this.toast("Sandalyenin ayağına bantlanmış bir kaset. Etiketinde 'Beste 1 — Tanışalım' yazıyor. Ama 1. kaset dolabın üstünde duruyor.", 7);
         g.updateObjective();
-        return true;
-      }
-      case 'window': {
-        if (!(r.hotcold && !this.has(8))) return false;
-        if (this.hc.band !== 'Yandın!') {
-          this.toast('Mandal sıkışmış. Televizyon ne diyor?');
-          return true;
-        }
-        r.windowOpen = true;
-        au.sfx('creak', g.room.points.window, 1.2);
-        await sleep(600);
-        au.sfx('pickup');
-        g.addTape(8);
-        this.toast('Mandal açıldı. Dış pervazda, küçük el izlerinin arasında bir kaset duruyordu.', 6);
-        g.updateObjective();
+        g.scares?.onTape7Pickup();
         return true;
       }
       case 'chain':
@@ -368,6 +262,76 @@ export class Finds {
       default:
         return false;
     }
+  }
+
+  /** SOBE sandığından: ALT KAT anahtarı, el feneri ve resim */
+  async takeKey() {
+    const g = this.g;
+    const r = this.room;
+    if (r.key) return;
+    g.audio.sfx('pickup');
+    r.key = true;
+    g.room.attic.apply(this.st);
+    this.toast("Sandıkta eski bir anahtar, küçük bir el feneri, mum boya bir resim ve turuncu, kesik bir peluş kuyruğu var. Anahtarın etiketinde 'ALT KAT' yazıyor.", 7);
+    g.save();
+    g.updateObjective();
+    await g.readDoc('resim');
+    g.updateObjective();
+  }
+
+  /** Beste'nin evini arama tuş takımı (giriş telefonu; eski kayıtlarda tavan arası). true: doğru numara çevrildi */
+  async dialHome() {
+    const g = this.g;
+    const au = g.audio;
+    g.releasePointer();
+    const hints = ["Beste'nin şarkıdaki ev numarası. Yedi rakam.", '364 ile başlıyordu. Sonra iki kere en sevdiği sayı.', '364 27 27.'];
+    const ok = await g.ui.keypad(
+      (code) => {
+        if (code === '3642727') return true;
+        if (code === '3645180') {
+          au.sfx('busy', 6);
+          return 'Hat meşgul. Hat sanki başka bir yerde de açık.';
+        }
+        return 'Aradığınız numaraya şu anda ulaşılamıyor.';
+      },
+      {
+        len: 7,
+        mask: '___ __ __',
+        title: 'ÇEVİR',
+        help: 'Numarayı rakamlarla çevir · Esc: kapat',
+        onDigit: (k) => au.sfx('rotaryDial', +k, au.room),
+        onWrong: () => this.wrongHint('phone', hints),
+      },
+    );
+    g.lockPointer();
+    return ok;
+  }
+
+  /** Bağlantı kurulunca Beste'nin iki fısıltısı ahizeden (pos: telefon) */
+  async homeCall(p) {
+    const au = this.g.audio;
+    const dur = au.sfx('ringback', 2) || 8;
+    await sleep(Math.min(dur, 8) * 1000 * 0.5);
+    au.sfx('phonePickup', p);
+    await sleep(600);
+    await this.roomSay('k5_room_real1', p);
+    await this.roomSay('k5_room_real2', p);
+    au.sfx('hangup', p);
+  }
+
+  /** Hediye kutusunun gün/ay kilidi */
+  async giftKeypad() {
+    const g = this.g;
+    g.releasePointer();
+    const ok = await g.ui.keypad((code) => (code === '0302' ? true : code === '0203' ? 'Neredeyse. Önce gün, sonra ay.' : false), {
+      len: 4,
+      mask: '__/__',
+      title: 'GG/AA',
+      help: 'Gün ve ay · Esc: kapat',
+      onWrong: () => this.wrongHint('gift', ['Etikete göre doğum gününde açılacak...', 'Metal kutudaki okul kartına bak.', 'Gün ve ay: 03 02.']),
+    });
+    g.lockPointer();
+    return ok;
   }
 
   /** Harf kilidi; yanlışlarda 2/4/6. denemede ipucu */
@@ -396,7 +360,7 @@ export class Finds {
     const r = this.room;
     const pts = g.room.points;
     const au = g.audio;
-    this.objectiveOverride = null;
+    const h = g.house;
     if (n === 3) {
       await sleep(2500);
       r.furnitureMoved = true;
@@ -405,24 +369,31 @@ export class Finds {
       g.room.attic.moveFurniture();
       this.toast('Arkanda bir şey yer değiştirdi.', 4);
     } else if (n === 4) {
+      // girişteki telefon çalar (çalma, house.updateLeads'te duruma bağlı sürer)
       await sleep(1500);
-      this.stopRing = au.sfx('phoneRing', pts.phone, 8);
-      this.toast('Arkanda eski bir telefon çalıyor.', 4);
-      setTimeout(() => (this.stopRing = null), 24000);
+      if (!r.kilimLifted && !r.holCall) this.toast('Aşağıdan bir telefon sesi geliyor. Girişten.', 5);
     } else if (n === 5) {
       await sleep(2000);
-      r.boxToppled = true;
-      au.sfx('woodScrape', pts.giftbox, 0.5);
-      setTimeout(() => au.sfx('thud', new THREE.Vector3(2.0, 0.2, 1.55)), 450);
-      g.room.attic.toppleBox();
-      this.toast('Sağ taraftaki kutulardan biri devrildi.', 4);
+      if (!r.boxToppled && !r.koliDown) {
+        r.koliDown = true;
+        h?.ensureBuilt();
+        h?.toppleKoli(true);
+        this.toast('Aşağıdan, mutfak tarafından bir gürültü geldi. Bir şey devrildi.', 5);
+      }
     } else if (n === 6) {
       // ampul 6. kasette söndü; 7. kaset oynayana kadar karanlık
       r.bulbDead = true;
       this.applyLight();
+      this.toast('Ampul söndü. Fenerin var: ayağa kalkınca kendiliğinden yanar (Q).', 6);
     } else if (n === 7) {
       r.hotcold = true;
+      r.arkaUnlocked = true;
       g.room.attic.apply(this.st);
+      g.save();
+      this.hc = { band: null, pending: null, since: 0, lastSaid: -10, sameT: 0, start: g.clock + 4.5 };
+      await sleep(1500);
+      if (h?.built) au.sfx('boltSlide', h.points.backDoor, 1.4);
+      this.toast('Aşağıda bir kapının sürgüsü kendiliğinden açıldı.', 5);
     } else if (n === 8) {
       await sleep(1500);
       r.falseBottom = true;
@@ -436,9 +407,10 @@ export class Finds {
       au.sfx('pop', pts.bulb);
       this.toast('Ampulün yanından bir zincir sarkıyor. Az önce orada değildi.', 5);
     }
+    // ilk izlemede applyStage çağrılmaz: evdeki eşyalar (salıncaktaki kaset, şerit...) yeni aşamaya göre yerleşsin
+    if (h?.built && !g.playingTape) h.apply(this.st);
     g.save();
     this.t = 0;
-    this.hintsDone.clear();
     g.updateObjective();
   }
 
@@ -462,6 +434,7 @@ export class Finds {
 
   /** 7. kaset için: karanlıkta sandalyenin altından bant hışırtısı */
   hiss() {
+    if (this.stopHiss) return;
     const au = this.g.audio;
     const p = this.g.room.points.chairLeg;
     const out = au.at(p.x, p.y, p.z, 0.15);
@@ -544,45 +517,79 @@ export class Finds {
   // ================================================================ her kare
   update(dt) {
     const g = this.g;
+    // ayaktayken sandalyenin oturağına bakınca da 7. kaset bulunur
+    const at = g.room.attic;
+    const live = at.chairTape.visible;
+    const want = live && !!g.walk?.standing;
+    if (at.chairHit2.visible !== want) at.chairHit2.visible = want;
     if (g.mode !== 'play' || g.director.active || g.loadingTape || g.overlay) return;
     const n = this.seeking();
     if (n !== this.seekingFor) {
       this.seekingFor = n;
       this.t = 0;
-      this.hintsDone.clear();
-      this.objectiveOverride = null;
     }
-    if (n == null) return;
+    if (n == null) {
+      if (g.house) g.house.swingHold = false;
+      return;
+    }
     this.t += dt;
-    for (const [sec, h] of TIME_HINTS[n] || []) {
-      const key = n + ':' + sec;
-      if (this.t >= sec && !this.hintsDone.has(key)) {
-        this.hintsDone.add(key);
-        if (typeof h === 'function') h(this);
-        else this.toast(h, 6);
-      }
-    }
-    if (n === 8 && this.room.hotcold) this.updateHotCold();
+    if (n === 8 && this.room.hotcold) this.updateHotCold(dt);
+    else if (g.house) g.house.swingHold = false;
   }
 
-  updateHotCold() {
+  /** Yürüyerek sıcak-soğuk: oyuncunun bulunduğu oda ve bahçede salıncağa uzaklık (§2.5) */
+  updateHotCold(dt) {
     const g = this.g;
+    const hc = this.hc;
+    if (g.clock < (hc.start || 0) || g.panelOpen() || g.playingTape) return;
+    const w = g.walk;
+    const zone = w?.standing ? w.zone : 'cati';
+    const sw = g.house?.points.swingSeat;
+    const d = sw && zone === 'bahce' ? Math.hypot(w.pos.x - sw.x, w.pos.z - sw.z) : 99;
+    const word = hotColdBand(zone, d);
+    const now = g.clock;
+    if (word !== hc.pending) {
+      hc.pending = word;
+      hc.since = now;
+    }
+    const moving = !!w?.standing && Math.hypot(w.vel.x, w.vel.z) > 0.3;
+    if (word === hc.band) {
+      if (moving) hc.sameT += dt;
+      if (hc.sameT >= 10 && now - hc.lastSaid >= 1.5) {
+        hc.sameT = 0;
+        hc.lastSaid = now;
+        this.sayBand(word, 0.6);
+      }
+    } else if (now - hc.since >= 0.6 && now - hc.lastSaid >= 1.5) {
+      const before = hc.band;
+      hc.band = word;
+      hc.lastSaid = now;
+      hc.sameT = 0;
+      this.sayBand(word, 1.0);
+      if ((before === 'Yandın!') !== (word === 'Yandın!')) g.updateObjective(true);
+    }
+    if (g.house) g.house.swingHold = hc.band === 'Sıcak!' || hc.band === 'Yandın!';
+  }
+
+  /** Beste'nin sesi sağ kulağın hemen arkasından */
+  sayBand(word, gain) {
+    const g = this.g;
+    const id = HC_LINE[word];
+    const line = g.lines[id];
+    if (!line) return;
     const cam = g.room.camera;
     const fwd = new THREE.Vector3();
     cam.getWorldDirection(fwd);
-    const to = g.room.points.window.clone().sub(cam.position).normalize();
-    const ang = (Math.acos(Math.max(-1, Math.min(1, fwd.dot(to)))) * 180) / Math.PI;
-    const [, word, line] = HOTCOLD.find(([max]) => ang <= max);
-    const now = g.clock;
-    if (word !== this.hc.pending) {
-      this.hc.pending = word;
-      this.hc.since = now;
-    }
-    if (word !== this.hc.band && now - this.hc.since > 0.5 && now - this.hc.lastSaid > 1.2) {
-      this.hc.band = word;
-      this.hc.lastSaid = now;
-      this.roomSay(line, g.room.points.tv);
-    }
+    const right = new THREE.Vector3(-fwd.z, 0, fwd.x).normalize();
+    const pos = cam.position.clone().addScaledVector(fwd, -0.45).addScaledVector(right, 0.15);
+    const d = g.director;
+    const w = d.labelFor(line);
+    g.ui.subtitle(w.label, d.fmt(line.s || line.t), w.cls);
+    const h = g.audio.playRoomVoice(id, { pos, gain });
+    this.lastBandId = id;
+    Promise.race([h.promise, sleep(4000)]).then(() => {
+      if (this.lastBandId === id) g.ui.subtitle(null, null, null, 0.4);
+    });
   }
 
   /** Kaset oynamıyorken TV'de gösterilecek bir şey varsa çizer ve true döner */

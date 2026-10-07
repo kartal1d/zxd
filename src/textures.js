@@ -586,3 +586,48 @@ export function besteGhost() {
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
+
+/** Camın dışına vuran küçük, solgun çocuk eli (saydam zemin) */
+export function childHand() {
+  const [c, ctx] = canvas(64, 96);
+  ctx.clearRect(0, 0, 64, 96);
+  ctx.fillStyle = 'rgba(214,206,190,.92)';
+  ctx.beginPath();
+  ctx.ellipse(32, 62, 17, 20, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // parmaklar
+  for (const [x, y, h, a] of [[15, 34, 15, -0.35], [24, 26, 19, -0.12], [33, 24, 20, 0], [42, 27, 18, 0.12], [50, 44, 12, 0.6]]) {
+    ctx.save();
+    ctx.translate(x, y + h / 2);
+    ctx.rotate(a);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 4.2, h / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.fillRect(22, 74, 20, 22);
+  // kirli avuç çizgileri
+  ctx.strokeStyle = 'rgba(90,80,70,.35)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(20, 60);
+  ctx.quadraticCurveTo(32, 66, 44, 58);
+  ctx.stroke();
+  const t = tex(c);
+  t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+  return t;
+}
+
+/** Hedef parıltısı: yumuşak, beyaz, yuvarlak nokta */
+export function glint() {
+  const [c, ctx] = canvas(64, 64);
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.25, 'rgba(255,250,230,.75)');
+  g.addColorStop(1, 'rgba(255,240,200,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  const t = tex(c);
+  t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+  return t;
+}

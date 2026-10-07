@@ -847,17 +847,17 @@ const SFX = {
     this.noiseBurst(d, t, 0.04, { type: 'highpass', freq: 2500, gain: 0.5 });
     this.tone(d, t + 0.1, 880, 0.2, { type: 'square', gain: 0.04 });
   },
-  thud(t, pos) {
+  thud(t, pos, k = 1) {
     const d = this.at(pos.x, pos.y, pos.z, 0.6);
-    this.tone(d, t, 75, 0.35, { gain: 0.6, endFreq: 40 });
-    this.noiseBurst(d, t, 0.2, { type: 'lowpass', freq: 350, gain: 0.5 });
+    this.tone(d, t, 75, 0.35, { gain: 0.6 * k, endFreq: 40 });
+    this.noiseBurst(d, t, 0.2, { type: 'lowpass', freq: 350, gain: 0.5 * k });
   },
-  knock(t, pos, n = 3, gap = 0.42) {
+  knock(t, pos, n = 3, gap = 0.42, k = 1) {
     const d = this.at(pos.x, pos.y, pos.z, 0.5);
     for (let i = 0; i < n; i++) {
       const tt = t + i * gap + rand(-0.03, 0.03);
-      this.noiseBurst(d, tt, 0.12, { type: 'lowpass', freq: 420, gain: 0.9, attack: 0.001 });
-      this.tone(d, tt, 115, 0.16, { gain: 0.5, attack: 0.001 });
+      this.noiseBurst(d, tt, 0.12, { type: 'lowpass', freq: 420, gain: 0.9 * k, attack: 0.001 });
+      this.tone(d, tt, 115, 0.16, { gain: 0.5 * k, attack: 0.001 });
     }
   },
   // ---------------------------------------------------------------- 3-9. kaset efektleri
@@ -868,29 +868,29 @@ const SFX = {
     this.noiseBurst(this.tvIn, t + 0.05, 0.25, { freq: 900, q: 0.6, gain: 0.15 });
   },
   /** Kumaş kayması (çarşaf), pos verilirse odada */
-  clothSlide(t, pos, dur = 1.4) {
+  clothSlide(t, pos, dur = 1.4, k = 1) {
     const d = pos ? this.at(pos.x, pos.y, pos.z, 0.4) : this.room;
-    const n = this.noiseBurst(d, t, dur, { type: 'bandpass', freq: 1200, q: 0.4, gain: 0.22, attack: 0.25 });
+    const n = this.noiseBurst(d, t, dur, { type: 'bandpass', freq: 1200, q: 0.4, gain: 0.22 * k, attack: 0.25 });
     n.f.frequency.setValueAtTime(700, t);
     n.f.frequency.linearRampToValueAtTime(1800, t + dur);
   },
   /** Ahşap sürtünmesi (mobilya itilir) */
-  woodScrape(t, pos, dur = 1.6) {
+  woodScrape(t, pos, dur = 1.6, k = 1) {
     const d = pos ? this.at(pos.x, pos.y, pos.z, 0.5) : this.room;
-    for (let i = 0; i < 10; i++) this.noiseBurst(d, t + (i * dur) / 10, dur / 8, { type: 'bandpass', freq: 320 + rand(-60, 60), q: 3, gain: 0.35 });
-    this.tone(d, t, 70, dur, { type: 'sawtooth', gain: 0.05, attack: 0.1 });
+    for (let i = 0; i < 10; i++) this.noiseBurst(d, t + (i * dur) / 10, dur / 8, { type: 'bandpass', freq: 320 + rand(-60, 60), q: 3, gain: 0.35 * k });
+    this.tone(d, t, 70, dur, { type: 'sawtooth', gain: 0.05 * k, attack: 0.1 });
   },
   /** Eski çift çalan telefon zili. Durdurmak için dönen fonksiyonu çağır. */
-  phoneRing(t, pos, rings = 6) {
+  phoneRing(t, pos, rings = 6, gk = 1) {
     const d = pos ? this.at(pos.x, pos.y, pos.z, 0.35) : this.room;
     const nodes = [];
     for (let r = 0; r < rings; r++) {
       const base = t + r * 3;
       for (const off of [0, 0.4]) {
-        nodes.push(this.tone(d, base + off, 1150, 0.35, { type: 'square', gain: 0.07, attack: 0.002 }));
-        nodes.push(this.tone(d, base + off, 1480, 0.35, { type: 'square', gain: 0.05, attack: 0.002 }));
+        nodes.push(this.tone(d, base + off, 1150, 0.35, { type: 'square', gain: 0.07 * gk, attack: 0.002 }));
+        nodes.push(this.tone(d, base + off, 1480, 0.35, { type: 'square', gain: 0.05 * gk, attack: 0.002 }));
         // zil titreşimi
-        for (let k = 0; k < 7; k++) nodes.push(this.noiseBurst(d, base + off + k * 0.05, 0.03, { type: 'highpass', freq: 3000, gain: 0.08 }));
+        for (let k = 0; k < 7; k++) nodes.push(this.noiseBurst(d, base + off + k * 0.05, 0.03, { type: 'highpass', freq: 3000, gain: 0.08 * gk }));
       }
     }
     return () => {

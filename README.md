@@ -30,7 +30,7 @@ Kulaklıkla ve karanlıkta oynaman önerilir. Oyunda yanıp sönen ışıklar va
 | Sol tık / **E** | Al, oku, kaseti tak |
 | Klavye + **ENTER** | Beste soru sorduğunda cevabını yaz |
 | **F** | Televizyona odaklan / geri çekil (kaset oynarken kilitli) |
-| **W A S D**, **Shift**, **Q** | 8. kasetten sonra: yürü, koş, el feneri |
+| **W A S D**, **Shift**, **Q** | 3. kasetten sonra: yürü, koş, el feneri |
 | **Boşluk** | Kaseti duraklat (Beste fark edebilir) |
 | **◀ Sol ok** (basılı tut) | Kaseti geri sar (yalnızca ekranda "◀ geri sar" yazdığında) |
 | **Esc** | Duraklatma menüsü |
@@ -57,7 +57,7 @@ On kaset var. Her kaset 4–8 dakika sürer; aradaki tavan arası bulmacaları v
 
 Beste'nin cevabı olan bir sorusunu 3 kez bilemezsen gerçeği söyler ve o an başka bir şey olur. Kasetlerde ani korkutmalar var.
 
-**8. kasetten sonra yürüyebilirsin:** çatı kapısının anahtarını bul, aşağı in, evi ve arka bahçeyi gez. **W A S D** yürü, **Shift** koş, **Q** ya da sağ tık el feneri, **E** etkileşim. Evde de ani korkutmalar var.
+**3. kasetten sonra yürüyebilirsin:** oyuncak sandığındaki anahtarla çatı kapısını aç, aşağı in; sonraki kasetler evin içinde ve arka bahçede saklı. Hedef satırı hep nereye gideceğini söyler; takılırsan ipuçları gelir. Kasetler yalnızca tavan arasındaki televizyonda, oturarak izlenir. **W A S D** yürü, **Shift** koş, **Q** ya da sağ tık el feneri, **E** etkileşim. Ani korkutmalar yalnızca evde yürürken olur, kaset izlerken olmaz.
 
 <details>
 <summary><b>Spoiler: çözümler, sonlar ve gizli kareler</b></summary>

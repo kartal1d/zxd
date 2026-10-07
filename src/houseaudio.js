@@ -90,10 +90,10 @@ export const HOUSE_SFX = {
     this.noiseBurst(d, t, 0.45, { type: 'bandpass', freq: 1800, q: 6, gain: gain * 1.5, attack: 0.06 });
   },
   /** Kapının ardında yavaşlatılmış jenerik: müzik kutusu. Durdurmak için dönen fonksiyonu çağır. */
-  musicBox(t, pos, speed = 0.55, loops = 3) {
+  musicBox(t, pos, speed = 0.55, loops = 3, gain = 1) {
     const d = this.at(pos.x, pos.y, pos.z, 0.5);
     const out = this.ctx.createGain();
-    out.gain.value = 1;
+    out.gain.value = gain;
     out.connect(d);
     const notes = [64, 67, 72, 67, 69, 67, 64, 65, 69, 74, 69, 67];
     let tt = t;
@@ -154,6 +154,17 @@ export const HOUSE_SFX = {
     this.noiseBurst(d, t, 0.04, { type: 'highpass', freq: 1800, gain: 0.7, attack: 0.0005 });
     this.noiseBurst(d, t + 0.05, 0.03, { type: 'highpass', freq: 2400, gain: 0.4, attack: 0.0005 });
     this.tone(d, t, 320, 0.05, { type: 'square', gain: 0.05, attack: 0.0005 });
+  },
+  /** Paslı sürgü açılır: metal sürtünme + tık */
+  boltSlide(t, pos, gain = 1) {
+    const d = this.at(pos.x, pos.y, pos.z, 0.35);
+    const n = this.noiseBurst(d, t, 0.35, { type: 'bandpass', freq: 2400, q: 3, gain: 0.3 * gain, attack: 0.03 });
+    n.f.frequency.setValueAtTime(1800, t);
+    n.f.frequency.linearRampToValueAtTime(3200, t + 0.33);
+    this.tone(d, t, 420, 0.32, { type: 'sawtooth', gain: 0.02 * gain, attack: 0.03, endFreq: 520 });
+    this.noiseBurst(d, t + 0.36, 0.04, { type: 'highpass', freq: 2600, gain: 0.6 * gain, attack: 0.001 });
+    this.tone(d, t + 0.37, 1250, 0.06, { type: 'square', gain: 0.04 * gain });
+    this.noiseBurst(d, t + 0.4, 0.07, { type: 'lowpass', freq: 800, gain: 0.45 * gain, attack: 0.001 });
   },
   /** Telesekreterin bip sesi */
   machineBeep(t, pos) {
@@ -324,12 +335,12 @@ export class HouseAmbience {
     const ground = ['giris', 'hol', 'salon', 'montaj', 'mutfak', 'banyo'].includes(z);
     const g = {
       clock: { giris: 0.6, hol: 0.45, salon: 0.18, merdiven: 0.2, sahanlik: 0.1, mutfak: 0.12, montaj: 0.1, banyo: 0.1 }[z] || 0,
-      fridge: { mutfak: 0.03, hol: 0.008, giris: 0.004, montaj: 0.004 }[z] || 0,
+      fridge: ({ mutfak: 0.03, hol: 0.008, giris: 0.004, montaj: 0.004 }[z] || 0) * (this.fridgeK ?? 1),
       crickets: z === 'bahce' ? 0.05 : z === 'mutfak' ? 0.05 * 0.3 * (this.outdoor ? 2 : 1) : 0,
       wind: z === 'bahce' ? 0.06 : 0,
       draught: z === 'sahanlik' || z === 'merdiven' ? 0.02 : ['giris', 'hol'].includes(z) ? 0.01 : 0,
       fan: z === 'montaj' ? 0.012 : 0,
-      deck: z === 'montaj' && !this.deckOff ? 0.02 : 0,
+      deck: z === 'montaj' && !this.deckOff ? 0.02 : this.deckLead && ['hol', 'giris', 'mutfak'].includes(z) ? 0.03 : 0,
       whine: z === 'salon' && !this.whineOff ? 0.004 : 0,
     };
     this.ramp(this.clockGain, g.clock);
@@ -360,6 +371,18 @@ export class HouseAmbience {
     const z = this.zone;
     this.ramp(this.crickets, mute ? 0 : z === 'bahce' ? 0.05 : 0, sec);
     this.ramp(this.pineWind.g, mute ? 0.01 : z === 'bahce' ? 0.06 : 0, sec);
+  }
+
+  /** Montaj kapısının ardından duyulan video kafası uğultusu (9. kaset yolu) */
+  setDeckLead(on) {
+    if (this.deckLead === on) return;
+    this.deckLead = on;
+    this.setZone(this.zone);
+  }
+  /** Buzdolabı uğultusu çarpanı (korkutma) */
+  setFridge(k) {
+    this.fridgeK = k;
+    this.setZone(this.zone);
   }
 
   setDeck(on) {

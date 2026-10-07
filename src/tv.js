@@ -183,17 +183,25 @@ export class TVScreen {
     this.u.tint.value.setRGB(p.tintR, p.tintG, p.tintB);
     this.texture.needsUpdate = true;
 
-    if (++this.avgTick % 4 === 0) {
+    // ekranın ortalama rengi (TV ışığı için); televizyon görünmüyorsa okumaya gerek yok.
+    // Önce GPU'da küçültüp eşzamansız okuma denenir (avgSampler); 2D tuvalden eşzamanlı okuma
+    // her seferinde işlemciyi GPU'nun bitirmesine bekletir ve kare hızını düşürür.
+    if (this.sampleAvg !== false && ++this.avgTick % 4 === 0 && !this.avgSampler?.()) {
       this.smallCtx.drawImage(this.canvas, 0, 0, 4, 4);
-      const d = this.smallCtx.getImageData(0, 0, 4, 4).data;
-      let r = 0, g = 0, b = 0;
-      for (let i = 0; i < d.length; i += 4) {
-        r += d[i];
-        g += d[i + 1];
-        b += d[i + 2];
-      }
-      const n = (d.length / 4) * 255;
-      this.avg.setRGB((r / n) * p.tintR, (g / n) * p.tintG, (b / n) * p.tintB, THREE.SRGBColorSpace);
+      this.setAvgBytes(this.smallCtx.getImageData(0, 0, 4, 4).data);
     }
+  }
+
+  /** RGBA bayt dizisinin (sRGB) ortalamasını TV ışığı rengine yazar */
+  setAvgBytes(d) {
+    const p = this.p;
+    let r = 0, g = 0, b = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      r += d[i];
+      g += d[i + 1];
+      b += d[i + 2];
+    }
+    const n = (d.length / 4) * 255;
+    this.avg.setRGB((r / n) * p.tintR, (g / n) * p.tintG, (b / n) * p.tintB, THREE.SRGBColorSpace);
   }
 }

@@ -25,6 +25,8 @@ protocol.registerSchemesAsPrivileged([
 ]);
 // sesler ilk tıklamayı beklemesin
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+// iki ekran kartlı dizüstülerde (Optimus vb.) Electron varsayılan olarak tümleşik GPU'yu seçer: güçlü olanı iste
+app.commandLine.appendSwitch('force_high_performance_gpu');
 
 if (!app.requestSingleInstanceLock()) app.quit();
 

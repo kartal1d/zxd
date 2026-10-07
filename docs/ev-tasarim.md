@@ -1,5 +1,7 @@
 # Ev: serbest yürüyüş bölümü (tasarım)
 
+> **Akış v2:** kilit açma, hedefler, bayraklar ve korkutma tetikleri için `docs/ev-akisi.md` geçerlidir (yürüyüş 3. kasetten sonra; kasetler 4–9 evde bulunur). Geometri, eşyalar, kontroller, ARŞİV rafı ve korkutma mekanikleri burada anlatıldığı gibidir.
+
 This is the design for the free-walk section that opens after Tape 8. It is written in English. Every player-facing string is given in Turkish exactly as it should appear in the game.
 
 It replaces row 9 of `roomChain` in `docs/kasetler-tasarim.json`: the EBE false bottom no longer holds Tape 9. Everything else in that file still applies.

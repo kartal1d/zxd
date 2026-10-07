@@ -46,6 +46,10 @@ button { font: inherit; color: inherit; }
   max-width: min(520px, calc(100% - 32px));
 }
 #objective.show { opacity: 1; }
+#objective.pulse { animation: objPulse 1.2s ease-out; }
+@keyframes objPulse { 0% { color: var(--beste-yellow); text-shadow: 0 0 10px var(--beste-yellow), 0 0 4px #000; } 100% { color: var(--dim); } }
+#hover-label small { font-size: 16px; color: var(--dim); }
+.hint-line { font-size: 18px; color: var(--dim); }
 #objective::before { content: "◆ "; color: var(--beste-yellow); }
 #inventory {
   position: absolute; left: 16px; bottom: max(16px, env(safe-area-inset-bottom));

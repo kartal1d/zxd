@@ -755,12 +755,12 @@ export class House {
     for (let i = 0; i < 2; i++) this.mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.02, 10), M.grey, tv, 0.26, 0.38 - i * 0.07, 0.23).rotation.x = HALF;
     this.tag(tv, 'ev:salontv');
     this.drawSalon('off');
-    // kanepe
-    this.box('zemin', 'salon', M.fabric, -4.05, -2.25, YG, YG + 0.42, 5.2, 6.02);
-    this.box('zemin', 'salon', M.fabric, -4.05, -2.25, YG + 0.42, YG + 0.85, 5.82, 6.02);
-    this.box('zemin', 'salon', M.fabric, -4.05, -3.87, YG + 0.42, YG + 0.6, 5.2, 6.02);
-    this.box('zemin', 'salon', M.fabric, -2.43, -2.25, YG + 0.42, YG + 0.6, 5.2, 6.02);
-    this.col('zemin', -4.05, -2.25, 5.18, 6.03);
+    // kanepe: batı duvarıyla arasında televizyona giden rahat bir geçit kalır (doğuda çıkmaz sokak olmasın diye duvara yakın)
+    this.box('zemin', 'salon', M.fabric, -3.85, -2.05, YG, YG + 0.42, 5.2, 6.02);
+    this.box('zemin', 'salon', M.fabric, -3.85, -2.05, YG + 0.42, YG + 0.85, 5.82, 6.02);
+    this.box('zemin', 'salon', M.fabric, -3.85, -3.67, YG + 0.42, YG + 0.6, 5.2, 6.02);
+    this.box('zemin', 'salon', M.fabric, -2.23, -2.05, YG + 0.42, YG + 0.6, 5.2, 6.02);
+    this.col('zemin', -3.85, -2.05, 5.18, 6.03);
     // sehpa, berjer, sönük abajur
     this.box('zemin', 'salon', M.wood, -3.65, -2.65, YG + 0.38, YG + 0.42, 4.13, 4.67);
     for (const [x, z] of [[-3.6, 4.18], [-2.7, 4.18], [-3.6, 4.62], [-2.7, 4.62]]) this.box('zemin', 'salon', M.wood, x - 0.025, x + 0.025, YG, YG + 0.38, z - 0.025, z + 0.025);
@@ -1601,6 +1601,13 @@ export class House {
     C.ust.visible = z === 'cati' ? this.room.doorPivot.rotation.y > 0.02 : z !== 'bahce';
     C.zemin.visible = z !== 'cati' && (z !== 'bahce' || this.arkaOpen());
     C.bahce.visible = z === 'bahce' || z === 'mutfak';
+    // arka kapı bahçedeyken bahçe parçasına geçer: kapalıyken zemin kat çizilmez ama kapı dışarıdan
+    // görünür ve açılabilir kalır (korkutma 'arka' kapıyı oyuncunun arkasından kapatır)
+    const ad = this.doors.arka;
+    if (ad) {
+      const want = z === 'bahce' ? C.bahce : C.zemin;
+      if (ad.pivot.parent !== want) want.add(ad.pivot);
+    }
     this.shell.visible = z === 'banyo';
     const showAttic = z === 'cati' || z === 'sahanlik' || z === 'merdiven';
     for (const o of this.atticMeshes) o.visible = showAttic || (z === 'bahce' && this.atticOutside.has(o));

@@ -17,7 +17,8 @@ const FLAP_UP = 2.9;
 const BOARD_UP = 1.95;
 /** Koli B: kolinin üstündeki ilk yeri ve devrilince düştüğü yer */
 const KOLI = { home: [4.0, YG + 0.7, -2.695], down: [3.55, YG + 0.25, -2.15], rot: [0, 0.4, 1.57] };
-const CHAIR2 = { pos: [2.1, -0.02], yaw: Math.PI + 0.3, out: [2.1, 0.38] };
+// out: korkutmada çekildiği yer; masanın kuzeyindeki geçit (hol ↔ mutfağın doğusu) açık kalsın diye az dışarıda
+const CHAIR2 = { pos: [2.1, -0.02], yaw: Math.PI + 0.3, out: [2.3, 0.14] };
 
 function labelTex(w, h, draw) {
   const c = document.createElement('canvas');
@@ -162,6 +163,7 @@ export function buildFlowProps(h) {
   const chair = h.mesh(mergeGeometries(parts, false), M.wood, Z, CHAIR2.pos[0], YG, CHAIR2.pos[1]);
   chair.rotation.y = CHAIR2.yaw;
   fp.chair2 = chair;
+  fp.chair2Out = CHAIR2.out;
 
   // ---------------------------------------------------------------- bahçe: salıncağın oturağındaki 8. kaset
   const t8 = room.makeTape('8');
@@ -291,7 +293,7 @@ export function flowColliders(h, out) {
   const r = h.r;
   if (r.koliDown) out.push({ x0: 3.25, x1: 3.85, z0: -2.45, z1: -1.85 });
   const c = h.fp.chair2.position;
-  out.push({ x0: c.x - 0.22, x1: c.x + 0.22, z0: c.z - 0.22, z1: c.z + 0.22 });
+  out.push({ x0: c.x - 0.2, x1: c.x + 0.2, z0: c.z - 0.2, z1: c.z + 0.2 });
 }
 
 /** afterFirst(5): üstteki koli devrilir; mutfak tavan arasının altında, ses döşemeden duyulur */

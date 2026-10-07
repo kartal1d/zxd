@@ -1197,7 +1197,10 @@ export class Scares {
       this.chairT = 0;
       return;
     }
-    if (this.angleTo(V(1.8, YG + 0.8, -0.7)) > 100) this.chairT += dt;
+    // sandalyenin çekileceği yerde duran oyuncunun içine kaymasın
+    const to = h.fp.chair2Out;
+    const clear = Math.hypot(w.pos.x - to[0], w.pos.z - to[1]) > 0.75;
+    if (clear && this.angleTo(V(1.8, YG + 0.8, -0.7)) > 100) this.chairT += dt;
     else this.chairT = 0;
     if (this.chairT >= this.chairNeed) {
       this.chairT = 0;
@@ -1211,7 +1214,7 @@ export class Scares {
     const ch = h.fp.chair2;
     this.mark('sandalye');
     const p = this.walk.pos;
-    const to = [2.1, 0.38];
+    const to = h.fp.chair2Out;
     const yaw = Math.atan2(p.x - to[0], p.z - to[1]);
     this.r.chairYaw = yaw;
     g.save();

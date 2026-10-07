@@ -541,7 +541,11 @@ export class UI {
       b.innerHTML = `<span class="tape-key">${t.n}</span><span class="tape-name"></span><span class="tape-tag">${t.watched ? 'izlendi' : 'YENİ'}</span>`;
       b.querySelector('.tape-name').textContent = t.name;
       b.onclick = () => close(t.n);
-      b.onmouseenter = () => select(i);
+      // seçim yalnızca gerçek fare hareketiyle değişir: liste açılınca imlecin altında kalan kaset
+      // (tarayıcının sahte mouseenter olayı) yeni kasetin ön seçimini bozmasın
+      b.onmousemove = (e) => {
+        if ((e.movementX || e.movementY) && idx !== i) select(i);
+      };
       box.appendChild(b);
       return b;
     });

@@ -504,7 +504,11 @@ class Game {
         this.wantLock = false;
         this.ui.clickHint?.(false);
       }
-      else if (this.mode === 'play' && !this.overlay && !this.expectUnlock) this.pause();
+      else if (this.mode === 'play' && !this.overlay && !this.expectUnlock) {
+        // aynı Esc bir paneli kapattıysa (tarayıcı kilidi de bıraktıysa) duraklatma menüsü açılmaz; kilit yeniden istenir
+        if (performance.now() - (this.escClosedAt || 0) < 600) this.needLock();
+        else this.pause();
+      }
       this.expectUnlock = false;
     });
     document.addEventListener('pointerlockerror', () => this.needLock());
@@ -576,6 +580,7 @@ class Game {
 
   onKey(e) {
     const k = e.key;
+    if (k === 'Escape' && this.overlay) this.escClosedAt = performance.now();
     if (this.anyKeyWaiters.length && this.mode === 'play') {
       const w = this.anyKeyWaiters;
       this.anyKeyWaiters = [];
@@ -779,7 +784,7 @@ class Game {
             ui.toast('Kaseti çıkardın. Tekrar takarsan baştan başlar.');
           } else {
             au.sfx('vcrStuck', this.room.points.vcr);
-            ui.toast('Kaset oynarken çıkarılamaz. Bitmesini bekle ya da ▶ sağ okla ileri sar.', 5);
+            ui.toast('Kaset oynarken çıkarılamaz. Bitmesini bekle.', 4);
           }
         } else if (st.tapes.length) await this.pickAndPlay();
         else ui.toast('Eski bir video oynatıcı. Ekranında 12:00 yanıp sönüyor.');

@@ -139,8 +139,6 @@ export class Finds {
             au.sfx('boxOpen', g.room.points.chest);
             g.save();
             g.updateObjective();
-            // ev şimdi kurulur: kurulum takılması bir sonraki okuyucunun arkasında kalsın
-            g.house?.ensureBuilt();
             await sleep(1200);
             await this.takeKey();
           }
@@ -275,7 +273,11 @@ export class Finds {
     this.toast("Sandıkta eski bir anahtar, küçük bir el feneri, mum boya bir resim ve turuncu, kesik bir peluş kuyruğu var. Anahtarın etiketinde 'ALT KAT' yazıyor.", 7);
     g.save();
     g.updateObjective();
-    await g.readDoc('resim');
+    const rd = g.readDoc('resim');
+    // ev şimdi kurulur: kurulumun kısa takılması durağan okuyucu ekranının arkasında kalsın (kapak animasyonu bitmiş olur)
+    setTimeout(() => g.house?.ensureBuilt(), 400);
+    await rd;
+    g.house?.ensureBuilt();
     g.updateObjective();
   }
 
@@ -450,7 +452,7 @@ export class Finds {
       gn.gain.setTargetAtTime(0, au.now, 0.1);
       setTimeout(() => src.stop(), 500);
     };
-    this.toast('Karanlıkta bant hışırtısı. Çok yakından geliyor.', 5);
+    // yazısı flow.js'teki 10. sn ipucu (ikinci kez gösterilmesin)
   }
 
   // ================================================================ zincir ve ritüel

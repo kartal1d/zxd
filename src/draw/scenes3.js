@@ -706,3 +706,75 @@ export function warningFlip(ctx) {
   ctx.fillText('ARKANA', W / 2, H / 2 - 44);
   ctx.fillText('BAKMA', W / 2, H / 2 + 44);
 }
+
+/**
+ * JUMPSCARE: üçüncü donmadan sonra gri adamın yüzü ekranı doldurur. Yüzsüz, ama Tonton'unki gibi
+ * dikilmiş, fazla geniş bir gülüş var; iki yandan uzun parmaklar ekranın kenarına yapışır.
+ */
+export function scareGreyMan(ctx, t) {
+  const k = 1 + Math.min(t, 0.5) * 0.3;
+  const jx = (hash(Math.floor(t * 45)) - 0.5) * 20;
+  const jy = (hash(Math.floor(t * 45) + 5) - 0.5) * 14;
+  ctx.fillStyle = '#040405';
+  ctx.fillRect(0, 0, W, H);
+  // arkada solgun gün ışığı, çit gibi dikey şeritler
+  ctx.fillStyle = 'rgba(150,160,150,.10)';
+  for (let i = 0; i < 9; i++) ctx.fillRect(i * 78 - 10, 0, 26, H);
+  ctx.save();
+  ctx.translate(W / 2 + jx, H / 2 + 24 + jy);
+  ctx.rotate(0.2);
+  ctx.scale(k, k);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  // uzun parmaklar: iki kenardan ekrana tutunur
+  ctx.strokeStyle = '#6a6b72';
+  ctx.lineWidth = 11;
+  for (const side of [-1, 1]) {
+    for (let f = 0; f < 4; f++) {
+      const y0 = -120 + f * 62;
+      ctx.beginPath();
+      ctx.moveTo(side * 330, y0 + 40);
+      ctx.quadraticCurveTo(side * 250, y0 - 70 - f * 10, side * (150 + f * 12), y0 + 6);
+      ctx.stroke();
+    }
+  }
+  // baş
+  const g = ctx.createRadialGradient(-40, -90, 20, 0, 0, 330);
+  g.addColorStop(0, '#9a9ba2');
+  g.addColorStop(0.7, '#6b6c73');
+  g.addColorStop(1, '#3a3b41');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 220, 292, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // gözler yok; yalnızca iki hafif çukur
+  ctx.fillStyle = 'rgba(20,20,24,.35)';
+  for (const x of [-72, 72]) {
+    ctx.beginPath();
+    ctx.ellipse(x, -50, 34, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // dikilmiş, fazla geniş gülüş
+  ctx.strokeStyle = '#0a0a0c';
+  ctx.lineWidth = 9;
+  ctx.beginPath();
+  ctx.moveTo(-150, 70);
+  ctx.quadraticCurveTo(0, 230, 150, 70);
+  ctx.stroke();
+  ctx.lineWidth = 4;
+  for (let i = -6; i <= 6; i++) {
+    const u = i / 6;
+    const x = u * 150;
+    const y = 70 + (1 - u * u) * 80;
+    ctx.beginPath();
+    ctx.moveTo(x - 7, y - 20);
+    ctx.lineTo(x + 7, y + 20);
+    ctx.stroke();
+  }
+  ctx.restore();
+  // parlama: ilk kareler beyazımsı
+  if (t < 0.07) {
+    ctx.fillStyle = 'rgba(235,235,240,.5)';
+    ctx.fillRect(0, 0, W, H);
+  }
+}

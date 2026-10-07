@@ -314,7 +314,12 @@ export function editSuite(ctx, t, o = {}) {
       ctx.fillStyle = done ? dim : bright;
       ctx.fillText(num, 279, y + 16);
       ctx.textAlign = 'left';
-      ctx.font = `27px ${FONT_OSD}`;
+      let fs = 27;
+      ctx.font = `${fs}px ${FONT_OSD}`;
+      while (fs > 15 && ctx.measureText(txt).width > 268) {
+        fs--;
+        ctx.font = `${fs}px ${FONT_OSD}`;
+      }
       ctx.fillStyle = deleted ? '#a05a52' : done ? dim : bright;
       ctx.fillText(txt, 310, y + 16);
       if (done && !deleted) {

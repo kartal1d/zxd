@@ -280,7 +280,7 @@ export class Scares {
   }
 
   fire(id) {
-    const f = { tonton: 's1', adam: 's2', tv: 's3', ayna: 's4', kapi: 's5', cit: 's6', monitor: 's7', delik: 's8' }[id];
+    const f = { tonton: 's1', adam: 's2go', tv: 's3', ayna: 's4run', kapi: 's5run', cit: 's6go', monitor: 's7', delik: 'keyhole' }[id];
     if (!f) return;
     if (['tv', 'ayna', 'cit', 'monitor', 'delik'].includes(id)) this.lastLoud = this.g.clock;
     if (id === 'tv') return this.s3();
@@ -523,7 +523,7 @@ export class Scares {
     }
   }
 
-  async s4() {
+  async s4run() {
     const g = this.g;
     const au = g.audio;
     const h = this.house;
@@ -588,7 +588,7 @@ export class Scares {
     }
   }
 
-  async s5() {
+  async s5run() {
     const g = this.g;
     const au = g.audio;
     const h = this.house;

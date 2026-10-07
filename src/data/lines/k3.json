@@ -189,5 +189,7 @@
     "v": "beste_whisper",
     "t": "Sobe. Sobe. Sobe.",
     "s": "sobe... sobe... sobe..."
-  }
+  },
+  "k3_word_wrong2": { "v": "beste", "t": "Bir daha söylüyorum, çok dikkatli dinle. Sobe. Sobe. Sobe. Son şansın!", "s": "Bir daha söylüyorum, çok dikkatli dinle: SOBE. SOBE. SOBE. Son şansın!" },
+  "k3_word_whisper": { "v": "beste_whisper", "t": "Sobe. Sobe. Sobe.", "s": "sobe... sobe... sobe..." }
 }

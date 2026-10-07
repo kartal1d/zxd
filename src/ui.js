@@ -206,6 +206,12 @@ export class UI {
     $('crosshair').classList.toggle('active', !!text);
   }
 
+  /** Geri sarma şu an açıksa VCR ipucunda gösterilir */
+  rewindHint(on) {
+    const el = $('rw-hint');
+    if (el) el.hidden = !on;
+  }
+
   /** Fare kilidi için tıklama gerektiğinde ortada yanıp sönen ipucu */
   clickHint(on) {
     const el = $('click-hint');

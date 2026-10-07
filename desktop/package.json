@@ -26,6 +26,7 @@
     },
     "files": [
       "main.cjs",
+      "preload.cjs",
       "package.json",
       "build/icon.png",
       "game/**/*"

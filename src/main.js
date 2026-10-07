@@ -217,6 +217,7 @@ class Game {
     $('btn-new-no').onclick = () => this.show('confirm-new', false);
     $('btn-continue').onclick = () => this.enterGame();
     $('btn-controls').onclick = () => this.panel('controls');
+    $('btn-exit').onclick = () => this.exitGame();
     $('btn-settings').onclick = () => this.panel('settings');
     $('btn-pause-controls').onclick = () => this.panel('controls');
     $('btn-pause-settings').onclick = () => this.panel('settings');
@@ -257,6 +258,19 @@ class Game {
       if (e.target === $('tapes')) this.ui.closeTapes?.(null);
     };
     $('answer').addEventListener('input', (e) => this.director.typed(e.target.value));
+  }
+
+  /** Ana menüden çıkış: masaüstü sürümünde pencereyi kapatır, tarayıcıda sekmeyi kapatmayı dener. */
+  exitGame() {
+    this.save();
+    if (window.besteApp?.quit) return window.besteApp.quit();
+    window.close();
+    // tarayıcılar kendi açmadıkları sekmeyi kapatmaz: menüde söyle
+    setTimeout(() => {
+      const el = $('loading');
+      el.textContent = 'Tarayıcıda oynuyorsun: çıkmak için sekmeyi kapatabilirsin. Oyun kaydedildi.';
+      el.hidden = false;
+    }, 300);
   }
 
   panel(id) {
@@ -397,23 +411,24 @@ class Game {
       $('crosshair').classList.add('free');
       return;
     }
-    // Esc tuşu tarayıcıya göre "kullanıcı hareketi" sayılmaz: bu durumda kilit istenemez,
-    // bir sonraki tıklamada kilitlenir ve ekranda bunu söyleriz
-    if (navigator.userActivation && !navigator.userActivation.isActive) {
-      this.wantLock = true;
-      this.ui.clickHint?.(true);
-      return;
-    }
     try {
       const p = this.canvas.requestPointerLock?.();
-      p?.catch?.(() => {
-        this.wantLock = true;
-        this.ui.clickHint?.(true);
-      });
+      p?.catch?.(() => this.needLock());
     } catch {
-      this.wantLock = true;
-      this.ui.clickHint?.(true);
+      this.needLock();
     }
+  }
+
+  /**
+   * Tarayıcı kilidi bir tıklama olmadan vermedi (ör. Esc ile menüden dönüş).
+   * Masaüstü sürümünde kabuk gerçek bir tıklama gönderir ve kilit hemen gelir;
+   * tarayıcıda bir sonraki tıklamada kilitlenir ve ekranda bunu söyleriz.
+   */
+  needLock() {
+    if (this.mode !== 'play' || this.overlay || this.wantLock) return;
+    this.wantLock = true;
+    if (window.besteApp?.relock) window.besteApp.relock();
+    else this.ui.clickHint?.(true);
   }
 
   setFree(on) {
@@ -433,10 +448,7 @@ class Game {
       else if (this.mode === 'play' && !this.overlay && !this.expectUnlock) this.pause();
       this.expectUnlock = false;
     });
-    document.addEventListener('pointerlockerror', () => {
-      this.wantLock = true;
-      this.ui.clickHint?.(true);
-    });
+    document.addEventListener('pointerlockerror', () => this.needLock());
 
     let down = null;
     this.canvas.addEventListener('pointerdown', (e) => {
@@ -446,6 +458,7 @@ class Game {
       down = { x: e.clientX, y: e.clientY, moved: 0 };
       if ((!this.free || this.wantLock) && !this.isTouch) {
         this.wantLock = false;
+        this.lockClickAt = performance.now(); // bu tıklama yalnızca kilit içindi
         this.lockPointer();
         down = null;
       }
@@ -476,6 +489,7 @@ class Game {
       if (e.button === 2 && this.mode === 'play' && !this.overlay && this.walk.standing && this.walk.canMove()) this.walk.toggleLight();
     });
     this.canvas.addEventListener('click', () => {
+      if (performance.now() - (this.lockClickAt || 0) < 500) return;
       if (document.pointerLockElement === this.canvas && this.mode === 'play' && !this.overlay) this.interact(this.room.hover);
     });
 
@@ -581,14 +595,6 @@ class Game {
       return;
     }
     const d = this.director;
-    if (k === 'ArrowRight' && !d.input) {
-      e.preventDefault();
-      if (!e.repeat) {
-        this.input.ffHeld = true;
-        d.startFF();
-      }
-      return;
-    }
     if (d.input) {
       const a = $('answer');
       if (k === 'Enter') {
@@ -817,11 +823,11 @@ class Game {
     this.ui.inventory(n ? TAPE_NAMES[n] : null);
   }
 
-  /** Tek kaset varsa onu oynatır; birden fazlaysa seçim ekranı açar. */
+  /** Kaset seçim ekranı: tek kaset olsa bile oyuncu seçer. */
   async pickAndPlay() {
     const st = this.state;
-    let n = st.tapes[0];
-    if (st.tapes.length > 1) {
+    let n = null;
+    if (st.tapes.length) {
       this.releasePointer();
       n = await this.ui.chooseTape(
         st.tapes.map((t) => ({ n: t, name: TAPE_NAMES[t], watched: t <= st.stage })),

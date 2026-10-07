@@ -1,7 +1,7 @@
 // Beste'nin Sihirli Dünyası — masaüstü (Electron) kabuğu.
 // Oyun dosyaları paketin içindeki game/ klasöründen app:// adresiyle sunulur:
 // internet gerekmez, ES modülleri ve fetch() tarayıcıdaki gibi çalışır.
-const { app, BrowserWindow, Menu, protocol, shell } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, protocol, shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
@@ -41,7 +41,7 @@ function createWindow() {
     title: "Beste'nin Sihirli Dünyası",
     icon: path.join(__dirname, 'build', 'icon.png'),
     autoHideMenuBar: true,
-    webPreferences: { contextIsolation: true, sandbox: true, backgroundThrottling: false, spellcheck: false },
+    webPreferences: { contextIsolation: true, sandbox: true, backgroundThrottling: false, spellcheck: false, preload: path.join(__dirname, 'preload.cjs') },
   });
   win.once('ready-to-show', () => {
     win.maximize();
@@ -64,6 +64,15 @@ function createWindow() {
   });
   win.loadURL('app://oyun/index.html');
 }
+
+ipcMain.on('beste:quit', () => app.quit());
+ipcMain.on('beste:relock', () => {
+  if (!win) return;
+  // pencerenin sol üst köşesine gerçek bir tıklama: sayfa bu tıklamada fare kilidini ister
+  const wc = win.webContents;
+  wc.sendInputEvent({ type: 'mouseDown', x: 4, y: 4, button: 'left', clickCount: 1 });
+  wc.sendInputEvent({ type: 'mouseUp', x: 4, y: 4, button: 'left', clickCount: 1 });
+});
 
 app.on('second-instance', () => {
   if (!win) return;

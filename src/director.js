@@ -5,6 +5,12 @@ import * as S from './draw/scenes.js';
 import { drawBeste, drawTonton } from './draw/characters.js';
 
 const FF_SPEED = 5;
+/** İleri sarma kapalı (oyuncu isteği); kod duruyor. */
+const FF_ENABLED = false;
+/** Kasetlerde ani korkutma kapalı; korkutmalar ev bölümlerinde. */
+const TAPE_SCARES = false;
+/** Ters mesaj / gizli kareden sonra geri sarmanın açık kaldığı süre (bant saniyesi) */
+const REWIND_WINDOW = 10;
 // VCR modlarının ekran görünümü: kasetin kendi ayarlarının (tv.p) üstüne biner, onları değiştirmez
 const LOOK_FF = { jitter: 0.9, tracking: 1.1 };
 const LOOK_RW = { jitter: 1.2, tracking: 1.4, noise: 0.12 };
@@ -75,6 +81,9 @@ export class Director {
     this.onRewindHold = null;
     this.onRewindEnd = null;
     this.noFF = false;
+    this.tagAt = null;
+    this.allowRewind = false;
+    this.rwHint = null;
     this.ffSkipped = null;
     this.sayCur = null; // { id, o, h, sub, tok }: şu an söylenen replik
     this.subTok = 0; // altyazıyı en son kim yazdı (bir replik bitince başkasının altyazısını silmesin)
@@ -175,6 +184,11 @@ export class Director {
   update(dt) {
     if (!this.active) return false;
     this.runRealTimers();
+    const rwOk = this.rewindAvailable();
+    if (rwOk !== this.rwHint) {
+      this.rwHint = rwOk;
+      this.g.ui?.rewindHint?.(rwOk);
+    }
     if (this.rewinding) {
       this.updateRewind(dt);
       return true;
@@ -351,6 +365,18 @@ export class Director {
 
   tag(meta) {
     this.meta = meta;
+    if (meta?.rev || meta?.secret) this.tagAt = this.time;
+  }
+
+  /**
+   * Geri sarma her an açık değil: ters mesaj ya da gizli kare az önce geçtiyse,
+   * kaset geri sarmayı dinliyorsa (onRewindHold, ör. final kapıları) ya da kaset izin verdiyse.
+   */
+  rewindAvailable() {
+    if (!this.active || this.fakeEnding || this.paused) return false;
+    if (this.allowRewind || this.onRewindHold || this.rewinding) return true;
+    if (this.meta?.rev || this.meta?.secret) return true;
+    return this.tagAt != null && this.time - this.tagAt < REWIND_WINDOW;
   }
 
   wait(sec) {
@@ -521,7 +547,8 @@ export class Director {
    * o.room true ise ses arkadan, odadan gelir. İleri sarılırken atlanır (false döner).
    */
   async jumpscare(o = {}) {
-    if (this.ff || this.aborted) return false;
+    // kasetler izlenirken ani korkutma yok: korkutmalar evde yürürken olur
+    if (!TAPE_SCARES || this.ff || this.aborted) return false;
     const sec = o.sec ?? 0.55;
     this.scareT0 = this.time;
     this.scareFn = o.draw || ((ctx, t) => S.scareFace(ctx, t, o.face || 'beste', o));
@@ -684,6 +711,7 @@ export class Director {
 
   /** Sağ ok basılıyken: bant hızlanır, replikler atlanır. Soru gelince kendiliğinden durur. */
   startFF() {
+    if (!FF_ENABLED) return;
     if (!this.active || this.noFF || this.rewinding || this.paused || this.input || this.ff || this.fakeEnding) return;
     this.ff = true;
     // yarıda kesilen replik de atlanmış sayılır: hemen ardından soru açılırsa yeniden okunur
@@ -719,6 +747,7 @@ export class Director {
     if (this.rewinding && this.rw) this.rw.release = false;
     // sahte bitişte VCR "durdu"; ekran kapalıyken (oda sahnesi gerçek zamanlı) geri sarılmaz
     if (!this.active || this.rewinding || this.fakeEnding || this.tv.p.power < 0.05) return;
+    if (!this.rewindAvailable()) return;
     if (this.ff) this.stopFF();
     this.rewinding = true;
     this.audio.pauseVoices();

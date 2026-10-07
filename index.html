@@ -25,7 +25,7 @@
     <div id="secret-toast"></div>
     <div id="subtitles" aria-live="polite"></div>
     <div id="type-hint" hidden>Klavyeden yaz · <b>ENTER</b> ile gönder</div>
-    <div id="vcr-hint" hidden><b>BOŞLUK</b> duraklat · <b>◀ / ▶</b> basılı tut: geri / ileri sar</div>
+    <div id="vcr-hint" hidden><b>BOŞLUK</b> duraklat<span id="rw-hint" hidden> · <b>◀</b> basılı tut: geri sar</span></div>
     <div id="walk-hint" hidden><b>W A S D</b> yürü · <b>Shift</b> koş · <b>E</b> / tık: etkileşim · <b>Q</b> fener · oturmak için video oynatıcıya tıkla</div>
     <button id="mobile-type" type="button" hidden>⌨ Yaz</button>
   </div>
@@ -42,6 +42,7 @@
         <button id="btn-new" type="button">▶ YENİ OYUN</button>
         <button id="btn-controls" type="button">KONTROLLER</button>
         <button id="btn-settings" type="button">AYARLAR</button>
+        <button id="btn-exit" type="button">ÇIKIŞ</button>
       </nav>
       <p id="confirm-new" class="confirm" hidden>Kayıtlı oyun silinecek. <button id="btn-new-yes" type="button">Evet, baştan başla</button> <button id="btn-new-no" type="button">Vazgeç</button></p>
       <p class="warn">Bu oyun korku öğeleri, ani sesler ve yanıp sönen ışıklar içerir. Kulaklıkla, karanlıkta oynayın.</p>
@@ -61,8 +62,7 @@
         <dt>Q / Sağ tık</dt><dd>El fenerini aç / kapat</dd>
         <dt>F</dt><dd>Televizyona odaklan / geri çekil (yalnızca otururken; kaset oynarken ekrandan ayrılamazsın)</dd>
         <dt>Boşluk</dt><dd>Kaseti duraklat (Beste fark edebilir)</dd>
-        <dt>Sol ok (basılı)</dt><dd>Kaseti geri sar. Gizli kareleri yakala</dd>
-        <dt>Sağ ok (basılı)</dt><dd>Kaseti ileri sar. Soru gelince kendiliğinden durur</dd>
+        <dt>Sol ok (basılı)</dt><dd>Kaseti geri sar. Yalnızca ekranda "◀ geri sar" yazdığında çalışır</dd>
         <dt>Video oynatıcı</dt><dd>İzlediğin kasetleri istediğin zaman tekrar oynat</dd>
         <dt>Esc</dt><dd>Duraklatma menüsü</dd>
       </dl>

@@ -2,6 +2,7 @@
 import * as S from '../draw/scenes.js';
 import { drawPhoto, drawRealHand } from '../draw/characters.js';
 import { has } from '../util.js';
+import { parseNum } from './common.js';
 
 export async function tape2(d) {
   const g = d.g;
@@ -70,26 +71,44 @@ export async function tape2(d) {
 
   // ---- arama
   const found = new Set();
+  let searchWrong = 0;
   for (;;) {
     const r = await d.choose({
       options: ['DOLAP', 'YATAK', 'KUTU'],
       idle: ['b1_idle2', 'b1_idle3'],
       match: (txt) =>
-        has(txt, 'dolap', 'gardirop', 'elbise') ? 'closet' : has(txt, 'yatak', 'yatag', 'alti', 'bed') ? 'bed' : has(txt, 'kutu', 'oyuncak', 'box', 'sandik') ? 'box' : null,
-      unknown: 'b2_search_unknown',
+        has(txt, 'dolap', 'gardirop', 'elbise') ? 'closet' : has(txt, 'yatak', 'yatag', 'alti', 'bed') ? 'bed' : has(txt, 'kutu', 'oyuncak', 'box', 'sandik') ? 'box' : 'unk',
     });
-    v.highlight = r.key;
+    let key = r.key;
+    if (key !== 'box') {
+      searchWrong++;
+      if (searchWrong >= 3) {
+        // 3 yanlış: gerçek cevap + kapıya vuruş ve ışık titremesi
+        await d.say('b2_search_truth');
+        d.sfx('knock', g.room.points.door, 3, 0.35);
+        g.room?.flickerBurst?.(1.2);
+        d.glitch(0.7, 0.4);
+        await d.wait(1.6);
+        key = 'box';
+      }
+    }
+    if (key === 'unk' || key == null) {
+      await d.say('b2_search_unknown');
+      if (searchWrong === 2) await d.say('b2_search_hint');
+      continue;
+    }
+    v.highlight = key;
     await d.wait(0.6);
     v.highlight = null;
     d.sfx('static', 0.15, 0.15);
-    if (r.key === 'closet') {
+    if (key === 'closet') {
       d.scene((c, t) => S.searchCloset(c, t, { drawPhoto }));
       d.tag({ secret: { id: 'fotograf', text: 'O BENİM' } });
       await d.say('b2_closet');
       d.tag(null);
       await d.say('b2_closet2');
       found.add('closet');
-    } else if (r.key === 'bed') {
+    } else if (key === 'bed') {
       const ev = { eyes: 1 };
       d.scene((c, t) => S.searchBed(c, t, ev));
       await d.say('b2_bed');
@@ -114,6 +133,7 @@ export async function tape2(d) {
     d.sfx('static', 0.15, 0.15);
     d.scene(room);
     await d.wait(0.5);
+    if (searchWrong === 2) await d.say('b2_search_hint');
   }
 
   // ---- kurallar
@@ -131,13 +151,28 @@ export async function tape2(d) {
   }
   await read;
   await d.say('b2_rules_ask');
-  const rule = await d.choose({
-    idle: ['b1_idle2', 'b1_idle3'],
-    match: (txt) => (has(txt, 'durdur', 'durma', 'kaset', 'stop', 'dondur') ? 'right' : 'wrong'),
-  });
-  v.highlight = 2;
-  if (rule.key === 'right') await d.say('b2_rules_right');
-  else await d.say('b2_rules_wrong');
+  let ruleOk = false;
+  for (let w = 0; !ruleOk; ) {
+    const rule = await d.choose({
+      idle: ['b1_idle2', 'b1_idle3'],
+      match: (txt) => (has(txt, 'durdur', 'durma', 'kaset', 'stop', 'dondur') || parseNum(txt) === 3 ? 'right' : 'wrong'),
+    });
+    v.highlight = 2;
+    if (rule.key === 'right') {
+      ruleOk = true;
+      await d.say('b2_rules_right');
+    } else if (++w === 1) await d.say('b2_rules_hint1');
+    else if (w === 2) await d.say('b2_rules_hint2');
+    else {
+      // 3 yanlış: gerçek cevap + arkandan fısıltı, Beste'nin yüzü boşalır
+      ruleOk = true;
+      B.expr = 'void';
+      d.glitch(0.9, 0.5);
+      await d.say('b2_rules_truth');
+      await d.sayRoom('b2_rules_whisper', { pos: 'behind', listener: true });
+      B.expr = 'frozen';
+    }
+  }
   v.highlight = null;
   if (d.pauseCount > 0 || st.flags.pauses > 0) {
     d.stopMusic(0.05);
@@ -195,8 +230,11 @@ export async function tape2(d) {
   v.hand = 0;
   v.pull = 0;
   g.audio.setHiss(true);
-  // ani sessizlik
-  await d.wait(3.4);
+  // ani sessizlik, sonra JUMPSCARE: sahte sakinlikte Beste'nin yüzü ekranı doldurur
+  await d.wait(2.4);
+  d.stopMusic(0.02);
+  if (await d.jumpscare({ face: 'beste', sec: 0.5, room: true })) await d.wait(1.4);
+  else await d.wait(1.0);
   B.lookTarget = null;
 
   // ---- "uzun bir yolculuk" ve şarkı

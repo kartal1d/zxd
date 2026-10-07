@@ -1,0 +1,11 @@
+{
+  "b1_count_hint": {"v": "beste", "t": "İpucu! Elmaları ağacın tepesinden başlayarak tek tek say. Hiçbirini atlama!"},
+  "b1_count_truth": {"v": "beste", "t": "Tamam, ben sayayım! Bir, iki, üç, dört, beş, altı, yedi! Ağaçta tam yedi tane elma var!", "s": "Tamam, ben sayayım! 1, 2, 3, 4, 5, 6, 7! Ağaçta tam 7 tane elma var!"},
+  "b1_hide_hint": {"v": "beste", "t": "İpucu! Sadece ağaç ve çalı yok ki. Bir de kütük var. Kütüğe de bakmak ister misin?"},
+  "b2_search_hint": {"v": "beste", "t": "Hmm, orada da yok. Tonton oyuncaklarını çok severdi. Oyuncakların yeri neresi?"},
+  "b2_search_truth": {"v": "beste_cold", "t": "Kuyruk oyuncak kutusunda. Hep oradaydı. Hadi, kutuya bak."},
+  "b2_rules_hint1": {"v": "beste", "t": "Hayır. Kuralları bir daha dikkatle oku."},
+  "b2_rules_hint2": {"v": "beste_cold", "t": "Yine hayır. İpucu: bu kural kasetle ilgili."},
+  "b2_rules_truth": {"v": "beste_cold", "t": "Üçüncü kural: kaseti asla durdurma. Asla."},
+  "b2_rules_whisper": {"v": "beste_whisper", "t": "Asla durdurma."}
+}

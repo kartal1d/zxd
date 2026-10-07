@@ -91,26 +91,45 @@ export async function tape1(d) {
   d.sfx('static', 0.15, 0.15);
   d.scene((c, t) => {
     S.bgGarden(c, t, { counted: v.counted });
+    if (v.sil > 0) drawSilhouette(c, 540, 330, 210, v.sil);
     d.beste(c, { x: 116, y: 462, scale: 0.82 });
   });
   B.lookTarget = { x: 0.8, y: -0.6 };
   await d.say('b1_count_intro');
   B.lookTarget = null;
-  const count = await d.choose({
-    idle: ['b1_idle1', 'b1_idle2'],
-    match: (txt, tries) => (parseNum(txt) === 7 ? 'right' : tries >= 1 ? 'help' : null),
-    unknown: 'b1_count_wrong',
-  });
-  if (count.key === 'right') {
-    v.counted = 7;
-    await d.say('b1_count_right');
-  } else {
-    const line = d.say('b1_count_help');
-    for (let i = 1; i <= 7; i++) {
-      v.counted = i;
-      await d.wait(0.42);
+  // 3 yanlış cevapta gerçek cevap + küçük bir olay (ağaç altında tek kare gri adam, bulb kısılır)
+  let countOk = false;
+  for (let wrongCount = 1; !countOk; wrongCount++) {
+    const r = await d.choose({
+      idle: ['b1_idle1', 'b1_idle2'],
+      match: (txt) => (parseNum(txt) === 7 ? 'right' : 'wrong'),
+    });
+    if (r.key === 'right') {
+      countOk = true;
+      v.counted = 7;
+      await d.say('b1_count_right');
+    } else if (wrongCount === 1) await d.say('b1_count_wrong');
+    else if (wrongCount === 2) await d.say('b1_count_hint');
+    else {
+      const line = d.say('b1_count_truth');
+      for (let i = 1; i <= 7; i++) {
+        v.counted = i;
+        await d.wait(0.42);
+      }
+      await line;
+      // olay: ışık kısılır, kısa bir bozulma, 2 karelik gri adam
+      g.room?.setBulb?.(0.45, 0.25);
+      d.glitch(0.5, 0.3);
+      await d.wait(0.2);
+      v.sil = 0.85;
+      d.tag({ secret: { id: 'siluet', text: 'BENİ GÖRDÜN' } });
+      await d.wait(0.07);
+      v.sil = 0;
+      d.tag(null);
+      await d.wait(0.5);
+      g.room?.setBulb?.(1, 1.2);
+      countOk = true;
     }
-    await line;
   }
   st.clues.yas = true;
 
@@ -245,8 +264,7 @@ export async function tape1(d) {
     const r = await d.choose({
       options: ['AĞAÇ', 'ÇALI', 'KÜTÜK'],
       idle: ['b1_idle1', 'b1_idle2'],
-      match: (txt) => (has(txt, 'agac', 'agaç', 'tree') ? 'tree' : has(txt, 'cali', 'çalı', 'bush', 'cal') ? 'bush' : has(txt, 'kutuk', 'kütük', 'kutu', 'stump') ? 'stump' : null),
-      unknown: 'b1_hide_unknown',
+      match: (txt) => (has(txt, 'agac', 'agaç', 'tree') ? 'tree' : has(txt, 'cali', 'çalı', 'bush', 'cal') ? 'bush' : has(txt, 'kutuk', 'kütük', 'kutu', 'stump') ? 'stump' : 'unk'),
     });
     if (r.key === 'stump') {
       besteHidden = false;
@@ -257,7 +275,9 @@ export async function tape1(d) {
       break;
     }
     wrong++;
-    if (r.key === 'tree') {
+    if (r.key === 'unk' || r.key == null) {
+      if (wrong === 1) await d.say('b1_hide_unknown');
+    } else if (r.key === 'tree') {
       sawTree = true;
       await showCarving('b1_hide_tree', 3.5);
     } else {
@@ -271,11 +291,21 @@ export async function tape1(d) {
       d.tag(null);
       await line;
     }
-    if (wrong >= 2) {
+    if (wrong === 2) await d.say('b1_hide_hint');
+    if (wrong >= 3) {
       besteHidden = false;
       Object.assign(B, { x: 395, y: 400, scale: 0.6 });
       d.sfx('cartoonPop');
-      await d.say('b1_hide_giveup');
+      // olay: ışık kısılır, ekran yırtılır, ağaçlar arasında 2 karelik gri adam
+      g.room?.setBulb?.(0.5, 0.2);
+      d.glitch(0.6, 0.3);
+      const gl = d.say('b1_hide_giveup');
+      await d.wait(0.8);
+      v.sil = 0.9;
+      await d.wait(0.07);
+      v.sil = 0;
+      await gl;
+      g.room?.setBulb?.(1, 1.2);
       B.expr = 'frozen';
       B.lookTarget = { x: 0, y: 0 };
       await d.say('b1_hide_giveup2');

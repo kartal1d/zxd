@@ -29,7 +29,8 @@ Kulaklıkla ve karanlıkta oynaman önerilir. Oyunda yanıp sönen ışıklar va
 | Fare | Etrafa bak (önce ekrana tıkla) |
 | Sol tık / **E** | Al, oku, kaseti tak |
 | Klavye + **ENTER** | Beste soru sorduğunda cevabını yaz |
-| **F** | Televizyona odaklan / geri çekil |
+| **F** | Televizyona odaklan / geri çekil (kaset oynarken kilitli) |
+| **W A S D**, **Shift**, **Q** | 8. kasetten sonra: yürü, koş, el feneri |
 | **Boşluk** | Kaseti duraklat (Beste fark edebilir) |
 | **◀ Sol ok** (basılı tut) | Kaseti geri sar, gizli kareleri yakala |
 | **▶ Sağ ok** (basılı tut) | Kaseti ileri sar (soru gelince kendiliğinden durur) |
@@ -42,13 +43,22 @@ Kulaklıkla ve karanlıkta oynaman önerilir. Oyunda yanıp sönen ışıklar va
 
 ## Bölümler
 
-Her kaset 3–5 dakika sürer, cevaplarına göre değişen sahneler ve repliklerle doludur. Aradaki bulmacalarla birlikte bir oyun yaklaşık 20–30 dakika.
+On kaset var. Her kaset 4–8 dakika sürer; aradaki tavan arası bulmacaları ve ev keşfiyle birlikte ilk oynayış yaklaşık 1,5–2 saat.
 
-1. **Beste ile Tanışalım!** Uyarı ekranı, jenerik, tanışma. Beste adını sorar ve aklında tutar. Ağaçtaki elmaları sayarsın, piknik sepetini doldurursun (ekranda masum yiyeceklerin yanında yerde bir *ip* de vardır), Çamlık Ormanı'na gidip saklambaç oynarsın. Ağaçların arasında bir an gri bir siluet belirir.
-2. **Tonton Kedi'nin Kaybolan Kuyruğu.** Renkler solmuş, sesler metalik. Beste'nin gülümsemesi sabit, gözleri imlecini takip ediyor. Kuyruğu ararsın, "Beste'nin Kuralları"nı ezberlersin. "Kurallara uymayanlara ne yapılır?" sorusundan sonra çizgi filmin içine gerçek bir insan eli uzanır.
-3. **Zamanın Sonu.** Kırmızı-siyah, pikselleşmiş bir kâbus. Beste ekrandan doğrudan sana konuşur, saati ve adını bilir, odandaki ışıklarla oynar. Kaset kilitlenir; çıkmak için üç kapının şifresini çözmen gerekir.
+1. **Beste ile Tanışalım!** Tanışma, elmalar, piknik, saklambaç.
+2. **Tonton Kedi'nin Kuyruğu.** Kurallar ve gerçek bir el.
+3. **Tonton Kedi Geri Döndü!** Dikişli Tonton ve Heykel oyunu: farenle kımıldama.
+4. **Kaybolursan Ne Yaparsın?** Ev telefonu şarkısı; arkandaki gerçek telefon çalar.
+5. **Bugün Sen Beste'sin!** Roller değişir; ayna, sessizlik ve sahte bir son.
+6. **İyi ki Doğdun Beste!** Doğum günü yalanını yakala; mumlar sönünce ampul de söner.
+7. **Bir Daha!** Kopyanın kopyası; her turda bir şey değişir, kapına vurulur.
+8. **Ebe Sensin!** Duraklatmak gözlerini kapamaktır; biri ona kadar sayar.
+9. **HAM KAYIT, Çamlık 14.05.98.** Çizgi film yok: Nermin'in montaj odasındaki klipler.
+10. **Zamanın Sonu.** Üç kapı ve iki son.
 
-Kasetlerin arasında tavan arasında bulmaca çözersin: mektup, gazete kupürü, şifreli metal kutu, Tonton peluşu.
+Beste'nin cevabı olan bir sorusunu 3 kez bilemezsen gerçeği söyler ve o an başka bir şey olur. Kasetlerde ani korkutmalar var.
+
+**8. kasetten sonra yürüyebilirsin:** çatı kapısının anahtarını bul, aşağı in, evi ve arka bahçeyi gez. **W A S D** yürü, **Shift** koş, **Q** ya da sağ tık el feneri, **E** etkileşim. Evde de ani korkutmalar var.
 
 <details>
 <summary><b>Spoiler: çözümler, sonlar ve gizli kareler</b></summary>

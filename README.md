@@ -32,8 +32,7 @@ Kulaklıkla ve karanlıkta oynaman önerilir. Oyunda yanıp sönen ışıklar va
 | **F** | Televizyona odaklan / geri çekil (kaset oynarken kilitli) |
 | **W A S D**, **Shift**, **Q** | 8. kasetten sonra: yürü, koş, el feneri |
 | **Boşluk** | Kaseti duraklat (Beste fark edebilir) |
-| **◀ Sol ok** (basılı tut) | Kaseti geri sar, gizli kareleri yakala |
-| **▶ Sağ ok** (basılı tut) | Kaseti ileri sar (soru gelince kendiliğinden durur) |
+| **◀ Sol ok** (basılı tut) | Kaseti geri sar (yalnızca ekranda "◀ geri sar" yazdığında) |
 | **Esc** | Duraklatma menüsü |
 | **F11** | Tam ekran |
 

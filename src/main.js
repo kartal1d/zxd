@@ -14,6 +14,7 @@ import { House } from './house.js';
 import { Walk } from './walk.js';
 import { Scares } from './scares.js';
 import { Flow } from './flow.js';
+import { Secrets, SECRET_TAPES, isSecretTape } from './secrets.js';
 import { Perf } from './perf.js';
 import { UI, SECRETS, REVERSED, secretCounts } from './ui.js';
 import * as S from './draw/scenes.js';
@@ -27,7 +28,9 @@ const FINAL = 10;
 /** Kaset senaryoları gerektiğinde yüklenir; açılış hafif kalır. */
 const tapeCache = {};
 function loadTape(n) {
-  tapeCache[n] ||= import(`./tapes/tape${n}.js`).then((m) => m['tape' + n]);
+  // gizli kasetler: 'gizli1' / 'gizli2' (src/tapes/gizli1.js ...)
+  const f = isSecretTape(n) ? n : 'tape' + n;
+  tapeCache[n] ||= import(`./tapes/${f}.js`).then((m) => m[f]);
   tapeCache[n].catch(() => delete tapeCache[n]);
   return tapeCache[n];
 }
@@ -42,6 +45,8 @@ const TAPE_NAMES = {
   8: "Kaset 8 — 'Ebe Sensin!'",
   9: "Kaset 9 — 'HAM KAYIT — Çamlık 14.05.98'",
   10: "Kaset 10 — 'SON'",
+  gizli1: SECRET_TAPES.gizli1.name,
+  gizli2: SECRET_TAPES.gizli2.name,
 };
 
 const GrainShader = {
@@ -61,7 +66,7 @@ const GrainShader = {
 };
 
 function defaultState() {
-  return { v: 2, stage: 0, tapes: [], name: '', boxOpen: false, tape2Taken: false, tape3Taken: false, flags: { pauses: 0 }, clues: {}, answers: {}, room: {}, secrets: [], ending: null, endings: [] };
+  return { v: 2, stage: 0, tapes: [], name: '', boxOpen: false, tape2Taken: false, tape3Taken: false, flags: { pauses: 0 }, clues: {}, answers: {}, room: {}, secrets: [], ending: null, endings: [], secretTapes: [], secretPlace: {} };
 }
 
 /** Eski kayıtlarda elde tutulan tek kaset (inv) vardı; artık sahip olunan kasetlerin listesi tutuluyor. */
@@ -126,6 +131,7 @@ class Game {
     this.walk = new Walk(this);
     this.scares = new Scares(this);
     this.flow = new Flow(this);
+    this.secrets = new Secrets(this);
     this.room.applyStage(this.state);
     this.ambience = new Ambience(this.audio);
     this.audio.setTvPosition(this.room.points.tv.x, this.room.points.tv.y, this.room.points.tv.z);
@@ -710,17 +716,19 @@ class Game {
   label(id) {
     const st = this.state;
     const playing = this.director.active;
+    const sl = this.secrets.label(id);
+    if (sl != null) return sl;
     const fl = this.finds.label(id);
     if (fl != null) return fl;
     const hl = this.house.label(id);
     if (hl != null) return hl;
     switch (id) {
       case 'tapebox':
-        return !st.tapes.includes(1) ? 'Kaseti al' : 'Eski kaset kutuları';
+        return this.canTakeTape(1) ? 'Kaseti al' : 'Eski kaset kutuları';
       case 'vcr':
         if (this.director.fakeEnding) return 'Video oynatıcı';
         if (playing || this.loadingTape) return 'Kaset oynuyor';
-        if (this.newTape()) return '<b>Kaseti tak</b>';
+        if (this.newTape() || this.secrets.held()) return '<b>Kaseti tak</b>';
         return st.tapes.length ? 'Kaset seç' : 'Video oynatıcı';
       case 'tapestack':
         return playing || this.loadingTape ? 'İzlediğin kasetler' : 'Kasetleri tekrar izle';
@@ -732,9 +740,9 @@ class Game {
       case 'newspaper':
         return 'Gazete kupürünü oku';
       case 'metalbox':
-        return !st.boxOpen ? 'Kilitli kutu' : !st.tape2Taken ? 'Kaseti al' : 'Okul kartına bak';
+        return !st.boxOpen ? 'Kilitli kutu' : !st.tape2Taken && this.canTakeTape(2) ? 'Kaseti al' : 'Okul kartına bak';
       case 'plush':
-        return st.stage >= 2 && !st.tape3Taken ? '<b>Peluşa bak</b>' : 'Tonton peluşu';
+        return !st.tape3Taken && this.canTakeTape(3) ? '<b>Peluşa bak</b>' : 'Tonton peluşu';
       case 'door':
         return 'Kapı (kilitli)';
       case 'window':
@@ -764,6 +772,10 @@ class Game {
         return;
       }
     }
+    if (await this.secrets.interact(id)) {
+      this.updateObjective(true);
+      return;
+    }
     if (await this.finds.interact(id)) {
       this.updateObjective(true);
       return;
@@ -774,7 +786,7 @@ class Game {
     }
     switch (id) {
       case 'tapebox':
-        if (!st.tapes.includes(1)) {
+        if (this.canTakeTape(1)) {
           this.addTape(1);
           au.sfx('pickup');
           ui.toast("Kutunun en üstünde etiketli bir kaset var: 'Beste 1 — Tanışalım'.");
@@ -825,7 +837,7 @@ class Game {
             this.updateObjective();
           }
           this.lockPointer();
-        } else if (!st.tape2Taken) {
+        } else if (!st.tape2Taken && this.canTakeTape(2)) {
           st.tape2Taken = true;
           this.addTape(2);
           au.sfx('pickup');
@@ -834,7 +846,7 @@ class Game {
         } else await this.readDoc('card');
         break;
       case 'plush':
-        if (st.stage >= 2 && !st.tape3Taken) {
+        if (!st.tape3Taken && this.canTakeTape(3)) {
           st.tape3Taken = true;
           this.addTape(3);
           au.sfx('pickup');
@@ -883,18 +895,33 @@ class Game {
     return st.tapes.filter((n) => n > st.stage).sort((a, b) => a - b)[0] ?? null;
   }
 
+  /**
+   * Kural: her an yalnızca sıradaki tek kaset alınabilir. st.tapes 1..10 sırayla büyür (n. kaset ancak
+   * n-1. kaset izlendikten sonra); 10. kaset de yalnız 9. izlendikten sonra, ritüelle. Gizli kasetler bu sırada değil.
+   */
+  canTakeTape(n) {
+    const st = this.state;
+    return Number.isInteger(n) && n >= 1 && n <= 10 && n === st.stage + 1 && !st.tapes.includes(n) && (n === 1 || st.tapes.includes(n - 1));
+  }
+
+  /** false: sıra dışı kaset reddedildi (hiçbir şey değişmez) */
   addTape(n) {
     const st = this.state;
+    if (Number.isInteger(n) && !this.canTakeTape(n)) {
+      console.info(`kaset ${n} sıra dışı (aşama ${st.stage}, eldeki ${st.tapes.join(',')}): alınmadı`);
+      return false;
+    }
     if (!st.tapes.includes(n)) st.tapes.push(n);
     st.tapes.sort((a, b) => a - b);
     loadTape(n).catch(() => {}); // takılmadan önce hazır olsun
     this.refreshInventory();
     this.room.applyStage(st, this.playingTape);
     this.save();
+    return true;
   }
 
   refreshInventory() {
-    const n = this.playingTape ? null : this.newTape();
+    const n = this.playingTape ? null : this.newTape() ?? this.secrets.held();
     this.ui.inventory(n ? TAPE_NAMES[n] : null);
   }
 
@@ -905,8 +932,8 @@ class Game {
     if (st.tapes.length) {
       this.releasePointer();
       n = await this.ui.chooseTape(
-        st.tapes.map((t) => ({ n: t, name: TAPE_NAMES[t], watched: t <= st.stage })),
-        this.newTape() ?? st.tapes[st.tapes.length - 1],
+        [...st.tapes.map((t) => ({ n: t, name: TAPE_NAMES[t], watched: t <= st.stage })), ...this.secrets.chooserItems()],
+        this.newTape() ?? this.secrets.held() ?? st.tapes[st.tapes.length - 1],
       );
       this.lockPointer();
     }
@@ -996,8 +1023,9 @@ class Game {
     this.audio.sfx('tvOn');
     this.ui.show('vcr-hint', true);
     // sonraki kasetlerin sesleri arka planda çözülüyor olabilir
-    if (this.audio.allVoices && n > 3) await this.audio.allVoices;
-    const res = await this.director.play(tapeFn, 't' + n, { firstViewing: n > st.stage });
+    if (this.audio.allVoices && (isSecretTape(n) || n > 3)) await this.audio.allVoices;
+    const res = await this.director.play(tapeFn, 't' + n, { firstViewing: isSecretTape(n) || n > st.stage });
+    this.secrets.afterTape();
     this.ui.show('vcr-hint', false);
     this.audio.setHiss(false);
     this.audio.setTapeFx('off', 0.5);
@@ -1015,6 +1043,8 @@ class Game {
   async onTapeDone(n) {
     const st = this.state;
     const r = this.room;
+    // gizli kaset: izlenince oyun kendi sonuyla biter (src/secrets.js)
+    if (isSecretTape(n)) return this.secrets.finish(n);
     // tekrar izlenen kaset hikâyeyi ilerletmez, olaylar yeniden tetiklenmez
     const first = n > st.stage;
     st.stage = Math.max(st.stage, n);

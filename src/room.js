@@ -429,7 +429,7 @@ export class Room {
     this.tag(board.children[0], 'newspaper');
 
     // alçak raf ve peluş
-    const shelf = new THREE.Group();
+    const shelf = (this.shelf = new THREE.Group());
     shelf.position.set(-2.62, 0, -0.1);
     this.scene.add(shelf);
     this.box(0.34, 0.03, 1.1, mats.furniture, 0, 0.9, 0, shelf);
@@ -470,6 +470,7 @@ export class Room {
 
   makeTape(label) {
     const g = new THREE.Group();
+    g.userData.tape = +label; // denetim için: sahnedeki her kaset modeli
     this.box(0.188, 0.025, 0.104, this.mats.black, 0, 0.0125, 0, g);
     const c = document.createElement('canvas');
     c.width = 256;
@@ -652,7 +653,7 @@ export class Room {
       t.visible = owned.includes(n) && n <= s && n !== playing;
       if (t.visible) t.position.y = h++ * 0.026;
     }
-    this.tape2.visible = st.boxOpen && !st.tape2Taken;
+    this.tape2.visible = st.boxOpen && !st.tape2Taken && !owned.includes(2);
     this.lidPivot.rotation.x = st.boxOpen ? -1.6 : 0;
     this.keypadLed.material.color.set(st.boxOpen ? 0x10ff40 : s >= 1 ? 0xff1a10 : 0x110000);
     const moved = s >= 2;
@@ -665,10 +666,11 @@ export class Room {
       this.plush.rotation.set(0, Math.PI / 2 - 0.3, 0);
       this.plushTail.visible = true;
     }
-    this.tape3.visible = moved && !st.tape3Taken && s === 2;
+    this.tape3.visible = moved && !st.tape3Taken && s === 2 && !owned.includes(3);
     this.prints.visible = s >= 2;
     this.attic.apply(st);
     this.g.house?.apply(st);
+    this.g.secrets?.apply(st); // gizli kasetler (src/secrets.js)
   }
 
   setMood(m) {

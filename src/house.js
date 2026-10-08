@@ -223,8 +223,16 @@ export class House {
     // tavan arasının kendi parçaları (zemin katta gizlenir). Işık içerenler ve kapı sahnesi hariç.
     const win = room.sky.parent;
     const keep = new Set([room.plush, win, room.camera, room.bulbGroup, room.doorPivot, room.girl, room.gap, room.corridor, this.zoneLight]);
-    this.atticMeshes = sc.children.filter((o) => !o.isLight && !keep.has(o) && o.type !== 'Object3D');
+    const atticParts = sc.children.filter((o) => !o.isLight && !keep.has(o) && o.type !== 'Object3D');
     this.atticOutside = new Set([...(room.roofs || []), room.frontGable].filter(Boolean));
+    // Zemin katta gizlenen parçalar tek bir grupta toplanır; gizleyip gösteren yalnız grubun visible'ı.
+    // (Önceden her parçanın visible'ı doğrudan true yapılıyordu: duruma göre gizli olması gereken
+    // kasetler, kilim kapağı, zincir... tavan arasına her girişte görünür oluyordu.)
+    this.atticRoot = new THREE.Group();
+    this.atticRoot.name = 'tavanArasi';
+    sc.add(this.atticRoot);
+    for (const o of atticParts) if (!this.atticOutside.has(o)) this.atticRoot.add(o);
+    this.atticMeshes = atticParts.filter((o) => this.atticOutside.has(o));
     if (room.corridor) room.corridor.visible = false;
 
     this.chunks = {};
@@ -556,6 +564,8 @@ export class House {
     // sahanlık zemini ve tavanı
     this.floor('ust', 'sahanlik', M.floor, -1.7, -0.7, 2.6, 3.8, 0, 3);
     this.floor('ust', 'sahanlik', M.ceiling, -1.7, -0.7, 2.62, 4.628, 2.1, 2, true);
+    // kapı kasasının üstü ile sahanlık tavanı arasındaki aralık (çatı eğimi alçakta kalıyor; merdivenden boşluk görünüyordu)
+    this.box('ust', 'sahanlik', M.ceiling, -1.7, -0.7, 2.03, 2.1, 2.6, 2.64);
     // eğimli tavan: kafa yüksekliği her yerde 2.70
     const L = Math.hypot(7.8 - 4.628, 2.1 - YC);
     const sof = new THREE.BoxGeometry(1.0, 0.04, L);
@@ -568,6 +578,8 @@ export class House {
       const top = stairY(z0 + 0.125);
       this.box('ust', 'merdiven', M.stair, -1.66, -0.74, top - 0.2, top, z0 - 0.025, z1, 0.8, true);
     }
+    // sahanlık kenarı ile ilk basamak arasındaki 9 cm'lik açıklığı kapatan alın tahtası (katlar arası boşluk görünmesin)
+    this.box('ust', 'merdiven', M.stair, -1.66, -0.74, stairY(3.925) - 0.2, -0.002, 3.775, 3.8);
     // küpeşte
     this.add('ust', 'merdiven', M.wood, rodGeo(V(-0.76, 0.92, 3.6), V(-0.76, stairY(7.8) + 0.92, 7.9), 0.025));
     for (const z of [4.4, 5.8, 7.2]) this.add('ust', 'merdiven', M.metal, rodGeo(V(-0.74, stairY(z) + 0.9, z), V(-0.68, stairY(z) + 0.9, z), 0.008));
@@ -1129,6 +1141,12 @@ export class House {
     // çekmece
     const dr = this.mesh(new THREE.BoxGeometry(0.46, 0.13, 0.03), M.cream, Z, 1.9, -2.15, -2.59);
     this.mesh(new THREE.BoxGeometry(0.14, 0.02, 0.02), M.metal, dr, 0, 0, 0.025);
+    // çekmecenin gövdesi ve içi: açılınca havada asılı tek bir levha gibi görünmesin (kapalıyken tezgâhın içinde kalır)
+    for (const [w, hh, d, x, y, z] of [[0.42, 0.01, 0.36, 0, -0.055, -0.195], [0.01, 0.1, 0.36, -0.205, -0.01, -0.195], [0.01, 0.1, 0.36, 0.205, -0.01, -0.195], [0.42, 0.1, 0.01, 0, -0.01, -0.37]])
+      this.mesh(new THREE.BoxGeometry(w, hh, d), M.wood, dr, x, y, z);
+    for (const [x, z] of [[-0.1, -0.12], [-0.06, -0.15]]) this.mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.2, 8), M.porcelain, dr, x, -0.039, z).rotation.x = HALF;
+    this.mesh(new THREE.BoxGeometry(0.05, 0.015, 0.035), std({ color: 0x8a2a1c, roughness: 0.8 }), dr, 0.04, -0.042, -0.1);
+    this.mesh(new THREE.BoxGeometry(0.16, 0.004, 0.11), M.cream, dr, 0.09, -0.048, -0.24);
     this.drawer = dr;
     this.tag(dr, 'ev:cekmece');
     this.box('zemin', 'mutfak', M.tileWall, -0.65, 2.45, -2.0, -1.4, -3.2, -3.19, 0.6);
@@ -1306,7 +1324,9 @@ export class House {
   // ------------------------------------------------------------------ merdiven altı dolabı
   buildDolap() {
     const M = this.M;
-    this.box('zemin', 'dolap', M.plasterDark, -1.7, -0.7, YG, YC, 4.98, 5.02);
+    // arka duvar merdivenin altında biter: üstü basamağın içinde kalır (YC'ye kadar çıkınca z=5'te
+    // basamakların arasından 0.7 m'lik bir levha olarak görünüyordu)
+    this.box('zemin', 'dolap', M.plasterDark, -1.7, -0.7, YG, stairY(4.925) - 0.1, 4.98, 5.02);
     this.floor('zemin', 'dolap', M.ceiling, -1.7, -0.7, 2.62, 3.8, -0.21, 2, true);
     for (let i = 0; i < 14; i++) {
       const g = new THREE.BoxGeometry(0.19, 0.025, 0.105);
@@ -1610,7 +1630,8 @@ export class House {
     }
     this.shell.visible = z === 'banyo';
     const showAttic = z === 'cati' || z === 'sahanlik' || z === 'merdiven';
-    for (const o of this.atticMeshes) o.visible = showAttic || (z === 'bahce' && this.atticOutside.has(o));
+    this.atticRoot.visible = showAttic;
+    for (const o of this.atticMeshes) o.visible = showAttic || z === 'bahce';
     this.room.sky.visible = z !== 'bahce';
     this.litWindow.visible = z === 'bahce';
     this.visZone = z;
@@ -2225,7 +2246,8 @@ export class House {
     }
     this.busy.rack = true;
     try {
-      if (k === 'C4') {
+      // C4: 9. kaset yalnız sıradaki kasetse (8. izlenmişse) çıkar; değilse sıradan bir kutu gibi
+      if (k === 'C4' && (this.has(9) || g.canTakeTape(9))) {
         if (this.has(9)) {
           g.ui.toast('Boş kutu. Not hâlâ kapağın içinde.', 4);
           return;

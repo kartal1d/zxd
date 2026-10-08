@@ -86,18 +86,18 @@ export class Finds {
         if (!r.furnitureMoved) return 'Örtülü eşya';
         if (s >= 3 && !r.chestOpen) return '<b>Sandığın harf kilidi</b>';
         if (r.chestOpen && !r.key) return '<b>Anahtarı al</b>';
-        if (r.t4Chest && !this.has(4)) return '<b>Kaseti al</b>';
+        if (r.t4Chest && this.g.canTakeTape(4)) return '<b>Kaseti al</b>';
         if (r.falseBottom && !r.fbOpen) return '<b>Sahte dibin kilidi</b>';
         return 'Oyuncak sandığı';
       case 'phone':
         return 'Telefon';
       case 'floorboard':
-        if (!r.kilimLifted || this.has(5)) return '';
+        if (!r.kilimLifted || !this.g.canTakeTape(5)) return '';
         return r.boardOpen ? '<b>Kaseti al</b>' : '<b>Gevşek tahta</b>';
       case 'giftbox':
-        return this.has(6) ? 'Hediye kutusu' : r.giftOpen ? '<b>Kaseti al</b>' : '<b>Hediye kutusu</b>';
+        return !this.g.canTakeTape(6) ? 'Hediye kutusu' : r.giftOpen ? '<b>Kaseti al</b>' : '<b>Hediye kutusu</b>';
       case 'chairleg':
-        return s === 6 && !this.has(7) ? '<b>Bantlı kaset</b>' : '';
+        return this.g.canTakeTape(7) ? '<b>Bantlı kaset</b>' : '';
       case 'chain':
         return '<b>Zinciri çek</b>';
       case 'doortape':
@@ -148,7 +148,7 @@ export class Finds {
           await this.takeKey();
           return true;
         }
-        if (r.t4Chest && !this.has(4)) {
+        if (r.t4Chest && g.canTakeTape(4)) {
           // eski kayıt: 4. kaset hâlâ sandıkta
           au.sfx('pickup');
           g.addTape(4);
@@ -200,7 +200,7 @@ export class Finds {
         return true;
       }
       case 'floorboard': {
-        if (!r.kilimLifted || this.has(5)) return true;
+        if (!r.kilimLifted || !g.canTakeTape(5)) return true;
         if (!r.boardOpen) {
           r.boardOpen = true;
           g.room.attic.openBoard();
@@ -219,7 +219,7 @@ export class Finds {
           await g.readDoc('dogumgunu');
           return true;
         }
-        if (!r.boxToppled) return true;
+        if (!r.boxToppled || !g.canTakeTape(6)) return true;
         if (!r.giftOpen) {
           const ok = await this.giftKeypad();
           if (!ok) return true;
@@ -236,7 +236,7 @@ export class Finds {
         return true;
       }
       case 'chairleg': {
-        if (!(s === 6 && !this.has(7))) return true;
+        if (!g.canTakeTape(7)) return true;
         this.stopHiss?.();
         this.stopHiss = null;
         au.sfx('pickup');
@@ -250,7 +250,8 @@ export class Finds {
         this.pullChain();
         return true;
       case 'doortape': {
-        if (this.has(10)) return true;
+        // 10. kaset yalnız 9. kaset izlendikten sonra, ritüelle (en son) alınır
+        if (!r.ritualDone || !g.canTakeTape(10)) return true;
         au.sfx('pickup');
         g.addTape(10);
         this.toast('Kaset hâlâ sıcak. Etiketinde tek kelime kalmış: SON.', 5);

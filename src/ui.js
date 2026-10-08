@@ -149,6 +149,18 @@ export const DOCS = {
   },
 };
 
+/** Gizli kasetlerin sonları (Gizli Kaset 1: 'kamera', Gizli Kaset 2: 'kul') */
+const SECRET_ENDINGS = {
+  kamera: {
+    title: 'Kayıt Sürüyor',
+    text: "Kâmil'in kamerası hiç kapanmadı: ne Çamlık'ta, ne montaj odasında, ne bu gece. Beste'yi 'kameranın arkasına' o sakladı; sekizi sayan, bütün bölümleri anlatan ses onundu. Şimdi kasette, koltuğun arkasından çekilmiş bir tavan arası var. Koltukta biri oturuyor ve televizyona bakıyor. Arkasında kırmızı bir ışık yanıp sönüyor. Kayıt sürüyor.",
+  },
+  kul: {
+    title: 'Kül',
+    text: "Kibriti çaktın. Nermin'in bahçede yakamadığı bant, izlendiği yerde bir anda tutuştu. Alevler tavan arasını sararken arkandan ince bir ses 'Sıcak' dedi, sonra teşekkür etti. Merdivenden nasıl indiğini hatırlamıyorsun. Sabah küllerin arasında erimiş kasetler, boş bir kibrit kutusu ve küçük, gri bir çocuk ayakkabısı vardı. Beste artık üşümüyor. Sesi de artık hiçbir kasette yok.",
+  },
+};
+
 export class UI {
   constructor(game) {
     this.g = game;
@@ -538,7 +550,7 @@ export class UI {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'tape-choice';
-      b.innerHTML = `<span class="tape-key">${t.n}</span><span class="tape-name"></span><span class="tape-tag">${t.watched ? 'izlendi' : 'YENİ'}</span>`;
+      b.innerHTML = `<span class="tape-key">${t.key ?? t.n}</span><span class="tape-name"></span><span class="tape-tag">${t.watched ? 'izlendi' : 'YENİ'}</span>`;
       b.querySelector('.tape-name').textContent = t.name;
       b.onclick = () => close(t.n);
       // seçim yalnızca gerçek fare hareketiyle değişir: liste açılınca imlecin altında kalan kaset
@@ -571,7 +583,7 @@ export class UI {
       if (k === 'ArrowUp' || k === 'ArrowLeft') return select(idx - 1);
       if (k === 'ArrowDown' || k === 'ArrowRight') return select(idx + 1);
       if (k === 'Enter' || k === ' ' || k === 'e' || k === 'E') return close(list[idx].n);
-      const hit = list.find((t) => String(t.n) === k);
+      const hit = list.find((t) => String(t.key ?? t.n) === k);
       if (hit) close(hit.n);
     };
     return new Promise((r) => (resolveFn = r));
@@ -579,16 +591,21 @@ export class UI {
 
   ending(kind, secretsFound) {
     const good = kind === 'good';
-    $('ending-kind').textContent = good ? 'GİZLİ SON' : 'KÖTÜ SON';
+    // gizli kasetlerin sonları (src/secrets.js)
+    const sec = SECRET_ENDINGS[kind];
+    $('ending-kind').textContent = good || sec ? 'GİZLİ SON' : 'KÖTÜ SON';
     const t = $('ending-title');
-    t.textContent = good ? 'Sobe' : 'Ebe Sensin';
-    t.classList.toggle('bad', !good);
-    $('ending-text').textContent = good
+    t.textContent = sec ? sec.title : good ? 'Sobe' : 'Ebe Sensin';
+    t.classList.toggle('bad', !good && !sec);
+    $('ending-text').textContent = sec
+      ? sec.text
+      : good
       ? "Geri sardın ve gerçek Beste'yi buldun. Oyun, herkes bulununca biter: Sobe. Sabah kasetleri bahçede yaktın. Bu sefer geri dönmediler. Ertesi gün gazeteler, Çamlık'taki büyük çamın dibinde küçük, gri bir çocuk ayakkabısı bulunduğunu yazdı."
       : 'Ona istediği her şeyi verdin: tarihini, yaşını ve adını. Kaset kapandı ama kapı açık kaldı. İlk sobelenen ebe olur. Artık ebe sensin.';
     const c = secretCounts(secretsFound);
     $('ending-secrets').textContent =
-      `Gizli kareler: ${c.frames} / ${c.framesTotal} · Ters mesajlar: ${c.rev} / ${c.revTotal}` + (good ? '' : ' · Başka bir son daha var. Kapılarda geri sar ve bırakma.');
+      `Gizli kareler: ${c.frames} / ${c.framesTotal} · Ters mesajlar: ${c.rev} / ${c.revTotal}` +
+      (sec ? ' · Bir gizli kelime ve başka sonlar daha var.' : good ? '' : ' · Başka bir son daha var. Kapılarda geri sar ve bırakma.');
     this.show('hud', false);
     this.show('ending', true);
   }

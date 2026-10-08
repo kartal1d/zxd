@@ -242,8 +242,10 @@ export function applyFlow(h, st) {
   const r = st.room || {};
   const fp = h.fp;
   const has = (n) => (st.tapes || []).includes(n);
+  // bir bulunacak kaset yalnız sıradaki kasetse görünür (aynı anda en fazla bir tane)
+  const next = (n) => st.stage + 1 === n && !has(n);
   const sc = r.scares || [];
-  fp.kaset4.visible = st.stage === 3 && !!r.walk && !has(4) && !r.t4Chest;
+  fp.kaset4.visible = !!r.walk && next(4) && !r.t4Chest;
   // giriş telefonu: zil korkutmasından sonra ahize kalkık
   fp.handset.position.copy(fp.handsetHome);
   fp.handset.rotation.set(0, 0, 0);
@@ -258,7 +260,7 @@ export function applyFlow(h, st) {
   fp.board.visible = !!r.holCall;
   fp.board.rotation.z = r.holBoard ? -BOARD_UP : 0;
   fp.hole.visible = !!r.holBoard;
-  fp.tape5.visible = !!r.holBoard && !has(5);
+  fp.tape5.visible = !!r.holBoard && next(5);
   fp.clip.visible = !!r.holBoard;
   // mutfak kolileri
   if (r.koliDown) {
@@ -269,7 +271,7 @@ export function applyFlow(h, st) {
     fp.koli.rotation.set(0, 0, 0);
   }
   fp.giftLid.rotation.x = r.hediyeOpen ? -1.9 : 0;
-  fp.giftTape.visible = !!r.hediyeOpen && !has(6);
+  fp.giftTape.visible = !!r.hediyeOpen && next(6);
   // buzdolabı (korkutmadan sonra açık, ışığı sönük)
   fp.fridgeDoor.rotation.y = sc.includes('buzdolabi') ? -1.9 : 0;
   fp.fridgeIn.material.color.setHex(0x1a1c1e);
@@ -281,7 +283,7 @@ export function applyFlow(h, st) {
     fp.chair2.position.set(CHAIR2.pos[0], YG, CHAIR2.pos[1]);
     fp.chair2.rotation.y = CHAIR2.yaw;
   }
-  fp.kaset8.visible = st.stage === 7 && !has(8);
+  fp.kaset8.visible = next(8);
   fp.strip.visible = !!r.fbOpen && !r.montajOpen;
   fp.ghost2.visible = false;
   fp.hand.visible = false;
@@ -329,11 +331,11 @@ export function flowLabel(h, id) {
       if (s === 4 && !r.holCall && !r.kilimLifted && !h.has(5)) return h.ringing ? '<b>Telefonu aç</b>' : '<b>Telefonu çevir</b>';
       return 'Telefon';
     case 'ev:tahta':
-      if (!r.holCall || h.has(5)) return '';
+      if (!r.holCall || !h.g.canTakeTape(5)) return '';
       return r.holBoard ? '<b>Kaseti al</b>' : '<b>Gevşek tahta</b>';
     case 'ev:hediye':
       if (!r.koliDown) return '';
-      if (h.has(6)) return 'Hediye kutusu';
+      if (!h.g.canTakeTape(6)) return 'Hediye kutusu';
       if (r.hediyeOpen) return '<b>Kaseti al</b>';
       return '<b>Hediye kutusu</b><br><small>"Sekizinci yaş gününde açılsın."</small>';
     case 'ev:kaset8':
@@ -354,7 +356,7 @@ export async function flowInteract(h, id) {
   const fp = h.fp;
   switch (id) {
     case 'ev:kaset4': {
-      if (!fp.kaset4.visible) return true;
+      if (!fp.kaset4.visible || !g.canTakeTape(4)) return true;
       h.stopLead();
       au.sfx('pickup');
       g.addTape(4);
@@ -403,7 +405,7 @@ export async function flowInteract(h, id) {
       return true;
     }
     case 'ev:tahta': {
-      if (!r.holCall || h.has(5)) return true;
+      if (!r.holCall || !g.canTakeTape(5)) return true;
       if (!r.holBoard) {
         r.holBoard = true;
         fp.hole.visible = true;
@@ -422,6 +424,10 @@ export async function flowInteract(h, id) {
       if (!r.koliDown) return true;
       if (h.has(6)) {
         await g.readDoc('dogumgunu');
+        return true;
+      }
+      if (!g.canTakeTape(6)) {
+        ui.toast('Hediye kutusunun kilidi sıkı. Şimdilik açılmıyor.', 3);
         return true;
       }
       if (!r.hediyeOpen) {
@@ -443,7 +449,7 @@ export async function flowInteract(h, id) {
       return true;
     }
     case 'ev:kaset8': {
-      if (!fp.kaset8.visible) return true;
+      if (!fp.kaset8.visible || !g.canTakeTape(8)) return true;
       au.sfx('pickup');
       g.addTape(8);
       ui.toast("Salıncağın oturağında bir kaset. Etiketinde 'Ebe Sensin!' yazıyor. Oturak buz gibi.", 6);

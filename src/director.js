@@ -619,6 +619,8 @@ export class Director {
       this.sfx('beep', false);
       return;
     }
+    // gizli kelime (KAMİL / KİBRİT, src/secrets.js): cevap sayılmaz, kaset kısa bir an tepki verir, soru sürer
+    if (this.g.secrets?.onWord(text, this)) return;
     this.sfx('click');
     this.lastAnswer = text;
     this.endTyping();

@@ -393,6 +393,8 @@ export class Attic {
   apply(st) {
     const room = st.room || {};
     const has = (n) => (st.tapes || []).includes(n);
+    // bir bulunacak kaset yalnız sıradaki kasetse görünür (aynı anda en fazla bir tane)
+    const next = (n) => st.stage + 1 === n && !has(n);
     // çarşaf ve sandık
     if (room.furnitureMoved) {
       this.sheetGroup.position.set(...MOVED.pos);
@@ -409,7 +411,7 @@ export class Attic {
     }
     this.chestLid.rotation.x = room.chestOpen || room.falseBottom ? -1.7 : 0;
     // yeni akışta 4. kaset salonda; sandıkta yalnız eski kayıtlarda (t4Chest) kalır
-    this.chestTape4.visible = !!room.t4Chest && !has(4);
+    this.chestTape4.visible = !!room.t4Chest && next(4);
     this.falseBottom.rotation.x = room.fbOpen ? FB_UP : room.falseBottom ? FB_AJAR : 0;
     this.chestTail.position.y = room.fbOpen ? 0.2 : 0.39;
     this.chestKey.visible = !!room.chestOpen && !room.key;
@@ -421,7 +423,7 @@ export class Attic {
     this.board.visible = !!room.kilimLifted;
     this.board.rotation.z = room.boardOpen ? BOARD_UP : 0;
     this.hole.visible = !!room.boardOpen;
-    this.boardTape.visible = !!room.boardOpen && !has(5);
+    this.boardTape.visible = !!room.boardOpen && next(5);
     this.hairClip.visible = !!room.boardOpen;
     // devrilen kutu ve hediye
     if (room.boxToppled) {
@@ -434,9 +436,9 @@ export class Attic {
     this.gift.visible = !!room.boxToppled;
     this.gift.position.set(...GIFT.pos);
     this.giftLid.rotation.x = room.giftOpen ? -1.9 : 0;
-    this.giftTape.visible = !!room.giftOpen && !has(6);
+    this.giftTape.visible = !!room.giftOpen && next(6);
     // sandalye ayağı
-    const chairLive = st.stage === 6 && !has(7);
+    const chairLive = next(7);
     this.chairTape.visible = chairLive;
     this.chairHit.visible = chairLive;
     if (!chairLive) this.chairHit2.visible = false;
@@ -444,7 +446,7 @@ export class Attic {
     this.windowTape.visible = false;
     // zincir ve kapı altı
     this.chain.visible = !!room.chain;
-    this.showDoorTape(!!room.ritualDone && !has(10));
+    this.showDoorTape(!!room.ritualDone && next(10));
   }
 
   // ------------------------------------------------------------------ canlı olaylar (ilk izlemeden sonra)

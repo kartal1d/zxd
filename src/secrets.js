@@ -139,11 +139,20 @@ export class Secrets {
   afterTape() {
     if (!this.toasts.length) return;
     const ids = this.toasts.splice(0);
+    // kasetten sonraki kendi bildirimleri (kutudan tık sesi, yol ipucu...) bitince, ekranda başka yazı yokken gösterilir
+    let quiet = 0;
     const show = (tries) => {
       const g = this.g;
       if (g.mode === 'title' || g.mode === 'ending') return;
+      // kaset oynarken ya da bir panel açıkken beklenir; ekrandaki başka bir bildirim en fazla ~40 sn bekletir
       if (g.mode !== 'play' || g.playingTape || g.director.active || g.loadingTape || g.panelOpen()) {
-        if (tries < 20) setTimeout(() => show(tries + 1), 4000);
+        quiet = 0;
+        setTimeout(() => show(tries), 1000);
+        return;
+      }
+      quiet = document.getElementById('toast')?.classList.contains('show') ? 0 : quiet + 1;
+      if (quiet < 2 && tries < 40) {
+        setTimeout(() => show(tries + 1), 1000);
         return;
       }
       const st = this.st;
@@ -153,7 +162,7 @@ export class Secrets {
         .join(' ');
       if (txt) g.ui.toast(txt, 8);
     };
-    setTimeout(() => show(0), this.g.debug?.fast ? 300 : 9000);
+    setTimeout(() => show(0), this.g.debug?.fast ? 1500 : 6000);
   }
 
   // ------------------------------------------------------------------ yerleşim ve etkileşim
@@ -337,9 +346,10 @@ export class Secrets {
     if (!f.fire) {
       const tex = flameTexture();
       const sprites = [];
-      const spots = [[-0.7, 1.0], [0.8, 0.9], [-1.6, -0.6], [1.5, -0.4], [-0.3, -1.4], [0.9, -1.5], [-1.9, 1.6], [1.8, 1.4], [0, 2.1]];
+      // alevler duvar diplerinde ve eşyaların yanında, dar ve titrek dillerdir
+      const spots = [[-0.7, 1.0], [-0.95, 1.1], [0.8, 0.9], [1.0, 0.75], [-1.6, -0.6], [-1.75, -0.4], [1.5, -0.4], [1.62, -0.2], [-0.3, -1.4], [-0.1, -1.5], [0.9, -1.5], [-1.9, 1.6], [1.8, 1.4], [0, 2.1], [0.3, 2.2], [-2.3, 0.4], [2.3, 0.2], [-1.2, -1.9]];
       for (const [x, z] of spots) {
-        const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: 0xffb070, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+        const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: 0xffa860, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
         s.position.set(x, 0.3, z);
         s.scale.set(0.01, 0.01, 1);
         f.root.add(s);
@@ -386,10 +396,10 @@ export class Secrets {
       const k = f.fire.cur = (f.fire.cur || 0) + (f.level - (f.fire.cur || 0)) * Math.min(1, dt * 0.6);
       f.fire.sprites.forEach((s, i) => {
         const on = Math.max(0, Math.min(1, k * 1.8 - i * 0.09));
-        const h = (0.5 + on * 1.3) * (0.85 + 0.15 * Math.sin(t * 9 + i * 2.3) + 0.08 * Math.sin(t * 23 + i));
-        s.scale.set(on * h * 0.7, on * h, 1);
+        const h = (0.35 + on * (0.6 + (i % 3) * 0.25)) * (0.82 + 0.18 * Math.sin(t * 9 + i * 2.3) + 0.1 * Math.sin(t * 23 + i));
+        s.scale.set(on * h * 0.42, on * h, 1);
         s.position.y = (on * h) / 2 - 0.02;
-        s.material.opacity = on * (0.75 + 0.25 * Math.sin(t * 17 + i));
+        s.material.opacity = on * (0.5 + 0.2 * Math.sin(t * 17 + i));
       });
       f.fire.lights.forEach((l, i) => (l.intensity = k * (5 + Math.sin(t * 13 + i * 2) * 1.2 + Math.sin(t * 29 + i) * 0.8)));
     }
@@ -421,18 +431,22 @@ function flameTexture() {
   c.width = 64;
   c.height = 128;
   const x = c.getContext('2d');
-  const g = x.createRadialGradient(32, 96, 2, 32, 80, 60);
-  g.addColorStop(0, 'rgba(255,240,190,1)');
-  g.addColorStop(0.3, 'rgba(255,160,60,.9)');
-  g.addColorStop(0.7, 'rgba(220,70,20,.35)');
-  g.addColorStop(1, 'rgba(120,20,0,0)');
-  x.fillStyle = g;
-  x.beginPath();
-  x.moveTo(32, 2);
-  x.quadraticCurveTo(64, 70, 50, 124);
-  x.lineTo(14, 124);
-  x.quadraticCurveTo(0, 70, 32, 2);
-  x.fill();
+  x.globalCompositeOperation = 'lighter';
+  // üç dil: ortada uzun, yanlarda kısa; kökte sarı-beyaz, uçta koyu kırmızı ve saydam
+  for (const [cx, top, w, a] of [[32, 6, 18, 0.9], [20, 40, 12, 0.55], [44, 30, 12, 0.6]]) {
+    const g = x.createLinearGradient(0, 124, 0, top);
+    g.addColorStop(0, `rgba(255,236,170,${a})`);
+    g.addColorStop(0.35, `rgba(255,150,50,${a * 0.85})`);
+    g.addColorStop(0.75, `rgba(210,60,15,${a * 0.4})`);
+    g.addColorStop(1, 'rgba(120,20,0,0)');
+    x.fillStyle = g;
+    x.beginPath();
+    x.moveTo(cx, top);
+    x.quadraticCurveTo(cx + w * 1.1, 70, cx + w * 0.7, 124);
+    x.lineTo(cx - w * 0.7, 124);
+    x.quadraticCurveTo(cx - w * 1.1, 70, cx, top);
+    x.fill();
+  }
   FLAME = new THREE.CanvasTexture(c);
   FLAME.colorSpace = THREE.SRGBColorSpace;
   return FLAME;

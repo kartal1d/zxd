@@ -55,9 +55,11 @@ On kaset var. Her kaset 4–8 dakika sürer; aradaki tavan arası bulmacaları v
 9. **HAM KAYIT, Çamlık 14.05.98.** Çizgi film yok: Nermin'in montaj odasındaki klipler.
 10. **Zamanın Sonu.** Üç kapı ve iki son.
 
-Beste'nin cevabı olan bir sorusunu 3 kez bilemezsen gerçeği söyler ve o an başka bir şey olur. Kasetlerde ani korkutmalar var.
+Beste'nin cevabı olan bir sorusunu 3 kez bilemezsen gerçeği söyler ve o an başka bir şey olur.
 
-**3. kasetten sonra yürüyebilirsin:** oyuncak sandığındaki anahtarla çatı kapısını aç, aşağı in; sonraki kasetler evin içinde ve arka bahçede saklı. Hedef satırı hep nereye gideceğini söyler; takılırsan ipuçları gelir. Kasetler yalnızca tavan arasındaki televizyonda, oturarak izlenir. **W A S D** yürü, **Shift** koş, **Q** ya da sağ tık el feneri, **E** etkileşim. Ani korkutmalar yalnızca evde yürürken olur, kaset izlerken olmaz.
+**Gizli kasetler:** oyunda iki gizli kelime var. Beste'nin herhangi bir sorusuna cevap olarak yazılırsa evde bir **gizli kaset** belirir; izlersen oyun kendine özgü bir gizli sonla biter. Kasetler her zaman sırayla, birer birer alınır; 10. kaset hep en son çıkar.
+
+**3. kasetten sonra yürüyebilirsin:** oyuncak sandığındaki anahtarla çatı kapısını aç, aşağı in; sonraki kasetler evin içinde ve arka bahçede saklı. Hedef satırı hep nereye gideceğini söyler; takılırsan ipuçları gelir. Kasetler yalnızca tavan arasındaki televizyonda, oturarak izlenir. **W A S D** yürü, **Shift** koş, **Q** ya da sağ tık el feneri, **E** etkileşim. Ani korkutmalar yalnızca evde yürürken olur, kaset izlerken olmaz. Her yeni oyunda, daha önce görmediğin küçük nadir korkutmalar da çıkabilir; oyunu ne kadar çok tekrar oynarsan ihtimalleri o kadar artar.
 
 <details>
 <summary><b>Spoiler: çözümler, sonlar ve gizli kareler</b></summary>
@@ -67,6 +69,7 @@ Beste'nin cevabı olan bir sorusunu 3 kez bilemezsen gerçeği söyler ve o an b
 - **Kötü son (Artık Dışarıda):** üç cevabı verip ÇIKIŞ yazarsın. Kaset çöker, ışıklar söner, kapı çalınır.
 - **Gizli son (Kaset Yakıldı):** 2. kasetin sonundaki tersten konuşmayı geri sararak dinlersen gerçek Beste seni uyarır: "Ona soyadımı söyleme. Sıkışırsan, kaseti geri sar." 3. kasette kapı sorularında **sol oku 3 saniye basılı tut**.
 - 7 gizli kare: ağaçlardaki adam, çalının altındaki ayakkabı, jenerikten sonraki "YARDIM ET", dolaptaki fotoğraf, ters mesaj, penceredeki yüz, karın içindeki yüz. Hepsi duraklatarak ya da geri sararak yakalanır.
+- Gizli kelimeler: **KAMİL** → Gizli Kaset 1 "Kamera Arkası" → gizli son **Kayıt Sürüyor**; **KİBRİT** → Gizli Kaset 2 "Kül" → gizli son **Kül**. Kaset, kelime yazıldığında evde dolaşma başlamamışsa tavan arasında, başlamışsa aşağıda (giriş konsolu / mutfak tezgâhı) çıkar.
 - Sepete ip koyarsan, ismini "Beste" yazarsan ya da 2. kasette duraklatırsan Beste farklı tepki verir.
 
 </details>

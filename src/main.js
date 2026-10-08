@@ -98,10 +98,9 @@ class Game {
     this.tv = new TVScreen();
     this.settings = { volume: 0.9, sens: 1, subs: true, flash: false, quality: 'auto', ...storage.get(SETTINGS_KEY, {}) };
     // eski kayıtlardaki varsayılan 'Yüksek' yeni varsayılan 'Otomatik' olur (kullanıcı 'Düşük' seçtiyse kalır)
-    if (!this.settings.qv) {
-      if (this.settings.quality === 'high') this.settings.quality = 'auto';
-      this.settings.qv = 2;
-    }
+    // oyuncu isteği: oyun her zaman düşük kalitede çalışır (akıcılık için)
+    this.settings.quality = 'low';
+    this.settings.qv = 3;
     // varsayılan boş liste eski kaydın üstüne yazılmasın: tapes yoksa migrate() yeniden kursun
     const raw = storage.get(SAVE_KEY, {}) || {};
     this.state = migrate({ ...defaultState(), ...raw, tapes: raw.tapes, v: raw.v });
@@ -258,8 +257,8 @@ class Game {
       this.settings.flash = e.target.checked;
       storage.set(SETTINGS_KEY, this.settings);
     };
-    $('set-quality').onchange = (e) => {
-      this.settings.quality = e.target.value;
+    $('set-quality').onchange = () => {
+      this.settings.quality = 'low';
       this.applySettings();
     };
     $('reader').onclick = () => this.ui.closeReader?.();
@@ -426,11 +425,20 @@ class Game {
     $('btn-resume').focus({ preventScroll: true });
   }
 
-  resume() {
+  resume(fromKey = false) {
     this.show('pause', false);
     this.mode = 'play';
     this.audio.resume();
-    this.lockPointer();
+    this.resumedAt = performance.now();
+    // Esc ile dönüşte kilit, aynı tuş vuruşu tamamen işlendikten sonra istenir:
+    // kilit tuş basılıyken gelirse Chromium aynı Esc'yi "kilidi bırak" sayıp menüyü yeniden açtırıyordu
+    if (fromKey) setTimeout(() => this.mode === 'play' && this.lockPointer(), 150);
+    else this.lockPointer();
+  }
+
+  /** Basılı tutulan Esc'nin tekrarı ya da menüden dönüşün hemen ardındaki Esc yeniden duraklatmaz */
+  escTooSoon(e) {
+    return e.repeat || performance.now() - (this.resumedAt || 0) < 400;
   }
 
   quitToTitle() {
@@ -505,8 +513,10 @@ class Game {
         this.ui.clickHint?.(false);
       }
       else if (this.mode === 'play' && !this.overlay && !this.expectUnlock) {
-        // aynı Esc bir paneli kapattıysa (tarayıcı kilidi de bıraktıysa) duraklatma menüsü açılmaz; kilit yeniden istenir
-        if (performance.now() - (this.escClosedAt || 0) < 600) this.needLock();
+        // aynı Esc bir paneli kapattıysa (tarayıcı kilidi de bıraktıysa) ya da menüden yeni dönüldüyse
+        // duraklatma menüsü açılmaz; kilit yeniden istenir
+        const now = performance.now();
+        if (now - (this.escClosedAt || 0) < 600 || now - (this.resumedAt || 0) < 900) this.needLock();
         else this.pause();
       }
       this.expectUnlock = false;
@@ -632,8 +642,9 @@ class Game {
     }
     if (this.mode === 'paused' && k === 'Escape') {
       e.preventDefault();
+      if (e.repeat) return;
       if (this.openPanel) this.panelBack();
-      else this.resume();
+      else this.resume(true);
       return;
     }
     if (this.mode !== 'play') return;
@@ -668,7 +679,7 @@ class Game {
         return;
       }
       if (k === 'Escape') {
-        this.pause();
+        if (!this.escTooSoon(e)) this.pause();
         return;
       }
       if (document.activeElement !== a) a.focus({ preventScroll: true });
@@ -676,7 +687,7 @@ class Game {
     }
     if (this.walk.onKeyDown(e)) return;
     if (k === 'Escape') {
-      this.pause();
+      if (!this.escTooSoon(e)) this.pause();
       return;
     }
     if (k === ' ') {

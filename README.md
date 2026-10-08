@@ -22,7 +22,7 @@ Windows "Bilgisayarınız korundu" derse **Ek bilgi → Yine de çalıştır** (
 
 Exe'yi kendin derlemek için: `cd desktop && npm install && npm run dist` (Windows'ta). Commit mesajına `[exe]` yazınca GitHub Actions güncel sürümü, `[exe3]` yazınca 3 bölümlük sürümü derleyip Releases'a koyar.
 
-Kulaklıkla ve karanlıkta oynaman önerilir. Oyunda yanıp sönen ışıklar var; **Ayarlar → Yanıp sönmeyi azalt** ile kısılabilir.
+Kulaklıkla ve karanlıkta oynaman önerilir. Oyun akıcı çalışsın diye her zaman düşük grafik kalitesinde açılır. Oyunda yanıp sönen ışıklar var; **Ayarlar → Yanıp sönmeyi azalt** ile kısılabilir.
 
 | Tuş | İşlev |
 | --- | --- |

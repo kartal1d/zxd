@@ -13,6 +13,7 @@ import { Finds } from './finds.js';
 import { House } from './house.js';
 import { Walk } from './walk.js';
 import { Scares } from './scares.js';
+import { Rare } from './rare.js';
 import { Flow } from './flow.js';
 import { Secrets, SECRET_TAPES, isSecretTape } from './secrets.js';
 import { Perf } from './perf.js';
@@ -130,6 +131,7 @@ class Game {
     this.house = new House(this);
     this.walk = new Walk(this);
     this.scares = new Scares(this);
+    this.rare = new Rare(this); // nadir, oyun başına değişen küçük korkutmalar (src/rare.js)
     this.flow = new Flow(this);
     this.secrets = new Secrets(this);
     this.room.applyStage(this.state);
@@ -310,6 +312,7 @@ class Game {
   }
 
   newGame() {
+    this.rare.onNewGame(); // 'beste-meta-v1' (oyun sayısı, görülenler) Yeni oyunla silinmez
     this.state = defaultState();
     this.save();
     this.show('confirm-new', false);
@@ -354,6 +357,7 @@ class Game {
     this.room.applyStage(this.state);
     this.finds.applyLight();
     this.updateObjective();
+    this.rare.begin(); // bu oturumun nadir korkutmaları (Yeni oyun ve Devam'da zar yeniden atılır)
     for (const n of this.state.tapes) if (n > this.state.stage) loadTape(n).catch(() => {});
     this.ui.toast('Etrafa bakmak için ekrana tıkla.', 4);
     this.lockPointer();
@@ -449,6 +453,7 @@ class Game {
 
   quitToTitle() {
     this.scares.cancelAll();
+    this.rare.stop();
     this.walk.clearKeys();
     this.walk.resetSeated();
     this.director.abort();
@@ -958,6 +963,7 @@ class Game {
   objectiveText() {
     const st = this.state;
     if (this.playingTape) return 'Kaseti izle. Beste soru sorarsa klavyeden cevap ver.';
+    if (st.stage >= FINAL && this.secrets.pending()) return this.secrets.objective();
     const fo = this.flow.objective();
     if (fo) return fo;
     if (this.newTape()) return 'Kaseti televizyonun altındaki video oynatıcıya tak.';
@@ -984,6 +990,7 @@ class Game {
     const st = this.state;
     // kaset izlenirken korkutma yok; kasetlerdeki kapı vuruşları inandırıcı olsun diye tavan arası kapısı kapanır
     this.scares.cancelAll();
+    this.rare.abort();
     this.house.stopLead();
     const rm = st.room || {};
     if (this.room.doorPivot.rotation.y > 0.02 && !this.director.fakeEnding) {
@@ -1079,6 +1086,8 @@ class Game {
     } else if (n === FINAL) {
       st.endings = [...new Set([...(st.endings || []), st.ending])];
       this.save();
+      // gizli kelime son kasette yazıldıysa son, gizli kaset izlenene dek bekler (src/secrets.js)
+      if (this.secrets.deferEnding()) return this.updateObjective();
       this.fade(1);
       await sleep(2200);
       this.releasePointer();
@@ -1148,6 +1157,7 @@ class Game {
     r.update(dt, ndc);
     this.house.update(dt, this.clock);
     this.scares.update(dt);
+    this.rare?.update(dt);
     this.gazeOnTv = r.gaze;
     // televizyona odaklanınca ekranın ortasına yazı basma
     const tvFocus = r.hover === 'tv' && r.focusTarget > 0.5;
@@ -1169,6 +1179,7 @@ class Game {
 
   drawIdleTv() {
     const c = this.tv.ctx;
+    if (this.rare?.drawTv(c, this.clock)) return;
     if (this.mode !== 'title' && this.finds.drawTv(c, this.clock)) return;
     if (this.mode === 'title') {
       S.titleCard(c, this.clock * 0.6, { decay: 0.15 });

@@ -516,6 +516,8 @@
   "ev_tel2": { "v": "beste_kiz", "t": "Nermin abla? Neredesin? Ben saklandım ama kimse gelmedi.", "w": "TELESEKRETER" },
   "ev_dolap": { "v": "beste_whisper", "t": "Burası dolu. Başka yere saklan.", "w": "???" },
   "ev_buldun": { "v": "beste_whisper", "t": "Buldun. Şimdi sıra sende.", "w": "???" },
+  "rare_isim": { "v": "beste_whisper", "t": "Hey. Buradasın, değil mi?", "s": "{ad}... buradasın, değil mi?", "w": "???" },
+  "rare_kikir": { "v": "beste_kiz", "t": "Hihihi. Hihi. Bulamazsın beni.", "s": "(çocuk kıkırtısı) Hihihi... Bulamazsın beni.", "w": "???" },
 
   "b1_count_hint": { "v": "beste", "t": "İpucu! Elmaları ağacın tepesinden başlayarak tek tek say. Hiçbirini atlama!" },
   "b1_count_truth": { "v": "beste", "t": "Tamam, ben sayayım! Bir, iki, üç, dört, beş, altı, yedi! Ağaçta tam yedi tane elma var!", "s": "Tamam, ben sayayım! 1, 2, 3, 4, 5, 6, 7! Ağaçta tam 7 tane elma var!" },

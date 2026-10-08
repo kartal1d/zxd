@@ -90,7 +90,8 @@ export class Scares {
   /** force: 'kapanınca' tanımlı korkutmalar (2 sn panel kuralını atlar) */
   loudOk(force = false) {
     const c = this.g.clock;
-    return c - this.lastLoud >= LOUD_GAP && (force || c >= this.quietUntil);
+    // rareUntil: nadir (src/rare.js) korkutmalar sürerken yüksek sesli betikli korkutma çıkmaz
+    return c - this.lastLoud >= LOUD_GAP && c >= (this.rareUntil || 0) && (force || c >= this.quietUntil);
   }
 
   // ================================================================== zamanlayıcılar

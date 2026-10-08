@@ -56,6 +56,45 @@ export class Secrets {
     return this.st.secretTapes[0] ?? null;
   }
 
+  /** Yerinde bekleyen ya da elde tutulan (henüz izlenmemiş) gizli kaset */
+  pending() {
+    const st = this.st;
+    return Object.keys(SECRET_TAPES).find((k) => st.secretPlace[k] || st.secretTapes.includes(k)) || null;
+  }
+
+  objective() {
+    return this.held() ? 'Gizli kaseti video oynatıcıya tak.' : 'Gizli kaseti bul.';
+  }
+
+  /**
+   * Kelime son kasette (10) yazıldıysa: o kasetin sonu kaydedilir ama oyun bitmez; gizli kaset bulunup
+   * izlenince kendi sonuyla biter. Son kaset yeniden izlenirse oyun o kasetin sonuyla biter.
+   */
+  deferEnding() {
+    const g = this.g;
+    const st = this.st;
+    // her gizli kaset için yalnız bir kez bekler: son kaset yeniden izlenirse oyun o kasetin sonuyla biter
+    const ids = Object.keys(SECRET_TAPES).filter((k) => st.secretPlace[k] || st.secretTapes.includes(k));
+    const done = Array.isArray(st.secretDeferred) ? st.secretDeferred : [];
+    if (!ids.some((k) => !done.includes(k))) return false;
+    st.secretDeferred = ids;
+    // alt katta bekleyen kaset (tavan arası mühürlü, oyuncu inemez) tavan arasına taşınır
+    const moved = ids.filter((k) => st.secretPlace[k] === 'house' && !st.secretTapes.includes(k));
+    for (const k of moved) st.secretPlace[k] = 'attic';
+    st.ending = null;
+    g.save();
+    // son kasetin kapanışı kamerayı kapıya kilitler, kızı kapıda bırakır: oyun sürdüğü için geri alınır
+    const r = g.room;
+    r.locked = false;
+    r.showGirl(false);
+    if (r.bulbBase < 0.1) r.setBulb(0.4, 2);
+    g.audio.sfx('vcrEject', r.points.vcr);
+    r.applyStage(st);
+    g.refreshInventory();
+    g.ui.toast(['Kaset bitti. Ama bu gece henüz bitmedi.', ...moved.map((k) => PLACES[k].attic.toast)].join(' '), moved.length ? 9 : 5);
+    return true;
+  }
+
   /** Kaset seçicideki satırlar */
   chooserItems() {
     return this.st.secretTapes.filter(isSecretTape).map((n) => ({ n, key: SECRET_TAPES[n].key, name: SECRET_TAPES[n].name, watched: false }));

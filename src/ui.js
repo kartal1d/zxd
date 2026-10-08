@@ -593,7 +593,7 @@ export class UI {
     const good = kind === 'good';
     // gizli kasetlerin sonları (src/secrets.js)
     const sec = SECRET_ENDINGS[kind];
-    $('ending-kind').textContent = good || sec ? 'GİZLİ SON' : 'KÖTÜ SON';
+    $('ending-kind').textContent = sec ? 'GİZLİ SON' : good ? 'İYİ SON' : 'KÖTÜ SON';
     const t = $('ending-title');
     t.textContent = sec ? sec.title : good ? 'Sobe' : 'Ebe Sensin';
     t.classList.toggle('bad', !good && !sec);

@@ -434,7 +434,8 @@ L = loud. Positions are from `ev-tasarim.md` and §2 above.
 | stage ≥ 7 | `arkaUnlocked = true`; at stage 7 with `!has(8)`: `hotcold = true` (walking version; the window find is off) |
 | stage 8, `fbOpen` | `montajOpen = true`, `doors.montaj = true` (in the old flow the montaj room was open once the key was taken) |
 | stage ≥ 9 | `montajOpen = true`; the existing rules stay (`has(9) && !atticSealed` → silent seal) |
-| always | `st.tapes` untouched; `flow = 2`; save |
+| always | `st.tapes` untouched here; `flow = 2`; save |
+| on load (`main.migrate`, every save) | One-tape rule: numbered tapes above `stage + 1` (taken early in an older build, e.g. the door tape 10) are dropped and reappear at their spot when their turn comes; `1..stage` are kept/filled; a dropped 2/3 resets `tape2Taken`/`tape3Taken`. Secret tapes are not touched. |
 
 - **Legacy attic props:** `attic.apply` keeps showing the lifted kilim, the open board and the toppled gift exactly as their legacy flags say. New code never sets those flags.
 - **Old scares:** saves with old scare ids keep them. New ids simply have not fired yet; their `moment` fallbacks follow §4.

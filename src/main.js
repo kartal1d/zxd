@@ -88,6 +88,15 @@ function migrate(st) {
     if (st.tape3Taken || st.stage >= 3) st.tapes.push(3);
   }
   delete st.inv;
+  // tek kaset kuralı: önceki sürümde sırası gelmeden alınabilen kasetler (ör. kapıdaki 10. kaset) yerine döner;
+  // elde yalnız izlenenler (1..stage) ve sıradaki tek kaset kalır, bulundukları yer sırası gelince yeniden açılır
+  const top = Math.max(0, Math.min(10, st.stage | 0));
+  const kept = st.tapes.filter((n) => !Number.isInteger(n) || n <= top + 1);
+  for (let n = 1; n <= top; n++) if (!kept.includes(n)) kept.push(n);
+  const dropped = st.tapes.filter((n) => !kept.includes(n));
+  if (dropped.includes(2)) st.tape2Taken = false;
+  if (dropped.includes(3)) st.tape3Taken = false;
+  st.tapes = kept.sort((a, b) => a - b);
   st.flags = { pauses: 0, ...st.flags };
   st.answers = st.answers || {};
   st.room = st.room || {};

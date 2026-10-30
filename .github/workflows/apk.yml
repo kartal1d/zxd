@@ -1,4 +1,4 @@
-# Android APK derlemesi (Capacitor). Commit mesajında [apk] geçince ya da elle (workflow_dispatch) çalışır.
+# Android APK + Google Play AAB derlemesi (Capacitor). Commit mesajında [apk] geçince ya da elle (workflow_dispatch) çalışır.
 # Çıktı: Actions sayfasında "artifact" olarak ve depo Releases sayfasında "apk-guncel" etiketiyle.
 name: Android apk
 
@@ -92,15 +92,27 @@ jobs:
         working-directory: mobile/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon --stacktrace
           mkdir -p ../dist
+          if [ "$HAS_KS_SECRET" = "true" ]; then
+            # Google Play için: AAB yalnız kullanıcının kendi yükleme anahtarıyla (depo sırları) imzalanır
+            ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
+            cp app/build/outputs/bundle/release/app-release.aab "../dist/$NAME.aab"
+          else
+            ./gradlew assembleRelease --no-daemon --stacktrace
+            echo "::warning::APK_KEYSTORE_B64 / APK_KEYSTORE_PASS depo sırları yok: Google Play için AAB derlenmedi."
+          fi
           cp app/build/outputs/apk/release/app-release.apk "../dist/$NAME.apk"
+          # imza sertifikasının parmak izi (Play Console'daki yükleme sertifikasıyla aynı olmalı)
+          keytool -list -v -keystore "$BESTE_KS_PATH" -storepass "$BESTE_KS_PASS" | grep -E "SHA256:" | head -1 | sed 's/^[[:space:]]*//' > ../dist/imza.txt
+          cat ../dist/imza.txt
           ls -la ../dist
 
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.NAME }}-apk
-          path: mobile/dist/*.apk
+          path: |
+            mobile/dist/*.apk
+            mobile/dist/*.aab
           retention-days: 30
 
       - name: Releases sayfasına koy
@@ -113,7 +125,12 @@ jobs:
 
           Telefonu yatay tut. Sol başparmakla yürü, sağ tarafı sürükleyerek etrafa bak, sağ tarafa dokunarak etkileşime gir.
           Yeni sürüm eskisinin üstüne kurulur, kaydın silinmez. Kulaklıkla ve karanlıkta oynayın.
+
+          **Google Play:** `Beste-Sihirli-Dunya.aab` dosyasını Play Console'a yükle (yalnızca yükleme anahtarı depo sırlarına eklendiyse bulunur).
           EOF
           sed -i 's/^          //' notes.md
+          echo "" >> notes.md
+          echo "İmza sertifikası $(cat mobile/dist/imza.txt)" >> notes.md
+          echo "Sürüm: $BESTE_VERSION_NAME (sürüm kodu $BESTE_VERSION_CODE)" >> notes.md
           gh release delete apk-guncel --cleanup-tag -y || true
-          gh release create apk-guncel mobile/dist/*.apk --target "$GITHUB_SHA" --title "Beste'nin Sihirli Dünyası: Android (apk)" --notes-file notes.md --prerelease
+          gh release create apk-guncel mobile/dist/*.apk $(ls mobile/dist/*.aab 2>/dev/null) --target "$GITHUB_SHA" --title "Beste'nin Sihirli Dünyası: Android (apk / aab)" --notes-file notes.md --prerelease

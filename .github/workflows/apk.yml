@@ -1,0 +1,115 @@
+# Android APK derlemesi (Capacitor). Commit mesajında [apk] geçince ya da elle (workflow_dispatch) çalışır.
+# Çıktı: Actions sayfasında "artifact" olarak ve depo Releases sayfasında "apk-guncel" etiketiyle.
+name: Android apk
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[apk]')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BESTE_VERSION_CODE: ${{ github.run_number }}
+      BESTE_VERSION_NAME: 1.0.${{ github.run_number }}
+      NAME: Beste-Sihirli-Dunya
+      HAS_KS_SECRET: ${{ secrets.APK_KEYSTORE_B64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Android SDK parçaları
+        run: sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "platform-tools" > /dev/null
+
+      - name: Oyun dosyalarını hazırla
+        working-directory: mobile
+        run: |
+          npm ci --no-audit --no-fund
+          node prepare.mjs ..
+          npx cap sync android
+
+      # İmza anahtarı depoda değil. Depo sırlarında APK_KEYSTORE_B64 + APK_KEYSTORE_PASS varsa onlar kullanılır;
+      # yoksa ilk derlemede bir anahtar üretilip Actions önbelleğinde saklanır (sonraki apk'lar aynı anahtarla
+      # imzalanır, eskisinin üstüne kurulur).
+      - name: İmza anahtarı (önbellek)
+        if: env.HAS_KS_SECRET != 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.beste-imza
+          key: apk-imza-v1
+
+      - name: İmza anahtarı
+        shell: bash
+        env:
+          KS_B64: ${{ secrets.APK_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.APK_KEYSTORE_PASS }}
+        run: |
+          d="$HOME/.beste-imza"
+          mkdir -p "$d"
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "$d/sirdan.jks"
+            echo "BESTE_KS_PATH=$d/sirdan.jks" >> "$GITHUB_ENV"
+            echo "::add-mask::$KS_PASS"
+            echo "BESTE_KS_PASS=$KS_PASS" >> "$GITHUB_ENV"
+          else
+            if [ ! -f "$d/beste.jks" ]; then
+              head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' > "$d/pass"
+              keytool -genkeypair -keystore "$d/beste.jks" -alias beste -storepass "$(cat "$d/pass")" -keypass "$(cat "$d/pass")" \
+                -keyalg RSA -keysize 2048 -validity 20000 -dname "CN=Beste Sihirli Dunya, O=kartal1d, C=TR"
+              echo "yeni imza anahtarı üretildi"
+            fi
+            echo "::add-mask::$(cat "$d/pass")"
+            echo "BESTE_KS_PATH=$d/beste.jks" >> "$GITHUB_ENV"
+            echo "BESTE_KS_PASS=$(cat "$d/pass")" >> "$GITHUB_ENV"
+          fi
+
+      - name: Derle
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+          mkdir -p ../dist
+          cp app/build/outputs/apk/release/app-release.apk "../dist/$NAME.apk"
+          ls -la ../dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.NAME }}-apk
+          path: mobile/dist/*.apk
+          retention-days: 30
+
+      - name: Releases sayfasına koy
+        run: |
+          cat > notes.md <<'EOF'
+          **Android (telefon / tablet) için indir ve kur:**
+          - `Beste-Sihirli-Dunya.apk` dosyasını telefona indir ve aç.
+          - "Bilinmeyen kaynaklardan yükleme" izni sorulursa tarayıcına / dosya yöneticine izin ver.
+          - Play Protect uyarı verirse **Yine de yükle**'ye dokun (uygulama Play Store dışından geldiği için çıkar).
+
+          Telefonu yatay tut. Sol başparmakla yürü, sağ tarafı sürükleyerek etrafa bak, sağ tarafa dokunarak etkileşime gir.
+          Yeni sürüm eskisinin üstüne kurulur, kaydın silinmez. Kulaklıkla ve karanlıkta oynayın.
+          EOF
+          sed -i 's/^          //' notes.md
+          gh release delete apk-guncel --cleanup-tag -y || true
+          gh release create apk-guncel mobile/dist/*.apk --target "$GITHUB_SHA" --title "Beste'nin Sihirli Dünyası: Android (apk)" --notes-file notes.md --prerelease

@@ -158,7 +158,7 @@ The bulb dies in Tape 6 (`bulbDead`, existing). Tape 7 stays taped under the fro
 
 | Step | Objective | Hints |
 |---|---|---|
-| `s6_sandalye` | `Tavan arası — 'Oturduğun yerin altında.' Sandalyenin altına bak.` | 10: hiss + toast `Karanlıkta bant hışırtısı. Çok yakından geliyor.` (existing) · 45: `Oturduğun yerde fareyle aşağı, dizlerine doğru bak. Ya da ayağa kalk (W), arkanı dön ve fenerle sandalyeye bak.` · 75: `Sandalyenin ön kenarına bantlanmış kasete bak ve tıkla.` + glint on `attic.chairTape` |
+| `s6_sandalye` | `Tavan arası — Oturduğun sandalyenin altına bak: aşağı bak ya da ayağa kalk (fener).` | 10: hiss + toast `Karanlıkta bant hışırtısı. Çok yakından geliyor.` (existing) · 45: seated `Oturduğun yerden dizlerine doğru aşağı bak: oturağın ön kenarının altında soluk bir şey seçiliyor. Ya da ayağa kalk; fener kendiliğinden yanar.` / standing `Televizyonun önündeki sandalyeye dön ve fenerle oturağın ön kenarının altına bak.` · 90: `Kaset, sandalyenin oturağının ön kenarının altına bantlanmış. Parıltıya bak.` + glint on `attic.chairTape` · 150: `Sandalyenin ön kenarının altındaki parıltıya bak; 'Bantlı kaset' yazısı çıkınca E'ye bas.` (touch: `ona dokun`) + glint. The tape's silver band and label glow faintly in the dark; seated, a hitbox from the seat edge to knee height (`chairHitSeat`) finds it when looking moderately down; standing, `chairHit2` + flashlight. Visibility follows `canTakeTape(7)` every frame (finds.update). |
 
 ### 2.5 Stage 7 → Tape 8 (walking hot/cold, garden swing)
 

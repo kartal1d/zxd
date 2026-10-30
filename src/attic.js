@@ -325,6 +325,17 @@ export class Attic {
     this.chairTape.position.set(-0.13, 0.37, 0.45);
     this.chairTape.rotation.set(-0.9, 0.12, 0);
     this.scene.add(this.chairTape);
+    // 6. kasetten sonra ampul ölü, oturan oyuncunun feneri yok: etiket ay ışığını yakalamış gibi çok hafif seçilir,
+    // kaseti tutan gümüş bant soğuk, ince bir parıltı verir (finds.update hafifçe kıpırdatır). Oda aydınlanmaz.
+    const label = this.chairTape.children.find((o) => o.material?.map);
+    if (label) {
+      label.material = label.material.clone();
+      label.material.emissive = new THREE.Color(0xffffff);
+      label.material.emissiveMap = label.material.map;
+      label.material.emissiveIntensity = 0.16;
+    }
+    this.chairBandMat = new THREE.MeshStandardMaterial({ color: 0xaab2bf, metalness: 0.5, roughness: 0.35, emissive: 0x8a9ab4, emissiveIntensity: 0.4 });
+    for (const x of [-0.082, 0.082]) r.box(0.03, 0.03, 0.112, this.chairBandMat, x, 0.0125, 0, this.chairTape);
     // geniş, görünmez tıklama alanı
     const hit = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.45), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
     hit.position.set(-0.1, 0.32, 0.45);
@@ -336,9 +347,24 @@ export class Attic {
     hit2.visible = false;
     this.chairHit2 = hit2;
     this.scene.add(hit2);
+    // otururken: kaset tam gözün altında kalır; dizlere doğru orta bir açıyla aşağı bakmak yetsin
+    // (oturağın ön kenarından öne, diz yüksekliğine kadar; yalnız otururken görünür, finds.update)
+    const hit3 = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.6, 0.62), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+    hit3.position.set(-0.06, 0.3, 0.26);
+    hit3.visible = false;
+    this.chairHitSeat = hit3;
+    this.scene.add(hit3);
     r.tag(this.chairTape, 'chairleg');
     r.tag(hit, 'chairleg');
     r.tag(hit2, 'chairleg');
+    r.tag(hit3, 'chairleg');
+  }
+
+  /** 7. kaset sandalyenin altında beklerken bandın soluk parıltısı (her kare, finds.update) */
+  chairShimmer(t) {
+    const s = Math.sin(t * 1.3) * 0.5 + 0.5;
+    const blink = Math.max(0, Math.sin(t * 0.47) - 0.93) * 6; // arada bir kısa bir ışıltı
+    this.chairBandMat.emissiveIntensity = 0.28 + 0.2 * s + blink;
   }
 
   // ------------------------------------------------------------------ dış pervazdaki kaset (8)
@@ -438,10 +464,11 @@ export class Attic {
     this.giftLid.rotation.x = room.giftOpen ? -1.9 : 0;
     this.giftTape.visible = !!room.giftOpen && next(6);
     // sandalye ayağı
+    // (ilk izlemeden sonra da, tutarsız eski kayıtlarda da finds.update her karede aynı kurala göre düzeltir)
     const chairLive = next(7);
     this.chairTape.visible = chairLive;
     this.chairHit.visible = chairLive;
-    if (!chairLive) this.chairHit2.visible = false;
+    if (!chairLive) this.chairHit2.visible = this.chairHitSeat.visible = false;
     // pencere: 8. kaset artık bahçedeki salıncakta
     this.windowTape.visible = false;
     // zincir ve kapı altı

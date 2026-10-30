@@ -415,6 +415,10 @@ class Game {
       if (moved && s >= 3) r.flowNote = false;
       this.save();
     }
+    // tutarsız (eski sürüm, yarıda bırakılmış) kayıtlarda kimse karanlıkta takılı kalmasın: ampul yalnız 6. aşamada
+    // (7. kaset oynayana dek) ölüdür; yarıda kalan ritüelin söndürdüğü ışık yanar, zincir yeniden çekilir
+    if (r.bulbDead && st.stage !== 6) delete r.bulbDead;
+    if (r.lightOff && !r.ritualDone && !this.finds.ritual) r.lightOff = false;
     if (r.walk) this.house.ensureBuilt();
     if (has(9) && r.walk && !r.atticSealed) this.scares.seal(true);
     if (r.flowNote === false) {

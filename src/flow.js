@@ -102,15 +102,20 @@ export const FLOW = {
   },
 
   // ---------------------------------------------------------------- 6 -> 7
+  // karanlıkta (ampul ölü) iki yol: otururken dizlere doğru aşağı bakmak ya da ayağa kalkıp (fener) arkaya dönmek.
+  // Metinler fareye bağlı değil (dokunmatikte de geçerli).
   s6_sandalye: {
-    obj: "Tavan arası — 'Oturduğun yerin altında.' Sandalyenin altına bak.",
+    obj: 'Tavan arası — Oturduğun sandalyenin altına bak: aşağı bak ya da ayağa kalk (fener).',
     hints: [
       [10, (g) => {
         g.finds.hiss();
         return 'Karanlıkta bant hışırtısı. Çok yakından geliyor.';
       }],
-      [45, 'Oturduğun yerde fareyle aşağı, dizlerine doğru bak. Ya da ayağa kalk (W), arkanı dön ve fenerle sandalyeye bak.'],
-      [75, 'Sandalyenin ön kenarına bantlanmış kasete bak ve tıkla.', true],
+      [45, (g) => (g.walk?.standing
+        ? 'Televizyonun önündeki sandalyeye dön ve fenerle oturağın ön kenarının altına bak.'
+        : 'Oturduğun yerden dizlerine doğru aşağı bak: oturağın ön kenarının altında soluk bir şey seçiliyor. Ya da ayağa kalk; fener kendiliğinden yanar.')],
+      [90, 'Kaset, sandalyenin oturağının ön kenarının altına bantlanmış. Parıltıya bak.', true],
+      [150, (g) => `Sandalyenin ön kenarının altındaki parıltıya bak; 'Bantlı kaset' yazısı çıkınca ${g.isTouch ? 'ona dokun' : "E'ye bas"}.`, true],
     ],
     target: (g) => wp(g.room.attic.chairTape),
   },

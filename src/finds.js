@@ -387,6 +387,9 @@ export class Finds {
       // ampul 6. kasette söndü; 7. kaset oynayana kadar karanlık
       r.bulbDead = true;
       this.applyLight();
+      // ilk izlemede applyStage çağrılmaz: sandalyenin altındaki 7. kaset şimdi yerine konur
+      // (yoksa kaset, oyun yeniden yüklenene dek görünmez ve alınamazdı)
+      g.room.attic.apply(this.st);
       this.toast('Ampul söndü. Fenerin var: ayağa kalkınca kendiliğinden yanar (Q).', 6);
     } else if (n === 7) {
       r.hotcold = true;
@@ -520,11 +523,16 @@ export class Finds {
   // ================================================================ her kare
   update(dt) {
     const g = this.g;
-    // ayaktayken sandalyenin oturağına bakınca da 7. kaset bulunur
+    // 7. kaset (sandalyenin altı) yalnız sıradaki kasetken görünür; kural her karede durumdan uygulanır,
+    // böylece hiçbir yol (ilk izleme, eski kayıt, menüden dönüş) onu gizli bırakamaz
     const at = g.room.attic;
-    const live = at.chairTape.visible;
-    const want = live && !!g.walk?.standing;
-    if (at.chairHit2.visible !== want) at.chairHit2.visible = want;
+    const live = g.canTakeTape(7);
+    if (at.chairTape.visible !== live || at.chairHit.visible !== live) at.chairTape.visible = at.chairHit.visible = live;
+    // ayaktayken sandalyenin oturağına bakınca, otururken dizlere doğru aşağı bakınca bulunur
+    const standing = !!g.walk?.standing;
+    if (at.chairHit2.visible !== (live && standing)) at.chairHit2.visible = live && standing;
+    if (at.chairHitSeat.visible !== (live && !standing)) at.chairHitSeat.visible = live && !standing;
+    if (live) at.chairShimmer(g.clock);
     if (g.mode !== 'play' || g.director.active || g.loadingTape || g.overlay) return;
     const n = this.seeking();
     if (n !== this.seekingFor) {

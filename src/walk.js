@@ -1,4 +1,4 @@
-// Serbest yürüyüş denetleyicisi (3. kasetten sonra, tavan arası kapısı açılınca): WASD / Shift, fare bakışı (room.js ile birlikte), daire-kutu çarpışma,
+// Serbest yürüyüş denetleyicisi (3. kasetten sonra, tavan arası kapısı açılınca): WASD / Shift ya da dokunmatik çubuk (src/touch.js), fare bakışı (room.js ile birlikte), daire-kutu çarpışma,
 // merdiven rampası, kafa sallanması, ayak sesleri, ayağa kalkma / oturma geçişleri, el feneri, titreme ve ışık kırpması.
 // Kasetler hep oturarak izlenir; paneller, kaset ve kilitli kamera hareketi engeller (bkz. docs/ev-tasarim.md §3).
 import * as THREE from 'three';
@@ -22,6 +22,8 @@ export class Walk {
   constructor(game) {
     this.g = game;
     this.keys = new Set();
+    // dokunmatik çubuk (src/touch.js): x sağ, y ileri, -1..1; run: halkanın dışına itildi
+    this.stick = { x: 0, y: 0, run: false };
     this.standing = false;
     this.everStood = false;
     this.standUps = 0;
@@ -87,10 +89,12 @@ export class Walk {
 
   clearKeys() {
     this.keys.clear();
+    this.stick.x = this.stick.y = 0;
+    this.stick.run = false;
   }
 
   anyMove() {
-    return MOVE_KEYS.some((k) => this.keys.has(k));
+    return MOVE_KEYS.some((k) => this.keys.has(k)) || this.stick.x !== 0 || this.stick.y !== 0;
   }
 
   /** Hareket edilebilir mi (tasarım §3) */
@@ -346,11 +350,20 @@ export class Walk {
     const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
     const rx = Math.cos(yaw), rz = -Math.sin(yaw);
     let ix = 0, iz = 0;
+    let amt = 1; // dokunmatik çubukta itme miktarı (tuşlarda hep tam hız)
+    let stickRun = false;
     if (can) {
       if (this.keys.has('KeyW')) iz += 1;
       if (this.keys.has('KeyS')) iz -= 1;
       if (this.keys.has('KeyD')) ix += 1;
       if (this.keys.has('KeyA')) ix -= 1;
+      const s = this.stick;
+      if (!ix && !iz && (s.x || s.y)) {
+        ix = s.x;
+        iz = s.y;
+        amt = Math.min(1, Math.hypot(ix, iz));
+        stickRun = s.run;
+      }
     }
     const moving = ix !== 0 || iz !== 0;
     let wx = fx * iz + rx * ix, wz = fz * iz + rz * ix;
@@ -358,7 +371,7 @@ export class Walk {
     wx /= wl;
     wz /= wl;
     // koşu ve soluk
-    const wantRun = moving && this.keys.has('Shift') && !this.winded && this.stamina > 0;
+    const wantRun = moving && (this.keys.has('Shift') || stickRun) && !this.winded && this.stamina > 0;
     if (wantRun) {
       this.stamina -= dt;
       this.noRun = 0;
@@ -373,6 +386,7 @@ export class Walk {
       if (this.winded && this.stamina >= 1) this.winded = false;
     }
     let speed = wantRun ? RUN : WALK;
+    if (amt < 1 && !wantRun) speed *= 0.3 + 0.7 * amt;
     if (iz < 0) speed *= 0.8;
     if (this.zone === 'merdiven') speed *= 0.8;
     const tvx = moving ? wx * speed : 0, tvz = moving ? wz * speed : 0;

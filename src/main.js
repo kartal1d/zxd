@@ -18,6 +18,7 @@ import { Flow } from './flow.js';
 import { Secrets, SECRET_TAPES, isSecretTape } from './secrets.js';
 import { Perf } from './perf.js';
 import { UI, SECRETS, REVERSED, secretCounts } from './ui.js';
+import { Touch } from './touch.js';
 import * as S from './draw/scenes.js';
 import { storage, clamp } from './util.js';
 
@@ -111,7 +112,7 @@ class Game {
     this.ui = new UI(this);
     this.audio = new AudioEngine();
     this.tv = new TVScreen();
-    this.settings = { volume: 0.9, sens: 1, subs: true, flash: false, quality: 'auto', ...storage.get(SETTINGS_KEY, {}) };
+    this.settings = { volume: 0.9, sens: 1, tsens: 1, tbig: false, subs: true, flash: false, quality: 'auto', ...storage.get(SETTINGS_KEY, {}) };
     // eski kayıtlardaki varsayılan 'Yüksek' yeni varsayılan 'Otomatik' olur (kullanıcı 'Düşük' seçtiyse kalır)
     // oyuncu isteği: oyun her zaman düşük kalitede çalışır (akıcılık için)
     this.settings.quality = 'low';
@@ -127,6 +128,9 @@ class Game {
     this.free = false;
     this.isTouch = matchMedia('(pointer: coarse)').matches;
     this.anyKeyWaiters = [];
+    // dokunmatik denetimler (src/touch.js); karma cihazlarda son kullanılan girişe göre açılıp kapanır
+    this.touch = new Touch(this);
+    this.touch.setMode(this.isTouch);
     window.__game = this;
   }
 
@@ -209,6 +213,9 @@ class Game {
     this.onResize();
     $('set-volume').value = s.volume;
     $('set-sens').value = s.sens;
+    $('set-tsens').value = s.tsens ?? 1;
+    $('set-tbig').checked = !!s.tbig;
+    document.body.classList.toggle('big', !!s.tbig);
     $('set-subs').checked = s.subs;
     $('set-flash').checked = s.flash;
     $('set-quality').value = s.quality;
@@ -266,6 +273,15 @@ class Game {
       this.settings.sens = +e.target.value;
       storage.set(SETTINGS_KEY, this.settings);
     };
+    $('set-tsens').oninput = (e) => {
+      this.settings.tsens = +e.target.value;
+      storage.set(SETTINGS_KEY, this.settings);
+    };
+    $('set-tbig').onchange = (e) => {
+      this.settings.tbig = e.target.checked;
+      document.body.classList.toggle('big', this.settings.tbig);
+      storage.set(SETTINGS_KEY, this.settings);
+    };
     $('set-subs').onchange = (e) => {
       this.settings.subs = e.target.checked;
       storage.set(SETTINGS_KEY, this.settings);
@@ -280,7 +296,6 @@ class Game {
     };
     $('reader').onclick = () => this.ui.closeReader?.();
     document.querySelectorAll('.keypad-grid button').forEach((b) => (b.onclick = () => this.ui.keypadKey?.(b.dataset.k || b.textContent)));
-    $('mobile-type').onclick = () => $('answer').focus();
     $('btn-tapes-cancel').onclick = () => this.ui.closeTapes?.(null);
     $('btn-wordlock-close').onclick = () => {
       this.ui.wordlockKey?.('close');
@@ -290,6 +305,11 @@ class Game {
       if (e.target === $('tapes')) this.ui.closeTapes?.(null);
     };
     $('answer').addEventListener('input', (e) => this.director.typed(e.target.value));
+    // ekran klavyesinin "tamam" tuşu ya da DENE düğmesi (masaüstünde ENTER onKey'de işlenir)
+    $('wordlock-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.ui.wordlockKey?.('Enter');
+    });
   }
 
   /** Ana menüden çıkış: masaüstü sürümünde pencereyi kapatır, tarayıcıda sekmeyi kapatmayı dener. */
@@ -357,6 +377,7 @@ class Game {
 
   enterGame() {
     this.audio.resume();
+    this.touch.fullscreen();
     this.mode = 'play';
     this.show('title', false);
     this.show('ending', false);
@@ -439,7 +460,7 @@ class Game {
     $('pause-objective').textContent = 'Hedef: ' + this.objectiveText();
     const ph = $('pause-hint');
     if (ph) {
-      ph.textContent = this.lastHint ? 'Son ipucu: ' + this.lastHint : '';
+      ph.textContent = this.lastHint ? 'Son ipucu: ' + this.ui.tt(this.lastHint) : '';
       ph.hidden = !this.lastHint;
     }
     const c = secretCounts(this.state.secrets);
@@ -497,11 +518,8 @@ class Game {
 
   // ===================================================================== giriş
   lockPointer() {
-    if (this.isTouch) {
-      this.free = true;
-      $('crosshair').classList.add('free');
-      return;
-    }
+    // dokunmatikte fare kilidi yok: bakış src/touch.js'te, etkileşim ortadaki noktada
+    if (this.isTouch) return;
     try {
       const p = this.canvas.requestPointerLock?.();
       p?.catch?.(() => this.needLock());
@@ -516,7 +534,7 @@ class Game {
    * tarayıcıda bir sonraki tıklamada kilitlenir ve ekranda bunu söyleriz.
    */
   needLock() {
-    if (this.mode !== 'play' || this.overlay || this.wantLock) return;
+    if (this.mode !== 'play' || this.overlay || this.wantLock || this.isTouch) return;
     this.wantLock = true;
     if (window.besteApp?.relock) window.besteApp.relock();
     else this.ui.clickHint?.(true);
@@ -549,7 +567,8 @@ class Game {
 
     let down = null;
     this.canvas.addEventListener('pointerdown', (e) => {
-      if (this.mode !== 'play' || this.overlay) return;
+      // dokunuşlar src/touch.js katmanında işlenir
+      if (e.pointerType === 'touch' || this.mode !== 'play' || this.overlay) return;
       // kilitliyken tıklama 'click' olayında işlenir; burada çift etkileşim olmasın
       if (document.pointerLockElement === this.canvas) return;
       down = { x: e.clientX, y: e.clientY, moved: 0 };
@@ -561,7 +580,7 @@ class Game {
       }
     });
     window.addEventListener('pointermove', (e) => {
-      if (this.mode !== 'play' || this.overlay) return;
+      if (e.pointerType === 'touch' || this.mode !== 'play' || this.overlay) return;
       const k = 0.0022 * this.settings.sens;
       if (document.pointerLockElement === this.canvas) {
         this.room.look(e.movementX * k, e.movementY * k);
@@ -1150,6 +1169,7 @@ class Game {
     this.last = now;
     if (this.mode !== 'paused') this.update(dt);
     // test kancası: başsız testlerde 3D çizimi atla (TV tuvali yine güncellenir)
+    this.touch.update();
     if (!this.debug?.noRender) {
       this.perf.beforeRender(raw);
       this.composer.render();

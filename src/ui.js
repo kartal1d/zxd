@@ -34,6 +34,35 @@ export const REVERSED = {
   k10_ters: 'Kapılardaki uyarı',
 };
 
+/**
+ * Dokunmatik kipte klavye / fare sözleri dokunmatik karşılıklarıyla değişir (ipuçları, hedef, etiketler, bildirimler).
+ * Masaüstünde metinler olduğu gibi kalır.
+ */
+const TOUCH_TEXT = [
+  [/Etrafa bakmak için ekrana tıkla\./g, 'Etrafa bakmak için parmağını ekranın sağında sürükle.'],
+  [/ ?\[[A-ZÇĞİÖŞÜ]\]/g, ''],
+  [/Artık W A S D ile yürüyebilirsin/g, 'Artık sol başparmağınla yürüyebilirsin'],
+  [/W A S D ile yürü/g, 'Sol başparmağınla yürü'],
+  [/Fareyle/g, 'Parmağınla'],
+  [/fareyle/g, 'parmağınla'],
+  [/ayağa kalk \(W\)/g, 'ayağa kalk (KALK)'],
+  [/ve E'ye bas/g, 've dokun'],
+  [/tıkla(?=[\s.,:;!]|$)/g, 'dokun'],
+  [/klavyeden cevap ver/g, 'üstteki kutuya yazarak cevap ver'],
+  [/BOŞLUK/g, '▶ düğmesi'],
+  [/^F yalnızca/, 'TV düğmesi yalnızca'],
+  [/Rakamları klavyeden de girebilirsin/g, 'Rakamlara dokun'],
+  [/Esc: kapat/g, '✕: kapat'],
+];
+export function touchText(text) {
+  if (!text) return text;
+  for (const [re, to] of TOUCH_TEXT) text = text.replace(re, to);
+  return text;
+}
+
+/** Harf kilidinin çarkları (Türk alfabesi) */
+const ABC = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ';
+
 /** kaydedilmiş listeden sayımlar */
 export function secretCounts(list = []) {
   return {
@@ -171,6 +200,11 @@ export class UI {
     $(id).hidden = !on;
   }
 
+  /** Dokunmatik kipte metnin dokunmatik söyleyişi (src/touch.js) */
+  tt(text) {
+    return this.g.isTouch ? touchText(text) : text;
+  }
+
   subtitle(who, text, cls = '', clearDelay = 0) {
     const el = $('subtitles');
     clearTimeout(this.subTimer);
@@ -200,7 +234,8 @@ export class UI {
     a.value = '';
     this.show('type-hint', true);
     this.show('vcr-hint', false);
-    if (this.g.isTouch) this.show('mobile-type', true);
+    // dokunmatikte üstte cevap kutusu ve şıklar çıkar; klavye kutuya dokununca açılır
+    if (this.g.isTouch) this.g.touch?.ask(this.g.director?.input);
     else a.focus({ preventScroll: true });
   }
 
@@ -209,11 +244,12 @@ export class UI {
     a.value = '';
     a.blur();
     this.show('type-hint', false);
-    this.show('mobile-type', false);
     if (this.g.director?.active) this.show('vcr-hint', true);
   }
 
   hover(text) {
+    if (text && this.g.isTouch) text = touchText(text);
+    this.hoverText = text || '';
     $('hover-label').innerHTML = text || '';
     $('crosshair').classList.toggle('active', !!text);
   }
@@ -227,12 +263,13 @@ export class UI {
   /** Fare kilidi için tıklama gerektiğinde ortada yanıp sönen ipucu */
   clickHint(on) {
     const el = $('click-hint');
-    if (el) el.hidden = !on;
+    // dokunmatikte fare kilidi yok: bu ipucu hiç çıkmaz
+    if (el) el.hidden = !on || !!this.g.isTouch;
   }
 
   toast(text, sec = 4) {
     const el = $('toast');
-    el.textContent = text;
+    el.textContent = this.tt(text);
     el.classList.add('show');
     clearTimeout(this.toastT);
     this.toastT = setTimeout(() => el.classList.remove('show'), sec * 1000);
@@ -252,7 +289,7 @@ export class UI {
       el.classList.remove('show');
       return;
     }
-    el.textContent = text;
+    el.textContent = this.tt(text);
     el.classList.add('show');
     if (pulse) {
       el.classList.remove('pulse');
@@ -431,7 +468,7 @@ export class UI {
     const mask = o.mask || '_'.repeat(len);
     const disp = $('keypad-display');
     $('keypad-title').textContent = o.title || 'KİLİTLİ KUTU';
-    $('keypad-help').textContent = o.help || 'Rakamları klavyeden de girebilirsin · Esc: kapat';
+    $('keypad-help').textContent = this.tt(o.help || 'Rakamları klavyeden de girebilirsin · Esc: kapat');
     disp.classList.toggle('long', len > 4);
     let code = '';
     const render = () => {
@@ -493,17 +530,50 @@ export class UI {
     const input = $('wordlock-input');
     const slots = $('wordlock-slots');
     $('wordlock-title').textContent = o.title || 'HARF KİLİDİ';
-    $('wordlock-help').textContent = o.help || `${len} harf yaz · ENTER: dene · Esc: kapat`;
+    const touch = !!this.g.isTouch;
+    $('wordlock-help').textContent = o.help ? this.tt(o.help) : touch ? `Çarkları çevir ya da yaz · DENE` : `${len} harf yaz · ENTER: dene · Esc: kapat`;
     input.value = '';
     input.maxLength = len;
+    // dokunmatik: her harf için ▲ / ▼ çarkı (ekran klavyesi kutuyu kapatmasın diye kutu kendiliğinden odaklanmaz)
+    const wheels = $('wordlock-wheels');
+    wheels.textContent = '';
+    const cells = [];
+    const spin = (i, dir) => {
+      const v = Array.from({ length: len }, (_, j) => input.value.toLocaleUpperCase('tr')[j] || ' ');
+      const cur = ABC.indexOf(v[i]);
+      v[i] = cur < 0 ? (dir > 0 ? 'A' : 'Z') : ABC[(cur + dir + ABC.length) % ABC.length];
+      input.value = v.join('').replace(/\s+$/, '');
+      this.g.audio.sfx('click');
+      render();
+    };
+    for (let i = 0; i < len; i++) {
+      const col = document.createElement('div');
+      col.className = 'wheel';
+      const up = document.createElement('button');
+      up.type = 'button';
+      up.textContent = '▲';
+      up.setAttribute('aria-label', `${i + 1}. harf: sonraki`);
+      up.onclick = () => spin(i, 1);
+      const cell = document.createElement('div');
+      cell.className = 'wheel-letter';
+      const dn = document.createElement('button');
+      dn.type = 'button';
+      dn.textContent = '▼';
+      dn.setAttribute('aria-label', `${i + 1}. harf: önceki`);
+      dn.onclick = () => spin(i, -1);
+      col.append(up, cell, dn);
+      wheels.appendChild(col);
+      cells.push(cell);
+    }
     const render = () => {
       const v = input.value.toLocaleUpperCase('tr');
       slots.textContent = Array.from({ length: len }, (_, i) => v[i] || '_').join(' ');
+      cells.forEach((c, i) => (c.textContent = v[i] && v[i] !== ' ' ? v[i] : '_'));
     };
     render();
     this.show('wordlock', true);
     this.g.overlay = 'wordlock';
-    setTimeout(() => input.focus({ preventScroll: true }), 30);
+    if (!touch) setTimeout(() => input.focus({ preventScroll: true }), 30);
     return new Promise((resolve) => {
       const close = (ok) => {
         input.oninput = null;

@@ -2,7 +2,8 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#050506">
 <title>Beste'nin Sihirli Dünyası</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect x=%221%22 y=%224%22 width=%2214%22 height=%229%22 rx=%221%22 fill=%22%23111%22/%3E%3Ccircle cx=%225%22 cy=%228.5%22 r=%222%22 fill=%22%23ffd23f%22/%3E%3Ccircle cx=%2211%22 cy=%228.5%22 r=%222%22 fill=%22%23ffd23f%22/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/fonts/fonts.css">
@@ -26,11 +27,28 @@
     <div id="subtitles" aria-live="polite"></div>
     <div id="type-hint" hidden>Klavyeden yaz · <b>ENTER</b> ile gönder</div>
     <div id="vcr-hint" hidden><b>BOŞLUK</b> duraklat<span id="rw-hint" hidden> · <b>◀</b> basılı tut: geri sar</span></div>
-    <div id="walk-hint" hidden><b>W A S D</b> yürü · <b>Shift</b> koş · <b>E</b> / tık: etkileşim · <b>Q</b> fener · oturmak için video oynatıcıya tıkla</div>
-    <button id="mobile-type" type="button" hidden>⌨ Yaz</button>
+    <div id="walk-hint" hidden><span class="desk-only"><b>W A S D</b> yürü · <b>Shift</b> koş · <b>E</b> / tık: etkileşim · <b>Q</b> fener · oturmak için video oynatıcıya tıkla</span><span class="touch-only"><b>Sol başparmak</b> yürü · halkanın dışına it: koş · <b>sağda sürükle</b> bak · <b>dokun</b> etkileşim</span></div>
   </div>
 
-  <input id="answer" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="24" aria-label="Cevabın">
+  <!-- dokunmatik denetimler (src/touch.js): yalnızca dokunmatik girişte görünür -->
+  <div id="touch" hidden>
+    <div id="joy" class="joy idle" aria-hidden="true"><div class="joy-ring"></div><div class="joy-knob"></div><span class="joy-label">YÜRÜ</span></div>
+    <button type="button" class="tbtn tb-menu" data-act="menu" aria-label="Duraklatma menüsü">≡ MENÜ</button>
+    <button type="button" class="tbtn tb-use" data-act="use" aria-label="Etkileşim">ETKİLEŞ</button>
+    <button type="button" class="tbtn tb-a" data-act="tv" hidden>TV</button>
+    <button type="button" class="tbtn tb-a" data-act="pause" hidden>❚❚ DURAKLAT</button>
+    <button type="button" class="tbtn tb-b" data-act="light" hidden>FENER</button>
+    <button type="button" class="tbtn tb-b tb-rw" data-act="rw" hidden>◀◀ GERİ SAR</button>
+    <button type="button" class="tbtn tb-c" data-act="stand" hidden>KALK</button>
+  </div>
+
+  <form id="ask-bar" autocomplete="off" novalidate>
+    <div class="ask-row">
+      <input id="answer" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="24" enterkeyhint="send" lang="tr" placeholder="Cevabını yaz…" aria-label="Cevabın">
+      <button id="ask-send" class="touch-only" type="submit">GÖNDER</button>
+    </div>
+    <div id="ask-opts" class="touch-only"></div>
+  </form>
 
   <section id="title" class="screen">
     <div class="title-inner">
@@ -53,7 +71,19 @@
   <section id="controls" class="screen panel" hidden>
     <div class="panel-inner">
       <h2>KONTROLLER</h2>
-      <dl class="keys">
+      <dl class="keys touch-only">
+        <dt>Sağda sürükle</dt><dd>Etrafa bak</dd>
+        <dt>Dokun / ETKİLEŞ</dt><dd>Ortadaki noktanın gösterdiği şeyle etkileşim: al, oku, kaseti tak</dd>
+        <dt>Sol başparmak</dt><dd>Yürü (tavan arası kapısı açıldıktan sonra). Halkanın dışına itersen kısa bir süre koşarsın</dd>
+        <dt>KALK / OTUR</dt><dd>Koltuktan kalk, koltuğa geri otur</dd>
+        <dt>FENER</dt><dd>El fenerini aç / kapat (ayaktayken)</dd>
+        <dt>TV</dt><dd>Televizyona odaklan / geri çekil (kaset oynarken ekrandan ayrılamazsın)</dd>
+        <dt>❚❚</dt><dd>Kaseti duraklat (Beste fark edebilir)</dd>
+        <dt>◀◀ basılı</dt><dd>Kaseti geri sar. Düğme yalnızca geri sarılabilecek anlarda görünür</dd>
+        <dt>Cevap kutusu</dt><dd>Beste soru sorduğunda üstteki kutuya yaz ya da şıklardan birine dokun</dd>
+        <dt>≡ MENÜ</dt><dd>Duraklatma menüsü (telefonun geri tuşu da açar)</dd>
+      </dl>
+      <dl class="keys desk-only">
         <dt>Fare</dt><dd>Etrafa bak (önce ekrana tıkla)</dd>
         <dt>Sol tık / E</dt><dd>Etkileşim: al, oku, kaseti tak</dd>
         <dt>Klavye</dt><dd>Beste soru sorduğunda cevabını yaz, <b>ENTER</b>'a bas</dd>
@@ -74,7 +104,9 @@
     <div class="panel-inner">
       <h2>AYARLAR</h2>
       <label class="row"><span>Ana ses</span><input id="set-volume" type="range" min="0" max="1" step="0.05" value="0.9"></label>
-      <label class="row"><span>Fare hassasiyeti</span><input id="set-sens" type="range" min="0.3" max="2" step="0.1" value="1"></label>
+      <label class="row desk-only"><span>Fare hassasiyeti</span><input id="set-sens" type="range" min="0.3" max="2" step="0.1" value="1"></label>
+      <label class="row touch-only"><span>Dokunmatik hassasiyeti</span><input id="set-tsens" type="range" min="0.3" max="2.5" step="0.1" value="1"></label>
+      <label class="row touch-only"><span>Kontrolleri büyüt</span><input id="set-tbig" type="checkbox"></label>
       <label class="row"><span>Altyazılar</span><input id="set-subs" type="checkbox" checked></label>
       <label class="row"><span>Yanıp sönmeyi azalt</span><input id="set-flash" type="checkbox"></label>
       <label class="row"><span>Grafik kalitesi</span>
@@ -101,14 +133,15 @@
 
   <section id="reader" class="screen" hidden>
     <article id="reader-doc"></article>
-    <p class="reader-close">Kapatmak için tıkla ya da <b>E</b> / <b>Esc</b></p>
+    <p class="reader-close"><span class="desk-only">Kapatmak için tıkla ya da <b>E</b> / <b>Esc</b></span><span class="touch-only">Kapatmak için dokun</span></p>
+    <button id="btn-reader-close" class="reader-x touch-only" type="button" aria-label="Kapat">✕</button>
   </section>
 
   <section id="tapes" class="screen panel" hidden>
     <div class="panel-inner">
       <h2>HANGİ KASET?</h2>
       <div id="tapes-list" class="tapes-list"></div>
-      <p class="keypad-help">Rakam tuşu ya da ↑ ↓ ve ENTER · Esc: vazgeç</p>
+      <p class="keypad-help desk-only">Rakam tuşu ya da ↑ ↓ ve ENTER · Esc: vazgeç</p>
       <button id="btn-tapes-cancel" class="back" type="button">◀ VAZGEÇ</button>
     </div>
   </section>
@@ -131,7 +164,11 @@
     <div class="keypad-box wordlock-box">
       <p class="keypad-title" id="wordlock-title">HARF KİLİDİ</p>
       <div id="wordlock-slots">_ _ _ _</div>
-      <input id="wordlock-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="4" aria-label="Kilit kelimesi">
+      <div id="wordlock-wheels" class="touch-only"></div>
+      <form id="wordlock-form" class="wordlock-row" autocomplete="off" novalidate>
+        <input id="wordlock-input" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="4" enterkeyhint="done" lang="tr" aria-label="Kilit kelimesi">
+        <button id="btn-wordlock-try" class="touch-only" type="submit">DENE</button>
+      </form>
       <p class="keypad-help" id="wordlock-help">Harfleri yaz · ENTER: dene · Esc: kapat</p>
       <button id="btn-wordlock-close" class="back" type="button">◀ KAPAT</button>
     </div>
@@ -153,6 +190,8 @@
   </section>
 
   <section id="keyhole" class="screen" hidden><canvas id="keyhole-canvas" width="640" height="480"></canvas></section>
+
+  <div id="rotate" aria-live="polite"><div class="rotate-inner"><div class="rotate-phone" aria-hidden="true"></div><p>Telefonu yatay çevir</p><p class="rotate-sub">Beste'nin Sihirli Dünyası yatay ekranda oynanır.</p></div></div>
 
   <div id="fade"></div>
   <div id="flash"></div>

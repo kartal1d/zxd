@@ -610,7 +610,8 @@ export async function debugFind(h, n) {
         await g.interact('ev:hediye');
       }
     } else if (n === 7) {
-      await g.interact('chairleg');
+      // oyuncunun göreceği kurala uyar: sandalyedeki kaset görünmüyorsa (oyuncu da alamaz) alınmış sayılmaz
+      if (g.room.attic.chairTape.visible && g.room.attic.chairHit.visible) await g.interact('chairleg');
     } else if (n === 8) {
       await waitFor(() => r.hotcold);
       await g.interact('ev:kaset8');

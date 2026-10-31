@@ -99,7 +99,11 @@ jobs:
             cp app/build/outputs/bundle/release/app-release.aab "../dist/$NAME.aab"
           else
             ./gradlew assembleRelease --no-daemon --stacktrace
-            echo "::warning::APK_KEYSTORE_B64 / APK_KEYSTORE_PASS depo sırları yok: Google Play için AAB derlenmedi."
+            # sır yoksa AAB imzasız derlenir: kullanıcının yükleme anahtarıyla elde (jarsigner) imzalanmak üzere
+            BESTE_KS_PATH= ./gradlew bundleRelease --no-daemon --stacktrace
+            mkdir -p ../dist-imzasiz
+            cp app/build/outputs/bundle/release/app-release.aab "../dist-imzasiz/$NAME-imzasiz.aab"
+            echo "::warning::APK_KEYSTORE_B64 / APK_KEYSTORE_PASS depo sırları yok: AAB imzasız derlendi (Play'e yüklenmeden önce yükleme anahtarıyla imzalanmalı)."
           fi
           cp app/build/outputs/apk/release/app-release.apk "../dist/$NAME.apk"
           # imza sertifikasının parmak izi (Play Console'daki yükleme sertifikasıyla aynı olmalı)
@@ -134,3 +138,9 @@ jobs:
           echo "Sürüm: $BESTE_VERSION_NAME (sürüm kodu $BESTE_VERSION_CODE)" >> notes.md
           gh release delete apk-guncel --cleanup-tag -y || true
           gh release create apk-guncel mobile/dist/*.apk $(ls mobile/dist/*.aab 2>/dev/null) --target "$GITHUB_SHA" --title "Beste'nin Sihirli Dünyası: Android (apk / aab)" --notes-file notes.md --prerelease
+          # imzasız AAB ayrı bir ön sürümde (Play'e doğrudan yüklenmez; önce yükleme anahtarıyla imzalanır)
+          if ls mobile/dist-imzasiz/*.aab > /dev/null 2>&1; then
+            gh release delete aab-imzasiz --cleanup-tag -y || true
+            gh release create aab-imzasiz mobile/dist-imzasiz/*.aab --target "$GITHUB_SHA" --title "İç kullanım: imzasız AAB (Play'e yüklemeyin)" \
+              --notes "Bu AAB imzasızdır. Google Play'e yüklemeden önce yükleme anahtarıyla (jarsigner) imzalanması gerekir. Oyuncular için değil; apk-guncel sayfasına bakın." --prerelease
+          fi

@@ -522,7 +522,7 @@ class Game {
 
   // ===================================================================== giriş
   lockPointer() {
-    // dokunmatikte fare kilidi yok: bakış src/touch.js'te, etkileşim ortadaki noktada
+    // dokunmatikte fare kilidi yok: bakış ve etkileşim src/touch.js'te (sürükle, dokun, ETKİLEŞ)
     if (this.isTouch) return;
     try {
       const p = this.canvas.requestPointerLock?.();

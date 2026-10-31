@@ -273,7 +273,7 @@ body.touch #touch[hidden] { display: none; }
 .tbtn i { display: block; font-style: normal; font-size: .75em; line-height: 1; margin-bottom: 1px; color: var(--beste-yellow); }
 .tbtn.down { background: var(--vcr-blue); border-color: var(--osd); transform: scale(.93); }
 .tbtn.on { border-color: var(--beste-yellow); color: var(--beste-yellow); }
-.tb-menu { right: var(--sr); top: var(--st); width: auto; height: calc(40px * var(--ts)); padding: 0 12px; font-size: calc(19px * var(--ts)); }
+.tb-menu { right: var(--sr); top: var(--st); width: auto; height: max(44px, calc(42px * var(--ts))); padding: 0 12px; font-size: calc(19px * var(--ts)); }
 .tb-use {
   right: var(--sr); bottom: var(--sb); width: var(--use); height: var(--use); border-radius: 50%;
   font-size: calc(17px * var(--ts)); letter-spacing: .02em; opacity: .62; background: rgba(13, 22, 119, .3);
@@ -336,12 +336,13 @@ body.touch #inventory {
   width: calc(var(--side) - var(--sr)); flex-direction: row-reverse; text-align: right; font-size: 16px; line-height: 1.15; gap: 8px;
 }
 body.touch #inventory .tape-icon { transform: scale(.8); transform-origin: right center; flex: none; }
-body.touch #secret-toast { right: var(--sr); top: calc(var(--st) + 52px); font-size: 18px; line-height: 1.15; width: calc(var(--side) - var(--sr) - 6px); text-align: right; }
+body.touch.asking #inventory { display: none; }
+body.touch #secret-toast { right: var(--sr); top: calc(var(--st) + 56px); font-size: 18px; line-height: 1.15; width: calc(var(--side) - var(--sr) - 6px); text-align: right; }
 body.touch #toast { bottom: auto; top: calc(var(--st) + 60px); width: max(260px, calc(100% - 2 * var(--side))); max-width: none; font-size: 20px; }
 body.touch.asking #toast { top: calc(var(--vvt, 0px) + var(--st) + 118px); }
 body.touch #hover-label { top: calc(50% + 16px); font-size: 20px; }
-body.touch #subtitles { bottom: calc(var(--sb) + var(--kb, 0px)); width: max(300px, calc(100% - 2 * var(--side))); font-size: 20px; line-height: 1.18; }
-body.touch #walk-hint { bottom: calc(var(--sb) + 70px); font-size: 17px; white-space: normal; text-align: center; width: max(280px, calc(100% - 2 * var(--side))); }
+body.touch #subtitles { bottom: calc(var(--sb) + var(--kb, 0px)); width: calc(100% - 2 * var(--side) - 8px); font-size: 20px; line-height: 1.18; }
+body.touch #walk-hint { bottom: calc(var(--sb) + 70px); font-size: 17px; white-space: normal; text-align: center; width: calc(100% - 2 * var(--side) - 8px); }
 
 /* ---------- Beste'nin sorusu: üstte cevap kutusu + şıklar ---------- */
 body.touch #ask-bar {
@@ -450,6 +451,14 @@ body.touch #btn-wordlock-close { min-height: 40px; }
   body.touch .wordlock-box { gap: 6px; padding: 10px 14px; }
   body.touch .wheel-letter { line-height: 46px; font-size: 38px; }
   body.touch .keys { font-size: 16px; }
+  /* elindeki kaset tek satır: sağ sütunda gizli kare bildirimiyle çakışmasın */
+  body.touch #inventory { font-size: 15px; }
+  body.touch #inventory-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  body.touch .credits { display: none; }
+  /* yürüme ipucu ortadaki etiketin altında kalsın; altyazı varken çekilir */
+  body.touch #walk-hint { bottom: calc(var(--sb) + 54px); font-size: 16px; }
+  body.touch #subtitles:not(:empty) ~ #walk-hint { opacity: 0; }
+  body.touch #ending-text, body.touch #ending-secrets { font-size: 16px !important; }
 }
 
 /* kısa yatay ekran (telefon): başlık ve son ekranı kaydırmadan sığsın */

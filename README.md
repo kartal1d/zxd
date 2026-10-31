@@ -22,6 +22,24 @@ Windows "Bilgisayarınız korundu" derse **Ek bilgi → Yine de çalıştır** (
 
 Exe'yi kendin derlemek için: `cd desktop && npm install && npm run dist` (Windows'ta). Commit mesajına `[exe]` yazınca GitHub Actions güncel sürümü, `[exe3]` yazınca 3 bölümlük sürümü derleyip Releases'a koyar.
 
+### Android (apk / Google Play aab)
+
+[Releases → apk-guncel](https://github.com/kartal1d/zxd/releases/tag/apk-guncel) sayfasından `Beste-Sihirli-Dunya.apk` dosyasını telefona indirip kur (bilinmeyen kaynaklardan yüklemeye izin ver). Telefonu yatay tut:
+
+| Dokunuş | İşlev |
+| --- | --- |
+| Sol başparmak (joystick) | Yürü; sonuna kadar it: koş |
+| Sağ tarafı sürükle | Etrafa bak |
+| Bir nesneye dokun | O nesneyle etkileşim (al, oku, aç) |
+| **ETKİLEŞ** | Nişangahın üstündekiyle etkileşim |
+| **FENER**, **KALK/OTUR**, **TV** | El feneri, ayağa kalk / otur, televizyona odaklan |
+| **❚❚ DURAKLAT**, **◀◀ GERİ SAR** | Kaseti duraklat; geri sar (yalnızca çıktığında, basılı tut) |
+| **≡ MENÜ** ya da telefonun geri tuşu | Duraklatma menüsü |
+
+Beste soru sorunca ekranın üstünde bir yazı kutusu açılır (Türkçe klavye), **GÖNDER** ile cevaplanır. Ayarlarda dokunmatik hassasiyeti ve "Kontrolleri büyüt" var.
+
+Android sürümü `mobile/` klasöründeki Capacitor projesidir. Commit mesajına `[apk]` yazınca GitHub Actions apk derler. Depo sırlarında `APK_KEYSTORE_B64` ve `APK_KEYSTORE_PASS` (Google Play yükleme anahtarı) varsa yanında Play Console'a yüklenecek `.aab` de çıkar. Gizlilik politikası: [docs/gizlilik-politikasi.md](docs/gizlilik-politikasi.md).
+
 Kulaklıkla ve karanlıkta oynaman önerilir. Oyun akıcı çalışsın diye her zaman düşük grafik kalitesinde açılır. Oyunda yanıp sönen ışıklar var; **Ayarlar → Yanıp sönmeyi azalt** ile kısılabilir.
 
 | Tuş | İşlev |

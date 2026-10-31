@@ -18,7 +18,8 @@ import { Scares } from './scares.js';
 import { Rare } from './rare.js';
 import { Flow } from './flow.js';
 import { Secrets, SECRET_TAPES, isSecretTape } from './secrets.js';
-import { Perf } from './perf.js';
+import { Perf, setCheapMaterials, mergeStatic } from './perf.js';
+import { LiteComposer } from './post.js';
 import { UI, SECRETS, REVERSED, secretCounts } from './ui.js';
 import { Touch } from './touch.js';
 import * as S from './draw/scenes.js';
@@ -150,6 +151,8 @@ class Game {
     this.flow = new Flow(this);
     this.secrets = new Secrets(this);
     this.room.applyStage(this.state);
+    // tavan arasının kodun dokunmadığı durağan parçaları malzeme başına tek ağ (çizim çağrısı azalır, perf.js)
+    mergeStatic(this, this.room.scene);
     this.ambience = new Ambience(this.audio);
     this.audio.setTvPosition(this.room.points.tv.x, this.room.points.tv.y, this.room.points.tv.z);
     this.applySettings();
@@ -188,13 +191,17 @@ class Game {
     const r = this.renderer;
     this.composer?.dispose?.();
     this.bloom?.dispose?.();
+    this.bloom = null;
+    if (this.settings.quality === 'low') {
+      // düşük kalite: ara hedef ve tam ekran geçişleri yok; sahne doğrudan tuvale (gren malzemelerde), kenar karartması tek karıştırmayla (post.js)
+      this.composer = new LiteComposer(r, this.room.scene, this.room.camera);
+      this.grain = { uniforms: this.composer.uniforms };
+      return;
+    }
     const c = (this.composer = new EffectComposer(r));
     c.addPass(new RenderPass(this.room.scene, this.room.camera));
-    this.bloom = null;
-    if (this.settings.quality !== 'low') {
-      this.bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), 0.5, 0.55, 0.75);
-      c.addPass(this.bloom);
-    }
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), 0.5, 0.55, 0.75);
+    c.addPass(this.bloom);
     this.grain = new ShaderPass(GrainShader);
     c.addPass(this.grain);
     c.addPass(new OutputPass());
@@ -208,6 +215,8 @@ class Game {
       this.renderer.shadowMap.enabled = !low;
       this.room.scene.traverse((o) => o.material && (o.material.needsUpdate = true));
     }
+    // düşük kalitede MeshStandard gölgelendiricileri Lambert + ucuz parlamaya iner (perf.js)
+    setCheapMaterials(low, this.room.scene);
     this.setupComposer();
     // çözünürlük: Yüksek = ekranın piksel oranı (en çok 2), Otomatik = en çok 1 ve kare süresine göre uyarlanır
     this.perf.setQuality(s.quality);
@@ -226,8 +235,8 @@ class Game {
 
   onResize() {
     const w = window.innerWidth, h = window.innerHeight;
-    // dokunmatikte çizim oranı ekran yüksekliğine bağlı (perf.js); masaüstünde değişmez
-    if (this.isTouch) this.perf?.applyScale();
+    // çizim oranı ekran yüksekliğine bağlı (dinamik çözünürlüğün tavanı / tabanı, perf.js)
+    this.perf?.applyScale();
     this.renderer.setSize(w, h, false);
     this.composer?.setSize(w, h);
     this.room.camera.aspect = w / h;
@@ -1169,6 +1178,11 @@ class Game {
 
   // ===================================================================== döngü
   frame(now) {
+    // telefonda 60 fps tavanı: 90/120 Hz ekranlarda fazladan kareleri atla (perf.skipFrame)
+    if (this.perf.skipFrame(now)) {
+      requestAnimationFrame((t) => this.frame(t));
+      return;
+    }
     const raw = now - this.last;
     const dt = Math.min(0.05, raw / 1000);
     this.last = now;
@@ -1204,8 +1218,10 @@ class Game {
     if (this.mode === 'play' && !this.overlay && !tvFocus && !r.locked) this.ui.hover(this.label(r.hover));
     else this.ui.hover('');
 
+    // TV tuvali en çok 30 Hz (kasette masaüstünde 60 Hz) çizilip GPU'ya yüklenir (tv.beginFrame)
+    this.tv.beginFrame(dt, this.director.active && !this.isTouch ? 60 : 30);
     // ev katlarındayken televizyon görünmez: boştaki ekranı çizme
-    if (!this.director.update(dt * (this.debug?.speed || 1)) && this.perf.tvVisible) this.drawIdleTv();
+    if (!this.director.update(dt * (this.debug?.speed || 1)) && this.perf.tvVisible && this.tv.due) this.drawIdleTv();
     this.finds.update(dt);
     this.flow.update(dt);
     this.tv.update(dt, this.clock);

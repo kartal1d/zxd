@@ -834,8 +834,21 @@ export class Room {
       this.drawVcr();
     }
 
-    // bakılan nesne ve ekrandaki bakış noktası
-    this.hover = this.pick(ndc)?.id || null;
+    // bakılan nesne ve ekrandaki bakış noktası. Kamera kıpırdamadıysa (nefes salınımı hariç) birkaç kare
+    // önceki sonuç kullanılır; ışın yine her kare kurulur (bakış noktası için)
+    const L = (this._hl ||= { p: new THREE.Vector3(1e9, 0, 0), q: new THREE.Quaternion(), ndc: new THREE.Vector2(9, 9), n: -99, id: null });
+    const cam = this.camera;
+    this._frame = (this._frame || 0) + 1;
+    if (L.p.distanceToSquared(cam.position) < 1e-4 && Math.abs(L.q.dot(cam.quaternion)) > 0.99999 && L.ndc.equals(ndc) && this._frame - L.n < 6) {
+      this.raycaster.setFromCamera(ndc, cam);
+    } else {
+      L.id = this.pick(ndc)?.id || null;
+      L.p.copy(cam.position);
+      L.q.copy(cam.quaternion);
+      L.ndc.copy(ndc);
+      L.n = this._frame;
+    }
+    this.hover = L.id;
     const pt = (this._pt ||= new THREE.Vector3());
     const ray = this.raycaster.ray;
     let gx = 0, gy = 0;
@@ -856,12 +869,50 @@ export class Room {
   pick(ndc, rc = this.raycaster) {
     rc.setFromCamera(ndc, this.camera);
     rc.far = this.reach;
-    const extra = this.g.house?.built ? this.g.house.extraInteractables() : null;
-    const hits = rc.intersectObjects(extra && extra.length ? this.interactables.concat(extra) : this.interactables, true);
+    const hits = (this._hits ||= []);
+    hits.length = 0;
+    rc.intersectObjects(this.pickables(), false, hits);
     // perde görevi gören duvarlar (extra) etkileşimleri örter; ilk görünür çarpışma kazanır
     const hit = hits.find((h) => h.object.visible !== false && isVisible(h.object) && (h.object.userData.interact || h.object.userData.occ));
     const id = hit ? hit.object.userData.interact || null : null;
     return id ? { id, dist: hit.distance } : null;
+  }
+
+  /**
+   * Işının çarpabileceği ağlar: erişim mesafesine giren etkileşimli parçalar ve görünür bölümlerin duvarları.
+   * Önbellekli: kamera 10 cm'den fazla yer değiştirince, bölge / erişim değişince ya da 12 karede bir yenilenir.
+   * (Eskiden her ışın tüm etkileşimli ağaçları ve bölümün bütün duvar üçgenlerini tarıyordu; dokunmatik nişan
+   * yardımı kare başına 9 ışın atınca telefonda birkaç ms tutuyordu.)
+   */
+  pickables() {
+    const C = (this._pk ||= { list: [], pos: new THREE.Vector3(1e9, 0, 0), f: -99 });
+    const cam = this.camera.position;
+    const h = this.g.house;
+    const zone = h?.built ? h.visZone : null;
+    const f = this._frame || 0;
+    if (f - C.f < 12 && C.reach === this.reach && C.zone === zone && C.len === this.interactables.length && C.pos.distanceToSquared(cam) < 0.01) return C.list;
+    C.f = f;
+    C.reach = this.reach;
+    C.zone = zone;
+    C.len = this.interactables.length;
+    C.pos.copy(cam);
+    const list = (C.list = []);
+    const sph = (this._sph ||= new THREE.Sphere());
+    const lim = this.reach + 0.3;
+    const add = (o) => {
+      if (!(o.userData.interact || o.userData.occ)) return;
+      if (o.isMesh && !o.isInstancedMesh && !o.isSkinnedMesh) {
+        const g = o.geometry;
+        if (!g.boundingSphere) g.computeBoundingSphere();
+        if (!g.boundingBox) g.computeBoundingBox();
+        sph.copy(g.boundingSphere).applyMatrix4(o.matrixWorld);
+        if (sph.center.distanceTo(cam) - sph.radius > lim) return;
+        list.push(o);
+      } else if (o.isMesh || o.isSprite || o.isPoints || o.isLine) list.push(o);
+    };
+    for (const root of this.interactables) root.traverse(add);
+    if (h?.built) for (const o of h.extraInteractables()) add(o);
+    return list;
   }
 
   listener() {

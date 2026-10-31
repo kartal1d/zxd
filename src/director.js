@@ -201,9 +201,13 @@ export class Director {
       this.updateChars(dt);
       this.updateIdle();
     }
+    // tuval yalnız GPU'ya yükleneceği karelerde çizilir (tv.beginFrame: telefonda 30 Hz); arada geçen süre kayda eklenir
+    if (!this.paused) this.recDt = (this.recDt || 0) + dt;
+    if (this.tv.due === false) return true;
     this.drawFrame();
     // geri sarma tamponuna OSD'siz kare girer (yoksa geri sararken eski "▶ OYNAT"/sayaç yazıları üst üste biner)
-    if (!this.paused) this.tv.record(dt, this.meta);
+    if (this.recDt) this.tv.record(this.recDt, this.meta);
+    this.recDt = 0;
     this.drawOsd();
     return true;
   }

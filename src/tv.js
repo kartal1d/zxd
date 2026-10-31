@@ -29,6 +29,8 @@ void main() {
   vec2 pu = (uv - 0.5) / vec2(max(sx, 0.001), sy) + 0.5;
   if (power <= 0.001 || pu.x < 0.0 || pu.x > 1.0 || pu.y < 0.0 || pu.y > 1.0) {
     gl_FragColor = vec4(glass, 1.0);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
     return;
   }
   uv = pu;
@@ -68,6 +70,9 @@ void main() {
   // kapanırken parlak çizgi
   col += (1.0 - sy) * 0.8 * smoothstep(0.02, 0.0, abs(vUv.y - 0.5));
   gl_FragColor = vec4(max(col, 0.0) * brightness + glass, 1.0);
+  // doğrudan tuvale çizilirken (düşük kalite, post.js) ton eşleme ve sRGB burada; ara hedefe çizilirken ikisi de etkisiz
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }`;
 
 export const SCREEN_DEFAULT = {
@@ -121,6 +126,21 @@ export class TVScreen {
     this.small.width = this.small.height = 4;
     this.smallCtx = this.small.getContext('2d', { willReadFrequently: true });
     this.avgTick = 0;
+    // tuvalin GPU'ya yüklenme takvimi (beginFrame)
+    this.upAcc = 1;
+    this.due = true;
+  }
+
+  /**
+   * Bu karede tuval çizilip GPU'ya yüklenecek mi: en çok hz kez / sn. 640x480'lik tuvalin her kare
+   * yüklenmesi (60-120 Hz) telefonda pahalı; CRT gölgelendiricisi (gürültü, titreme) yine her kare akar.
+   */
+  beginFrame(dt, hz = 30) {
+    const iv = 1 / hz;
+    this.upAcc = Math.min(this.upAcc + dt, 0.25);
+    this.due = this.upAcc >= iv - 0.004;
+    if (this.due) this.upAcc = Math.max(0, Math.min(this.upAcc - iv, iv));
+    return this.due;
   }
 
   clearBuffer() {
@@ -181,7 +201,8 @@ export class TVScreen {
     this.u.power.value = p.power;
     this.u.time.value = time;
     this.u.tint.value.setRGB(p.tintR, p.tintG, p.tintB);
-    this.texture.needsUpdate = true;
+    // ekran kapalıyken doku okunmaz; yükleme yalnız çizim karelerinde
+    if (this.due && p.power > 0.001) this.texture.needsUpdate = true;
 
     // ekranın ortalama rengi (TV ışığı için); televizyon görünmüyorsa okumaya gerek yok.
     // Önce GPU'da küçültüp eşzamansız okuma denenir (avgSampler); 2D tuvalden eşzamanlı okuma

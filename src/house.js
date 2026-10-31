@@ -3,6 +3,7 @@
 // kapılar, çarpışma kutuları, oda (bölge) bilgisi ve kayıttan durum uygulama. Korkutmalar: src/scares.js.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeStatic } from './perf.js';
 import * as TX from './textures.js';
 import * as S from './draw/scenes.js';
 import { drawSilhouette } from './draw/characters.js';
@@ -275,6 +276,11 @@ export class House {
       }
     }
     this.shell.visible = false;
+    // tek başına kurulan ama kodun hiç dokunmadığı durağan parçalar: bölüm + oda + malzeme başına tek ağ (perf.js)
+    for (const [k, level] of [['ust', 'ust'], ['zemin', 'zemin'], ['bahce', 'bahce']]) {
+      const C = this.chunks[k];
+      mergeStatic(this.g, C, { cell: (m, c) => this.zoneAt(level, c.x, c.z), dest: () => C });
+    }
     this.setZone(this.zone, true);
     this.apply(this.st);
     // gölgelendiricileri önceden derle (ilk inişte takılma olmasın): tavan arası ve ev ışık düzenleri için
@@ -1317,10 +1323,15 @@ export class House {
     this.box('zemin', 'banyo', M.porcelain, 2.72, 3.18, -2.12, -2.02, 6.85, 7.35);
     this.box('zemin', 'banyo', M.porcelain, 2.92, 3.06, YG, -2.12, 7.04, 7.16);
     this.col('zemin', 2.7, 3.2, 6.85, 7.35);
-    // ayna kapağı (dolabın kapağı): z = 6.85 kenarından menteşeli
+    // Ecza dolabı: duvardaki 0.5 x 0.65 m oyuğa (x 3.18-3.37) gömülü kutu + önüne kapanan aynalı kapak.
+    // Ayna kapalıyken arkasındaki oyuktan banyonun yansıması (shell) görünür; bu yüzden kutunun içi ve
+    // aynanın opak yüzü yalnız kapak açıkken çizilir (setEcza). Kapağın arka sacı yalnız arkadan görünür
+    // (tek yüzlü, duvara bakar): kapalıyken yansımayı örtmez, açıkken kapak içi boş bir çerçeve gibi durmaz.
+    // Kapak duvarın önüne biner (0.54 x 0.69, 18 mm): menteşe ön yüzün z = 6.83 kenarında, açılırken
+    // kanadın hiçbir köşesi duvara girmez.
+    const DW = 0.54, DH = 0.69, DT = 0.018;
     const mp = new THREE.Group();
-    // 3.185: aynanın çerçevesi banyo yansımasının (shell) x = 3.18'deki duvar yüzüyle aynı düzlemdeydi (titreşiyordu)
-    mp.position.set(3.185, -1.35, 6.85);
+    mp.position.set(3.178 - DT, -1.35, 6.83);
     Z.add(mp);
     const grime = ctex(128, 160, (x, w, h) => {
       x.fillStyle = 'rgba(255,255,255,0)';
@@ -1335,22 +1346,42 @@ export class House {
       x.fillStyle = g;
       x.fillRect(0, 0, w, h);
     });
-    this.mirrorGlass = this.mesh(new THREE.PlaneGeometry(0.5, 0.65), std({ color: 0x1a1c20, map: grime, transparent: true, opacity: 0.55, roughness: 0.15, metalness: 0.4, depthWrite: false }), mp, 0, 0, 0.25);
+    // yerel: x 0 (ön yüz) .. DT (arka), z 0 (menteşe) .. DW, y ±DH/2
+    this.mirrorGlass = this.mesh(new THREE.PlaneGeometry(0.5, 0.65), std({ color: 0x1a1c20, map: grime, transparent: true, opacity: 0.55, roughness: 0.15, metalness: 0.4, depthWrite: false }), mp, 0.004, 0, DW / 2);
     this.mirrorGlass.rotation.y = -HALF;
-    this.mesh(new THREE.BoxGeometry(0.02, 0.69, 0.02), M.metal, mp, 0, 0, 0.0);
-    this.mesh(new THREE.BoxGeometry(0.02, 0.69, 0.02), M.metal, mp, 0, 0, 0.5);
-    this.mesh(new THREE.BoxGeometry(0.02, 0.024, 0.52), M.metal, mp, 0, 0.335, 0.25);
-    this.mesh(new THREE.BoxGeometry(0.02, 0.024, 0.52), M.metal, mp, 0, -0.335, 0.25);
+    // açıkken: arkası görünmeyen opak, koyu ayna
+    this.mirrorOpaque = this.mesh(new THREE.PlaneGeometry(0.5, 0.65), std({ color: 0x24282d, map: grime, roughness: 0.32, metalness: 0.5 }), mp, 0.007, 0, DW / 2);
+    this.mirrorOpaque.rotation.y = -HALF;
+    this.mirrorOpaque.visible = false;
+    const enamel = std({ color: 0xcfcabb, roughness: 0.55 });
+    const back = this.mesh(new THREE.PlaneGeometry(DW, DH), enamel, mp, DT, 0, DW / 2);
+    back.rotation.y = HALF;
+    // çerçeve (kapağın kalınlığı da bu çıtalar)
+    this.mesh(new THREE.BoxGeometry(DT, DH, 0.02), M.metal, mp, DT / 2, 0, 0.01);
+    this.mesh(new THREE.BoxGeometry(DT, DH, 0.02), M.metal, mp, DT / 2, 0, DW - 0.01);
+    this.mesh(new THREE.BoxGeometry(DT, 0.02, DW - 0.04), M.metal, mp, DT / 2, DH / 2 - 0.01, DW / 2);
+    this.mesh(new THREE.BoxGeometry(DT, 0.02, DW - 0.04), M.metal, mp, DT / 2, -DH / 2 + 0.01, DW / 2);
+    // tutamak (açılan kenarda)
+    this.mesh(new THREE.BoxGeometry(0.012, 0.08, 0.012), M.metal, mp, -0.006, 0, DW - 0.035);
     this.mirrorPivot = mp;
     this.tag(mp, 'ev:ecza');
-    // dolabın içi (yalnız kapak açıkken görünür)
+    // dolabın içi: arka, tavan, taban, yanlar, raf (yalnız kapak açıkken görünür)
     const inside = new THREE.Group();
     Z.add(inside);
-    this.mesh(new THREE.BoxGeometry(0.02, 0.65, 0.5), M.plaster, inside, 3.36, -1.35, 7.1);
-    this.mesh(new THREE.BoxGeometry(0.16, 0.02, 0.5), M.plaster, inside, 3.28, -1.45, 7.1);
-    this.mesh(new THREE.BoxGeometry(0.06, 0.09, 0.04), std({ color: 0xd8d0f0 }), inside, 3.3, -1.395, 7.0);
-    this.mesh(new THREE.BoxGeometry(0.04, 0.12, 0.06), std({ color: 0xe0e0d0 }), inside, 3.3, -1.38, 7.2);
-    for (const z of [6.85, 7.35]) this.mesh(new THREE.BoxGeometry(0.16, 0.65, 0.02), M.plaster, inside, 3.28, -1.35, z);
+    const X0 = 3.181, X1 = 3.35, Y0 = -1.675, Y1 = -1.025, Z0 = 6.85, Z1 = 7.35;
+    const panel = (x0, x1, y0, y1, z0, z1, mat = enamel) => this.mesh(boxGeo(x0, x1, y0, y1, z0, z1), mat, inside);
+    const shade = std({ color: 0xa8a294, roughness: 0.6 });
+    panel(X1, X1 + 0.02, Y0, Y1, Z0, Z1, shade);
+    panel(X0, X1, Y1 - 0.02, Y1, Z0, Z1);
+    panel(X0, X1, Y0, Y0 + 0.02, Z0, Z1);
+    panel(X0, X1, Y0 + 0.02, Y1 - 0.02, Z0, Z0 + 0.02, shade);
+    panel(X0, X1, Y0 + 0.02, Y1 - 0.02, Z1 - 0.02, Z1, shade);
+    panel(X0 + 0.01, X1, -1.46, -1.448, Z0 + 0.02, Z1 - 0.02);
+    // raftaki kutu ve şişe, tabanda reçete
+    this.mesh(new THREE.BoxGeometry(0.06, 0.09, 0.04), std({ color: 0xd8d0f0 }), inside, 3.29, -1.403, 7.0);
+    this.mesh(new THREE.BoxGeometry(0.04, 0.12, 0.06), std({ color: 0xe0e0d0 }), inside, 3.29, -1.388, 7.2);
+    const rx = this.mesh(new THREE.BoxGeometry(0.1, 0.003, 0.13), std({ color: 0xe8e4d8, roughness: 0.9 }), inside, 3.27, Y0 + 0.022, 7.12);
+    rx.rotation.y = 0.25;
     inside.visible = false;
     this.mirrorInside = inside;
     // aynadaki hayalet (yalnız yansımada)
@@ -1797,7 +1828,7 @@ export class House {
     this.ambience.setWhine(!(r.scares || []).includes('tv'));
     this.ambience.setDeck(!(r.scares || []).includes('monitor'));
     this.mirrorPivot.rotation.y = 0;
-    this.mirrorInside.visible = false;
+    this.setEcza(false);
     this.ghost.visible = false;
     this.man.visible = this.manArms.visible = false;
     this.winGirl.visible = false;
@@ -2269,19 +2300,25 @@ export class House {
     }
   }
 
+  /** Ecza dolabının içi ve aynanın opak yüzü yalnız kapak açıkken (kapalıyken aynada yansıma görünür) */
+  setEcza(open) {
+    this.mirrorInside.visible = open;
+    this.mirrorOpaque.visible = open;
+  }
+
   async medicine() {
     const g = this.g;
     const au = g.audio;
     if (this.busy.ecza) return;
     this.busy.ecza = true;
     this.room.tweens.add(this.mirrorPivot.rotation, 'y', -1.9, 0.5);
-    this.mirrorInside.visible = true;
+    this.setEcza(true);
     au.sfx('creak', this.points.mirror, 0.6);
     g.ui.toast("Ecza dolabında bir kutu uyku hapı ve bir reçete. Arkasına Nermin not almış: 'Doktor sesleri benim uydurduğumu söylüyor. Sayıları da ben sayıyormuşum. Ama sekizden sonrasını ben saymıyorum.'", 8);
     await sleep(8000);
     this.room.tweens.add(this.mirrorPivot.rotation, 'y', 0, 0.35);
     await sleep(350);
-    this.mirrorInside.visible = false;
+    this.setEcza(false);
     au.sfx('boxClick', this.points.mirror);
     this.busy.ecza = false;
     g.scares?.onMirrorClosed();

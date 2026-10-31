@@ -30,13 +30,12 @@ Exe'yi kendin derlemek için: `cd desktop && npm install && npm run dist` (Windo
 | --- | --- |
 | Sol başparmak (joystick) | Yürü; sonuna kadar it: koş |
 | Sağ tarafı sürükle | Etrafa bak |
-| Bir nesneye dokun | O nesneyle etkileşim (al, oku, aç) |
-| **ETKİLEŞ** | Nişangahın üstündekiyle etkileşim |
+| Nişangahı nesneye getir + **ETKİLEŞ** | O nesneyle etkileşim (al, oku, aç); nesneye doğrudan dokunmak bir şey yapmaz |
 | **FENER**, **KALK/OTUR**, **TV** | El feneri, ayağa kalk / otur, televizyona odaklan |
 | **❚❚ DURAKLAT**, **◀◀ GERİ SAR** | Kaseti duraklat; geri sar (yalnızca çıktığında, basılı tut) |
 | **≡ MENÜ** ya da telefonun geri tuşu | Duraklatma menüsü |
 
-Beste soru sorunca ekranın üstünde bir yazı kutusu açılır (Türkçe klavye), **GÖNDER** ile cevaplanır. Ayarlarda dokunmatik hassasiyeti ve "Kontrolleri büyüt" var.
+Beste soru sorunca ekranın üstünde bir yazı kutusu açılır (Türkçe klavye), **GÖNDER** ile cevaplanır. Ayarlarda dokunmatik hassasiyeti ve "Kontrolleri büyüt" var. Ekranlar kaydırılmaz; uzun belgeler ◀ ▶ ile sayfa sayfa okunur. Görüntü çözünürlüğü telefonun hızına göre kendiliğinden ayarlanır.
 
 Android sürümü `mobile/` klasöründeki Capacitor projesidir. Commit mesajına `[apk]` yazınca GitHub Actions apk derler. Depo sırlarında `APK_KEYSTORE_B64` ve `APK_KEYSTORE_PASS` (Google Play yükleme anahtarı) varsa yanında Play Console'a yüklenecek `.aab` de çıkar. Gizlilik politikası: [docs/gizlilik-politikasi.md](docs/gizlilik-politikasi.md).
 

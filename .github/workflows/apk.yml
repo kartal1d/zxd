@@ -127,10 +127,10 @@ jobs:
           - "Bilinmeyen kaynaklardan yükleme" izni sorulursa tarayıcına / dosya yöneticine izin ver.
           - Play Protect uyarı verirse **Yine de yükle**'ye dokun (uygulama Play Store dışından geldiği için çıkar).
 
-          Telefonu yatay tut. Sol başparmakla yürü, sağ tarafı sürükleyerek etrafa bak, sağ tarafa dokunarak etkileşime gir.
+          Telefonu yatay tut. Sol başparmakla yürü, sağ tarafı sürükleyerek etrafa bak; nişangahı nesneye getirip ETKİLEŞ'e bas.
           Yeni sürüm eskisinin üstüne kurulur, kaydın silinmez. Kulaklıkla ve karanlıkta oynayın.
 
-          **Google Play:** `Beste-Sihirli-Dunya.aab` dosyasını Play Console'a yükle (yalnızca yükleme anahtarı depo sırlarına eklendiyse bulunur).
+          **Google Play:** Play Console'a yükleme anahtarıyla imzalanmış `.aab` yüklenir (anahtar depo sırlarındaysa burada çıkar).
           EOF
           sed -i 's/^          //' notes.md
           echo "" >> notes.md

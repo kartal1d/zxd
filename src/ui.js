@@ -49,7 +49,13 @@ const TOUCH_TEXT = [
   [/ve E'ye bas/g, 've dokun'],
   [/tıkla(?=[\s.,:;!]|$)/g, 'dokun'],
   [/klavyeden cevap ver/g, 'üstteki kutuya yazarak cevap ver'],
-  [/BOŞLUK/g, '▶ düğmesi'],
+  [/\(Q\)/g, '(FENER düğmesi)'],
+  [/(BOŞLUK|[Bb]oşluk) tuşuna bas/g, '❚❚ DURAKLAT düğmesine bas'],
+  [/kaseti oynat: BOŞLUK/g, 'kaseti oynat: ▶ OYNAT düğmesi'],
+  [/BOŞLUK/g, '❚❚ düğmesi'],
+  [/ENTER'a bas/g, "GÖNDER'e bas"],
+  [/ · ENTER: dene/g, ' · DENE'],
+  [/ENTER/g, 'GÖNDER'],
   [/^F yalnızca/, 'TV düğmesi yalnızca'],
   [/Rakamları klavyeden de girebilirsin/g, 'Rakamlara dokun'],
   [/Esc: kapat/g, '✕: kapat'],
@@ -217,6 +223,7 @@ export class UI {
       return;
     }
     el.innerHTML = '';
+    if (this.g.isTouch) text = touchText(text);
     const line = document.createElement('span');
     line.className = 'line';
     if (who) {
@@ -334,10 +341,17 @@ export class UI {
    */
   keyhole(onEye) {
     const cv = $('keyhole-canvas');
+    // dokunmatikte (yüksek piksel oranlı telefon ekranı) tuval cihaz çözünürlüğünde çizilir: büyütülmüş bulanık bit eşlem olmasın
+    const k = this.g.isTouch ? Math.min(3, window.devicePixelRatio || 1) : 1;
+    if (cv.width !== 640 * k) {
+      cv.width = 640 * k;
+      cv.height = 480 * k;
+    }
     const x = cv.getContext('2d');
+    x.setTransform(k, 0, 0, k, 0, 0);
     this.show('keyhole', true);
     this.g.overlay = 'keyhole';
-    const W = cv.width, H = cv.height;
+    const W = 640, H = 480;
     const t0 = performance.now();
     let eye = false;
     const hole = () => {

@@ -152,9 +152,10 @@ export function bsod(ctx, t, o = {}) {
     'BESTE.VXD (01) + 00010E36 içinde. Geçerli',
     'kaset sonlandırılacak.',
     '',
-    '*  Kaseti çıkarmak için herhangi bir tuşa basın.',
+    // dokunmatikte (o.touch) tuş yerine dokunuş
+    o.touch ? '*  Kaseti çıkarmak için ekranın herhangi bir yerine dokunun.' : '*  Kaseti çıkarmak için herhangi bir tuşa basın.',
     '*  Bilgisayarınızı yeniden başlatmak için',
-    '   CTRL+ALT+DEL tuşlarına basın. Kaydedilmemiş',
+    o.touch ? '   güç düğmesini basılı tutun. Kaydedilmemiş' : '   CTRL+ALT+DEL tuşlarına basın. Kaydedilmemiş',
     '   tüm bilgileriniz kaybolacak.',
     '',
     '*  KAPI AÇIK.',
@@ -164,7 +165,7 @@ export function bsod(ctx, t, o = {}) {
     ctx.fillText(l, 44, 130 + i * 27);
   });
   ctx.textAlign = 'center';
-  if (Math.floor(t * 2) % 2) ctx.fillText('Devam etmek için bir tuşa basın _', W / 2, 420);
+  if (Math.floor(t * 2) % 2) ctx.fillText(o.touch ? 'Devam etmek için ekrana dokunun _' : 'Devam etmek için bir tuşa basın _', W / 2, 420);
 }
 
 // ------------------------------------------------------------------ jenerik

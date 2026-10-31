@@ -334,7 +334,7 @@ export class Attic {
       label.material.emissiveMap = label.material.map;
       label.material.emissiveIntensity = 0.16;
     }
-    this.chairBandMat = new THREE.MeshStandardMaterial({ color: 0xaab2bf, metalness: 0.5, roughness: 0.35, emissive: 0x8a9ab4, emissiveIntensity: 0.4 });
+    this.chairBandMat = new THREE.MeshStandardMaterial({ color: 0xaab2bf, metalness: 0.5, roughness: 0.35, emissive: 0x7a8aa6, emissiveIntensity: 0.3 });
     for (const x of [-0.082, 0.082]) r.box(0.03, 0.03, 0.112, this.chairBandMat, x, 0.0125, 0, this.chairTape);
     // geniş, görünmez tıklama alanı
     const hit = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.45), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
@@ -364,7 +364,7 @@ export class Attic {
   chairShimmer(t) {
     const s = Math.sin(t * 1.3) * 0.5 + 0.5;
     const blink = Math.max(0, Math.sin(t * 0.47) - 0.93) * 6; // arada bir kısa bir ışıltı
-    this.chairBandMat.emissiveIntensity = 0.28 + 0.2 * s + blink;
+    this.chairBandMat.emissiveIntensity = 0.2 + 0.14 * s + blink;
   }
 
   // ------------------------------------------------------------------ dış pervazdaki kaset (8)

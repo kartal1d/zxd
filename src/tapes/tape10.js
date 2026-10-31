@@ -278,7 +278,7 @@ async function badEnding(d, v) {
   d.stopMusic(0.1);
   await d.glitch(1, 0.8);
   d.sfx('bsod');
-  d.scene((c, t) => S.bsod(c, t, { door: true }));
+  d.scene((c, t) => S.bsod(c, t, { door: true, touch: g.isTouch }));
   d.setBase({ saturation: 1, tintR: 1, tintG: 1, tintB: 1, glitch: 0, noise: 0.05, tracking: 0.2, aberration: 0.8 }, 0.05);
   await d.race(g.waitAnyKey(9));
 

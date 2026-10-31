@@ -224,6 +224,8 @@ class Game {
 
   onResize() {
     const w = window.innerWidth, h = window.innerHeight;
+    // dokunmatikte çizim oranı ekran yüksekliğine bağlı (perf.js); masaüstünde değişmez
+    if (this.isTouch) this.perf?.applyScale();
     this.renderer.setSize(w, h, false);
     this.composer?.setSize(w, h);
     this.room.camera.aspect = w / h;

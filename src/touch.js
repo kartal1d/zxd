@@ -4,6 +4,10 @@
 // basılı tutunca GERİ SAR, MENÜ. Beste soru sorunca üstte ekran klavyesini açan bir cevap kutusu ve şık düğmeleri çıkar.
 // Masaüstünde hiçbir şey değişmez: katman yalnızca dokunmatik kipte görünür. Hem dokunmatik hem fare olan cihazlarda
 // son kullanılan giriş kipi seçer (ekrana dokununca dokunmatik, fare kıpırdayınca masaüstü).
+// Kısa dokunuş, parmağın değdiği yerdeki nesneyle etkileşir (ortadaki noktayla aynı erişim kuralları, room.pick);
+// küçük hedefler (kaset, zincir, telefon) için dokunulan yerin ~25 px çevresi de denenir. ETKİLEŞ ortadaki noktaya bakar.
+import { Raycaster, Vector2 } from 'three';
+
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -13,6 +17,7 @@ const DEAD = 0.12; // ölü bölge (halkanın oranı)
 const RUN_AT = 1.4; // parmak halkanın 1,4 katı dışına itilince koşu
 const TAP_MS = 320; // kısa dokunuş en çok bu kadar sürer...
 const TAP_PX = 12; // ...ve en çok bu kadar kayar
+const TAP_RINGS = [9, 17, 25]; // dokunulan yer boşsa çevresinde denenen halkalar (px)
 const SLOP = 6; // bakış bu kadar kaydıktan sonra başlar: dokunuşta kamera titremesin
 const LOOK_K = 0.0035; // piksel başına radyan (hassasiyet 1): ekran genişliği ≈ yarım tur
 const FINE = matchMedia('(any-pointer: fine)');
@@ -33,6 +38,9 @@ export class Touch {
     this.pressed = new Map(); // parmak -> basılı görünen düğme
     this.vis = {}; // son yazılan görünürlük / etiket (DOM'a yalnız değişince dokunulur)
     this.wasStanding = false;
+    this.rc = new Raycaster();
+    this.ndc = new Vector2();
+    this.markEl = $('tap-mark');
     this.bind();
   }
 
@@ -45,6 +53,8 @@ export class Touch {
     g.isTouch = on;
     document.body.classList.toggle('touch', on);
     this.vis = {};
+    // çizim oranı kipe bağlı (perf.js)
+    if (g.renderer) g.perf?.applyScale();
     if (on) {
       g.wantLock = false;
       g.ui?.clickHint(false);
@@ -170,7 +180,7 @@ export class Touch {
         this.joyStart(t);
         continue;
       }
-      if (!this.look) this.look = { id: t.identifier, x: t.clientX, y: t.clientY, t0: performance.now(), moved: 0, live: false, ax: 0, ay: 0 };
+      if (!this.look) this.look = { id: t.identifier, x: t.clientX, y: t.clientY, sx: t.clientX, sy: t.clientY, t0: performance.now(), moved: 0, live: false, ax: 0, ay: 0 };
     }
   }
 
@@ -191,8 +201,8 @@ export class Touch {
       else if (this.look && id === this.look.id) {
         const L = this.look;
         this.look = null;
-        // kısa ve kıpırdamayan dokunuş: ortadaki noktanın gösterdiği şeyle etkileşim (tık / E gibi)
-        if (e.type === 'touchend' && L.moved < TAP_PX && performance.now() - L.t0 < TAP_MS && this.live()) g.interact(g.room.hover);
+        // kısa ve kıpırdamayan dokunuş: parmağın değdiği yerdeki nesneyle etkileşim
+        if (e.type === 'touchend' && L.moved < TAP_PX && performance.now() - L.t0 < TAP_MS && this.live()) this.tapAt(L.sx, L.sy);
       }
       if (id === this.rwId) this.rwRelease();
       const el = this.pressed.get(id);
@@ -262,6 +272,58 @@ export class Touch {
     this.rwId = null;
     this.g.input.rewindHeld = false;
     this.g.director?.stopRewind();
+  }
+
+  /** Dokunulan ekran noktasındaki (yoksa çevresindeki en yakın) etkileşimli nesneyle etkileşir; boşsa hiçbir şey olmaz */
+  tapAt(x, y) {
+    const g = this.g;
+    const id = this.pickAt(x, y);
+    if (!id) return;
+    this.mark(x, y, g.label(id));
+    g.interact(id);
+  }
+
+  /** Ekran noktası (px) -> etkileşim kimliği. Önce tam nokta, sonra büyüyen halkalarda kameraya en yakın isabet. */
+  pickAt(x, y) {
+    const g = this.g;
+    const room = g.room;
+    room.camera.updateMatrixWorld();
+    const W = innerWidth, H = innerHeight;
+    const at = (px, py) => {
+      this.ndc.set((px / W) * 2 - 1, -(py / H) * 2 + 1);
+      const h = room.pick(this.ndc, this.rc);
+      // etiketi boş olan nesne (ör. kaset oynarken televizyon) dokunuşa açık sayılmaz
+      return h && g.label(h.id) ? h : null;
+    };
+    const hit = at(x, y);
+    if (hit) return hit.id;
+    for (const r of TAP_RINGS) {
+      let best = null;
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2 + (r === TAP_RINGS[1] ? Math.PI / 8 : 0);
+        const h = at(x + Math.cos(a) * r, y + Math.sin(a) * r);
+        if (h && (!best || h.dist < best.dist)) best = h;
+      }
+      if (best) return best.id;
+    }
+    return null;
+  }
+
+  /** Dokunulan nesnenin üstünde kısa bir halka ve adı */
+  mark(x, y, label) {
+    const el = this.markEl;
+    if (!el) return;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = label || '';
+    el.querySelector('span').textContent = this.g.ui.tt(tmp.textContent || '');
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.hidden = false;
+    el.classList.remove('go');
+    void el.offsetWidth;
+    el.classList.add('go');
+    clearTimeout(this.markT);
+    this.markT = setTimeout(() => (el.hidden = true), 700);
   }
 
   /** Koltuğun yanında mı (F'nin ayaktayken oturttuğu mesafe, main.toggleFocus) */

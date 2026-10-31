@@ -45,6 +45,12 @@ export class Perf {
 
   pixelRatio() {
     const dpr = window.devicePixelRatio || 1;
+    // dokunmatik (telefon): küçük CSS ekranında 0,75 çok bulanık kalır. İç çizim yüksekliği ~720 px
+    // (en çok cihaz oranı, en çok 2); kare süresi yetmezse en az 1'e kadar iner (adapt)
+    if (this.g.isTouch) {
+      const cap = Math.min(Math.min(dpr, 2), Math.max(1, 720 / Math.max(1, window.innerHeight)));
+      return Math.max(Math.min(1, cap), cap * LEVELS[this.level]);
+    }
     if (this.quality === 'high') return Math.min(dpr, 2);
     if (this.quality === 'low') return Math.min(dpr, 1) * 0.75;
     return Math.min(dpr, 1) * LEVELS[this.level];
@@ -65,7 +71,7 @@ export class Perf {
     this.frameNo++;
     const dt = rawMs / 1000;
     this.clock += Math.min(dt, 0.1);
-    if (this.quality === 'auto') this.adapt(rawMs);
+    if (this.quality === 'auto' || this.g.isTouch) this.adapt(rawMs);
     this.scheduleShadows();
   }
 

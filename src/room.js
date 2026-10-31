@@ -19,7 +19,9 @@ export class Room {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x010102);
     this.scene.fog = new THREE.FogExp2(0x040405, 0.045);
-    this.camera = new THREE.PerspectiveCamera(62, 1, 0.02, 40);
+    // uzak düzlem 120 m: bahçedeki uzak gökyüzü düzlemi (z = -48) 40 m'de kırpılıyor, bakış açısına göre yarısı
+    // keskin bir çizgiyle kayboluyordu. Yakın düzlem değişmediği için derinlik hassasiyeti pratikte aynı kalır.
+    this.camera = new THREE.PerspectiveCamera(62, 1, 0.02, 120);
     this.camera.position.copy(SEAT);
     this.yaw = 0;
     this.pitch = -0.06;
@@ -146,7 +148,9 @@ export class Room {
       m.castShadow = true;
       return m;
     };
-    const front = gable([[1.4, 1.55, 0.7, 0.8]]);
+    // pencere boşluğunun sağ üst köşesi tam çatı çizgisine değiyordu (x=1.75, y=1.95): üçgenleme bozulup
+    // pencerenin üst yarısına bir duvar kâğıdı üçgeni çiziyordu. Boşluk 1 cm alçak (üst çerçeve yine örter).
+    const front = gable([[1.4, 1.545, 0.7, 0.79]]);
     front.position.z = Z0;
     this.scene.add(front);
     this.frontGable = front;
@@ -175,8 +179,9 @@ export class Room {
     const win = new THREE.Group();
     win.position.set(1.4, 1.55, Z0);
     this.scene.add(win);
-    for (const [w, h, x, y] of [[0.78, 0.06, 0, 0.42], [0.78, 0.08, 0, -0.42], [0.06, 0.84, -0.37, 0], [0.06, 0.84, 0.37, 0], [0.03, 0.8, 0, 0], [0.7, 0.03, 0, 0]])
-      this.box(w, h, 0.08, mats.beam, x, y, 0, win);
+    // parçalar köşelerde ve ortadaki artıda iç içe: aynı düzlemdeki ön / arka yüzler titreşmesin diye derinlikleri farklı
+    for (const [w, h, x, y, d] of [[0.78, 0.06, 0, 0.42, 0.084], [0.78, 0.08, 0, -0.42, 0.084], [0.06, 0.84, -0.37, 0, 0.08], [0.06, 0.84, 0.37, 0, 0.08], [0.03, 0.8, 0, 0, 0.07], [0.7, 0.03, 0, 0, 0.066]])
+      this.box(w, h, d, mats.beam, x, y, 0, win);
     this.skyNight = TX.skyTexture('night');
     this.skyDawn = TX.skyTexture('dawn');
     this.sky = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.2), new THREE.MeshBasicMaterial({ map: this.skyNight, fog: false }));
@@ -208,7 +213,8 @@ export class Room {
     this.doorPivot.add(knob);
     this.tag(door, 'door');
     // kasa
-    for (const [w, h, x, y] of [[0.06, 2.02, -1.67, 1.01], [0.06, 2.02, -0.73, 1.01], [1.0, 0.06, -1.2, 2.0]]) this.box(w, h, 0.12, mats.beam, x, y, Z1);
+    // dikmeler başlığın altında biter (iç içe geçen köşelerde aynı düzlemdeki yüzler titreşiyordu)
+    for (const [w, h, x, y] of [[0.06, 1.97, -1.67, 0.985], [0.06, 1.97, -0.73, 0.985], [1.0, 0.06, -1.2, 2.0]]) this.box(w, h, 0.12, mats.beam, x, y, Z1);
     this.points.door = new THREE.Vector3(-1.2, 1.1, Z1);
     // koridor (kapının arkası)
     const corr = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.0, 2.4), new THREE.MeshStandardMaterial({ color: 0x3a3430, roughness: 1, side: THREE.BackSide }));
@@ -251,9 +257,11 @@ export class Room {
     this.scene.add(cab);
     this.box(1.1, 0.04, 0.5, mats.furniture, 0, 0.56, 0, cab);
     this.box(1.1, 0.04, 0.5, mats.furniture, 0, 0.06, 0, cab);
-    this.box(0.04, 0.54, 0.5, mats.furniture, -0.53, 0.31, 0, cab);
-    this.box(0.04, 0.54, 0.5, mats.furniture, 0.53, 0.31, 0, cab);
-    this.box(1.1, 0.54, 0.02, mats.furniture, 0, 0.31, -0.24, cab);
+    // yanlar ve arkalık üst / alt tablaların arasında: eskiden iç içe geçip dış yüzleri aynı düzlemdeydi,
+    // dolabın köşeleri ve kenarları (oturunca tam karşıda) titreşiyordu
+    this.box(0.04, 0.46, 0.5, mats.furniture, -0.53, 0.31, 0, cab);
+    this.box(0.04, 0.46, 0.5, mats.furniture, 0.53, 0.31, 0, cab);
+    this.box(1.02, 0.46, 0.02, mats.furniture, 0, 0.31, -0.24, cab);
     this.box(1.02, 0.03, 0.46, mats.furniture, 0, 0.28, 0, cab);
     for (const x of [-0.5, 0.5]) this.box(0.05, 0.05, 0.05, mats.black, x, 0.025, 0.2, cab);
     // alt rafta eski kasetler
@@ -432,14 +440,18 @@ export class Room {
     const shelf = (this.shelf = new THREE.Group());
     shelf.position.set(-2.62, 0, -0.1);
     this.scene.add(shelf);
-    this.box(0.34, 0.03, 1.1, mats.furniture, 0, 0.9, 0, shelf);
-    this.box(0.34, 0.03, 1.1, mats.furniture, 0, 0.45, 0, shelf);
-    this.box(0.34, 0.03, 1.1, mats.furniture, 0, 0.03, 0, shelf);
+    // raf tahtaları yanların arasında ve 2 mm geride (ön kenarlar yan dikmelerle aynı düzlemde titreşiyordu)
+    this.box(0.336, 0.03, 1.05, mats.furniture, 0, 0.9, 0, shelf);
+    this.box(0.336, 0.03, 1.05, mats.furniture, 0, 0.45, 0, shelf);
+    this.box(0.336, 0.03, 1.05, mats.furniture, 0, 0.03, 0, shelf);
     this.box(0.34, 0.92, 0.03, mats.furniture, 0, 0.46, -0.54, shelf);
     this.box(0.34, 0.92, 0.03, mats.furniture, 0, 0.46, 0.54, shelf);
     for (let i = 0; i < 9; i++) {
       const b = this.box(0.18, 0.2 + rand(0, 0.08), 0.04, new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(rand(0, 0.12), 0.4, rand(0.15, 0.3)), roughness: 0.85 }), 0.02, 0.58, -0.4 + i * 0.05, shelf);
-      if (i === 8) b.rotation.x = 0.4;
+      if (i === 8) {
+        b.rotation.x = 0.4;
+        b.position.x = 0.012; // yatık kitabın sırtı komşusununkiyle aynı düzlemde titreşmesin
+      }
     }
     this.plush = this.makePlush();
     this.plushShelfPos = new THREE.Vector3(-2.58, 0.915, -0.2);
@@ -823,13 +835,7 @@ export class Room {
     }
 
     // bakılan nesne ve ekrandaki bakış noktası
-    this.raycaster.setFromCamera(ndc, this.camera);
-    this.raycaster.far = this.reach;
-    const extra = this.g.house?.built ? this.g.house.extraInteractables() : null;
-    const hits = this.raycaster.intersectObjects(extra && extra.length ? this.interactables.concat(extra) : this.interactables, true);
-    // perde görevi gören duvarlar (extra) etkileşimleri örter; ilk görünür çarpışma kazanır
-    const hit = hits.find((h) => h.object.visible !== false && isVisible(h.object) && (h.object.userData.interact || h.object.userData.occ));
-    this.hover = hit ? hit.object.userData.interact || null : null;
+    this.hover = this.pick(ndc)?.id || null;
     const pt = (this._pt ||= new THREE.Vector3());
     const ray = this.raycaster.ray;
     let gx = 0, gy = 0;
@@ -841,6 +847,21 @@ export class Room {
       gy = 0;
     }
     this.gaze = { x: gx, y: gy };
+  }
+
+  /**
+   * Ekrandaki bir noktada (NDC) erişilebilen etkileşimli nesne: { id, dist } ya da null.
+   * Ortadaki nokta (bakış) ve dokunmatikte parmağın değdiği yer (src/touch.js) aynı erişim / görünürlük / örtme kurallarını kullanır.
+   */
+  pick(ndc, rc = this.raycaster) {
+    rc.setFromCamera(ndc, this.camera);
+    rc.far = this.reach;
+    const extra = this.g.house?.built ? this.g.house.extraInteractables() : null;
+    const hits = rc.intersectObjects(extra && extra.length ? this.interactables.concat(extra) : this.interactables, true);
+    // perde görevi gören duvarlar (extra) etkileşimleri örter; ilk görünür çarpışma kazanır
+    const hit = hits.find((h) => h.object.visible !== false && isVisible(h.object) && (h.object.userData.interact || h.object.userData.occ));
+    const id = hit ? hit.object.userData.interact || null : null;
+    return id ? { id, dist: hit.distance } : null;
   }
 
   listener() {

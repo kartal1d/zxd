@@ -117,7 +117,8 @@ export const FLOW = {
       [90, 'Kaset, sandalyenin oturağının ön kenarının altına bantlanmış. Parıltıya bak.', true],
       [150, (g) => `Sandalyenin ön kenarının altındaki parıltıya bak; 'Bantlı kaset' yazısı çıkınca ${g.isTouch ? 'ona dokun' : "E'ye bas"}.`, true],
     ],
-    target: (g) => wp(g.room.attic.chairTape),
+    // parıltı kasetin gövdesine gömülmesin: biraz yukarıda ve önde
+    target: (g) => wp(g.room.attic.chairTape)?.add(new THREE.Vector3(0, 0.05, -0.04)),
   },
 
   // ---------------------------------------------------------------- 7 -> 8

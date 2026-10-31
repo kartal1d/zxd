@@ -229,7 +229,9 @@ export function buildFridgeDoor(h, Z) {
   h.mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.42, 8), M.metal, pivot, -0.065, 1.38, 0.63);
   h.mesh(new THREE.BoxGeometry(0.004, 0.01, 0.68), M.dark, pivot, -0.032, 0.9, 0.35);
   const inner = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 1.52), new THREE.MeshBasicMaterial({ color: 0x1a1c1e }));
-  inner.position.set(4.031, YG + 0.8, -0.6);
+  // gövdenin ön yüzünün (x = 4.03) 4 mm önünde: eskiden 1 mm içindeydi, kapak açılınca iç yerine düz krem bir blok
+  // görünüyor, korkutmadaki buzdolabı ışığı hiç görünmüyordu. Kapak kapalıyken kapağın içinde kalır.
+  inner.position.set(4.026, YG + 0.8, -0.6);
   inner.rotation.y = -HALF;
   Z.add(inner);
   fp.fridgeDoor = pivot;

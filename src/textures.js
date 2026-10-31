@@ -18,24 +18,38 @@ function tex(c, repeat = [1, 1], srgb = true) {
   return t;
 }
 
-/** Değer gürültüsü (yumuşak) */
-function vnoise(x, y, seed = 0) {
+/** Değer gürültüsü (yumuşak). px/py: kafesin periyodu (0 = periyotsuz); dokular kenarlarda kesintisiz döşensin diye */
+function vnoise(x, y, seed = 0, px = 0, py = 0) {
   const xi = Math.floor(x), yi = Math.floor(y);
   const xf = x - xi, yf = y - yi;
-  const s = (a, b) => hash(a * 157.1 + b * 311.7 + seed * 71.3);
+  const wx = (i) => (px ? ((i % px) + px) % px : i);
+  const wy = (i) => (py ? ((i % py) + py) % py : i);
+  const s = (a, b) => hash(wx(a) * 157.1 + wy(b) * 311.7 + seed * 71.3);
   const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
   const a = s(xi, yi), b = s(xi + 1, yi), c = s(xi, yi + 1), d = s(xi + 1, yi + 1);
   return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
 }
-function fbm(x, y, seed = 0, oct = 4) {
+function fbm(x, y, seed = 0, oct = 4, px = 0, py = 0) {
   let v = 0, a = 0.5, f = 1;
   for (let i = 0; i < oct; i++) {
-    v += a * vnoise(x * f, y * f, seed + i);
+    v += a * vnoise(x * f, y * f, seed + i, px * f, py * f);
     f *= 2;
     a *= 0.5;
   }
   return v;
 }
+/**
+ * Döşenebilir fbm: w x h dokuda, piksel başına yaklaşık sx / sy sıklığında; doku tekrar ettiğinde kenarda dikiş kalmaz.
+ * (Evin duvar, zemin ve tavanları dünya koordinatlı UV ile metrelerce tekrar eder; periyotsuz gürültü her
+ * tekrarın sınırında belirgin yatay / dikey çizgiler bırakıyordu.) tileY = false: dikeyde periyotsuz.
+ */
+function tfbm(x, y, sx, sy, w, h, seed = 0, oct = 4, tileY = true) {
+  const px = Math.max(1, Math.round(sx * w));
+  const py = tileY ? Math.max(1, Math.round(sy * h)) : 0;
+  return fbm((x * px) / w, tileY ? (y * py) / h : y * sy, seed, oct, px, py);
+}
+/** x'te w pikselde tam tur atan sinüs sıklığı (yaklaşık f'ye en yakın) */
+const tfreq = (f, w) => (Math.max(1, Math.round((f * w) / (Math.PI * 2))) * Math.PI * 2) / w;
 
 /** Ahşap tahtalar. dir: tahtalar yatay mı dikey mi */
 export function woodPlanks({ w = 1024, h = 1024, planks = 8, base = [118, 78, 46], vary = 26, seed = 1, gaps = true, worn = 0.3 } = {}) {
@@ -43,6 +57,9 @@ export function woodPlanks({ w = 1024, h = 1024, planks = 8, base = [118, 78, 46
   const ph = h / planks;
   const img = ctx.createImageData(w, h);
   const bump = ctx.createImageData(w, h);
+  // tüm gürültüler yatayda (ve tahta bantlarının dışında dikeyde) w / h periyotlu: doku dikişsiz tekrar eder
+  const gf = tfreq(0.018, w);
+  const gpx = Math.max(1, Math.round(w * 0.004));
   for (let p = 0; p < planks; p++) {
     const tone = (hash(p * 13.7 + seed) - 0.5) * vary;
     const off = hash(p + seed * 3) * 500;
@@ -51,13 +68,13 @@ export function woodPlanks({ w = 1024, h = 1024, planks = 8, base = [118, 78, 46
       const ly = (y - p * ph) / ph;
       for (let x = 0; x < w; x++) {
         const i = (y * w + x) * 4;
-        const grain = Math.sin((x + off) * 0.018 + fbm((x + off) * 0.004, y * 0.06, seed + p, 3) * 9) * 0.5 + 0.5;
-        const n = fbm(x * 0.02, y * 0.02, seed, 3);
+        const grain = Math.sin((x + off) * gf + fbm(((x + off) * gpx) / w, y * 0.06, seed + p, 3, gpx, 0) * 9) * 0.5 + 0.5;
+        const n = tfbm(x, y, 0.02, 0.02, w, h, seed, 3);
         let k = 0.78 + grain * 0.18 + (n - 0.5) * 0.25;
         let edge = 1;
         if (gaps && (ly < 0.035 || ly > 0.965)) edge = 0.35;
         if (gaps && Math.abs(x - seam) < 2) edge = 0.4;
-        const wear = fbm(x * 0.006, y * 0.006, seed + 9, 3) > 1 - worn ? 1.12 : 1;
+        const wear = tfbm(x, y, 0.006, 0.006, w, h, seed + 9, 3) > 1 - worn ? 1.12 : 1;
         k *= edge * wear;
         img.data[i] = Math.min(255, (base[0] + tone) * k);
         img.data[i + 1] = Math.min(255, (base[1] + tone * 0.7) * k);
@@ -87,9 +104,10 @@ export function wallpaper({ w = 512, h = 512 } = {}) {
     ctx.fillStyle = 'rgba(160,150,110,.25)';
     ctx.fillRect(x + 30, 0, 3, h);
   }
-  // çiçek motifleri
-  for (let y = 32; y < h; y += 96)
-    for (let x = 32 + ((y / 96) % 2) * 32; x < w; x += 64) {
+  // çiçek motifleri: satır aralığı dokunun yüksekliğini tam böler, satırlar dönüşümlü kayar (dikişsiz tekrar)
+  const rows = Math.max(2, Math.round(h / 128 / 2) * 2);
+  for (let r = 0; r < rows; r++)
+    for (let x = 32 + (r % 2) * 32, y = 32 + (r * h) / rows; x < w; x += 64) {
       ctx.save();
       ctx.translate(x, y);
       ctx.fillStyle = 'rgba(110,60,40,.35)';
@@ -110,9 +128,10 @@ export function wallpaper({ w = 512, h = 512 } = {}) {
   for (let y = 0; y < h; y++)
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
-      const n = fbm(x * 0.01, y * 0.01, 4, 5);
+      const n = tfbm(x, y, 0.01, 0.01, w, h, 4, 5);
       const stain = Math.max(0, n - 0.55) * 2.2;
-      const drip = Math.max(0, fbm(x * 0.05, y * 0.004, 8, 3) - 0.62) * 3 * (y / h);
+      // akıntılar her yerde aynı güçte (eskiden y / h ile alta doğru artıyordu: tekrar sınırında yatay bir çizgi bırakıyordu)
+      const drip = Math.max(0, tfbm(x, y, 0.05, 0.004, w, h, 8, 3) - 0.62) * 3 * 0.6;
       const k = 1 - stain * 0.5 - drip * 0.4 + (Math.random() - 0.5) * 0.06;
       img.data[i] *= k;
       img.data[i + 1] *= k * 0.98;
@@ -129,7 +148,7 @@ export function noiseTex(size = 256, scale = 0.05, seed = 2) {
   for (let y = 0; y < size; y++)
     for (let x = 0; x < size; x++) {
       const i = (y * size + x) * 4;
-      const v = fbm(x * scale, y * scale, seed, 4) * 200 + Math.random() * 40;
+      const v = tfbm(x, y, scale, scale, size, size, seed, 4) * 200 + Math.random() * 40;
       img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
       img.data[i + 3] = 255;
     }
@@ -200,7 +219,7 @@ export function kilim() {
   for (let y = 0; y < 768; y++)
     for (let x = 0; x < 512; x++) {
       const i = (y * 512 + x) * 4;
-      const k = 0.7 + fbm(x * 0.02, y * 0.02, 12, 4) * 0.4 + ((x + y) % 3 === 0 ? -0.05 : 0);
+      const k = 0.7 + tfbm(x, y, 0.02, 0.02, 512, 768, 12, 4) * 0.4 + ((x + y) % 3 === 0 ? -0.05 : 0);
       img.data[i] *= k;
       img.data[i + 1] *= k;
       img.data[i + 2] *= k;
@@ -387,7 +406,7 @@ export function tiles({ size = 256, n = 4, base = [196, 196, 186], grout = [92, 
       const g = lx < 3 || ly < 3;
       const ti = Math.floor(x / cell) + Math.floor(y / cell) * n;
       const tone = 0.9 + hash(ti + seed) * 0.12;
-      const dirt = 0.82 + fbm(x * 0.02, y * 0.02, seed, 3) * 0.3;
+      const dirt = 0.82 + tfbm(x, y, 0.02, 0.02, size, size, seed, 3) * 0.3;
       const col = g ? grout : base;
       const k = (g ? 1 : tone) * dirt;
       img.data[i] = col[0] * k;
@@ -406,8 +425,8 @@ export function plaster({ size = 256, base = [188, 180, 164], seed = 7 } = {}) {
   for (let y = 0; y < size; y++)
     for (let x = 0; x < size; x++) {
       const i = (y * size + x) * 4;
-      const n = fbm(x * 0.03, y * 0.03, seed, 4);
-      const stain = fbm(x * 0.008, y * 0.012, seed + 5, 3);
+      const n = tfbm(x, y, 0.03, 0.03, size, size, seed, 4);
+      const stain = tfbm(x, y, 0.008, 0.012, size, size, seed + 5, 3);
       let k = 0.86 + n * 0.2 + (Math.random() - 0.5) * 0.04;
       if (stain > 0.62) k *= 0.82 + (0.7 - stain);
       img.data[i] = base[0] * k;
@@ -426,7 +445,7 @@ export function grass({ size = 256, seed = 12 } = {}) {
   for (let y = 0; y < size; y++)
     for (let x = 0; x < size; x++) {
       const i = (y * size + x) * 4;
-      const n = fbm(x * 0.05, y * 0.05, seed, 4);
+      const n = tfbm(x, y, 0.05, 0.05, size, size, seed, 4);
       const blade = Math.random();
       const k = 0.55 + n * 0.6 + (blade > 0.93 ? 0.35 : 0);
       img.data[i] = 34 * k;
@@ -445,8 +464,9 @@ export function bark({ w = 128, h = 256, seed = 15 } = {}) {
   for (let y = 0; y < h; y++)
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
-      const ridge = Math.abs(Math.sin(x * 0.22 + fbm(x * 0.05, y * 0.02, seed, 3) * 6));
-      const k = 0.45 + ridge * 0.55 + (fbm(x * 0.1, y * 0.1, seed + 3, 2) - 0.5) * 0.3;
+      // gövdenin çevresinde dikişsiz (yatayda periyotlu)
+      const ridge = Math.abs(Math.sin(x * tfreq(0.22, w) + tfbm(x, y, 0.05, 0.02, w, h, seed, 3, false) * 6));
+      const k = 0.45 + ridge * 0.55 + (tfbm(x, y, 0.1, 0.1, w, h, seed + 3, 2) - 0.5) * 0.3;
       img.data[i] = 78 * k;
       img.data[i + 1] = 56 * k;
       img.data[i + 2] = 40 * k;

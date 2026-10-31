@@ -53,16 +53,20 @@ const RACK_HINTS = [
   "Beste'nin sekizinci doğum günü: 03.02.99. C rafı, dördüncü kutu.",
 ];
 
-/** Bölge başına ışık ve sis (bkz. docs/ev-tasarim.md §9) */
+/**
+ * Bölge başına ışık ve sis (bkz. docs/ev-tasarim.md §9). zl: pencereden giren ay ışığı (nokta ışık, gölgesiz).
+ * Işık pencerenin 20-30 cm önündeyken pencerenin çevresindeki duvarda (mutfak fayansı, salon perdesi, banyo)
+ * mavi, parlak bir lamba lekesi yapıyordu; odanın içine, pencereye dönük ~1.2 m geriye alındı.
+ */
 const ZONES = {
   sahanlik: { bulb: 1, moon: 0.35, hemi: 0.3, fog: 0x040405, dens: 0.05, zl: [-1.2, 1.9, 3.2, 0.25] },
   merdiven: { bulb: null, moon: 0.2, hemi: 0.2, fog: 0x030304, dens: 0.06, zl: null },
-  giris: { bulb: 0, moon: 0.08, hemi: 0.16, fog: 0x030304, dens: 0.06, zl: [0.9, -1.3, -2.6, 0.5] },
-  hol: { bulb: 0, moon: 0.08, hemi: 0.16, fog: 0x030304, dens: 0.06, zl: [0.9, -1.3, -2.6, 0.5] },
-  salon: { bulb: 0, moon: 0.08, hemi: 0.16, fog: 0x030304, dens: 0.06, zl: [-4.3, -1.4, 6.0, 0.55] },
-  montaj: { bulb: 0, moon: 0.06, hemi: 0.14, fog: 0x030304, dens: 0.065, zl: [-4.4, -1.6, 1.8, 0.3] },
-  mutfak: { bulb: 0, moon: 0.1, hemi: 0.18, fog: 0x030304, dens: 0.06, zl: [0.95, -1.3, -2.9, 0.6] },
-  banyo: { bulb: 0, moon: 0.06, hemi: 0.14, fog: 0x030304, dens: 0.06, zl: [2.1, -1.0, 9.0, 0.35] },
+  giris: { bulb: 0, moon: 0.08, hemi: 0.16, fog: 0x030304, dens: 0.06, zl: [0.95, -1.4, -1.95, 0.5] },
+  hol: { bulb: 0, moon: 0.08, hemi: 0.16, fog: 0x030304, dens: 0.06, zl: [0.95, -1.4, -1.95, 0.5] },
+  salon: { bulb: 0, moon: 0.08, hemi: 0.16, fog: 0x030304, dens: 0.06, zl: [-3.2, -1.5, 6.0, 0.55] },
+  montaj: { bulb: 0, moon: 0.06, hemi: 0.14, fog: 0x030304, dens: 0.065, zl: [-3.4, -1.7, 1.8, 0.3] },
+  mutfak: { bulb: 0, moon: 0.1, hemi: 0.18, fog: 0x030304, dens: 0.06, zl: [0.95, -1.4, -1.95, 0.6] },
+  banyo: { bulb: 0, moon: 0.06, hemi: 0.14, fog: 0x030304, dens: 0.06, zl: [2.1, -1.1, 8.0, 0.35] },
   bahce: { bulb: 0, moon: 3.0, hemi: 3.0, fog: 0x0b0f18, dens: 0.07, zl: null },
 };
 const GROUND = ['giris', 'hol', 'salon', 'montaj', 'mutfak', 'banyo'];
@@ -335,7 +339,8 @@ export class House {
     M.melt = std({ color: 0x2a2624, roughness: 0.3 });
     M.cork = std({ color: 0x9c7046, roughness: 1 });
     M.binder = [0x22305a, 0x5a2222, 0x2a4a2a, 0x222222, 0x6a5a22].map((c) => std({ color: c, roughness: 0.7 }));
-    M.cardigan = std({ color: 0xc4b088, roughness: 1 });
+    // koyu yün: açık bej kutu el fenerinde bembeyaz, havada asılı bir levha gibi görünüyordu
+    M.cardigan = std({ color: 0x7a6a50, roughness: 1 });
   }
 
   // ------------------------------------------------------------------ yardımcılar
@@ -468,13 +473,18 @@ export class House {
     this.wall('z', 9.22, 0.9, 3.36, [side(M.tileWall, 'banyo', 0.02, YG, YC, { uv: 0.9 }), side(M.ext, 'dis', 0.14)], [win(1.8, 2.4, -1.0, -0.5)]);
     this.wall('x', 4.62, -3.36, 1.0, [side(M.plaster, 'mutfak', 0.02), side(M.ext, 'dis', 0.14)]);
     this.wall('x', 4.62, 1.0, 6.4, [side(M.plaster, 'nermin', 0.02), side(M.ext, 'dis', 0.14)]);
-    this.wall('z', 6.4, 3.2, 4.76, [side(M.plaster, 'nermin', 0.04), side(M.ext, 'dis', 0.04)]);
+    // dış yüz 3 cm: banyonun aynadaki yansıması (shell) bu duvarın 6.44'teki yüzüyle aynı düzlemdeydi ve titreşiyordu
+    this.wall('z', 6.4, 3.2, 4.76, [side(M.plaster, 'nermin', 0.04), side(M.ext, 'dis', 0.03)]);
     // banyonun aynalı duvarı (x = 3.2): aynanın arkası boşluk, ayna kabuğu orada
     this.wall('x', 3.22, 6.4, 9.36, [side(M.tileWall, 'banyo', 0.02, YG, YC, { uv: 0.9 }), side(M.ext, 'dis', 0.02)], [win(6.85, 7.35, -1.675, -1.025)]);
     // arka duvar: içte ince sıva, dışta bahçeden görünen cephe (bahçe parçası)
-    this.wall('z', -3.22, -4.76, -0.7, [null, side(M.plasterDark, 'montaj', 0.02)], [], ['zemin', 'bahce']);
-    this.wall('z', -3.22, -0.7, 4.76, [null, side(M.plaster, 'mutfak', 0.02)], [win(0.4, 1.5, -1.85, -0.85), dw(2.6, 3.45)], ['zemin', 'bahce']);
-    this.wall('z', -3.22, -4.76, 4.76, [side(M.ext, 'dis', 0.14, YB, 0.1, { chunk: 'bahce', uv: 2 }), null], [win(0.4, 1.5, -1.85, -0.85), { a0: 2.6, a1: 3.45, b0: YB - 1, b1: YG + 2.05 }], null);
+    // iç yüzler yan duvarların iç yüzünde (±4.6) biter: ±4.76'ya kadar uzanınca uç yüzleri evin dış köşesinde
+    // dış sıvayla aynı düzlemde kalıyordu (bahçeden titreşen iç sıva şeridi). Çarpışma: aşağıdaki col + yan duvarlar.
+    this.wall('z', -3.22, -4.6, -0.7, [null, side(M.plasterDark, 'montaj', 0.02)], [], ['zemin', 'bahce']);
+    this.wall('z', -3.22, -0.7, 4.6, [null, side(M.plaster, 'mutfak', 0.02)], [win(0.4, 1.5, -1.85, -0.85), dw(2.6, 3.45)], ['zemin', 'bahce']);
+    // bahçe cephesi 2 mm taşkın: yan duvarların uç yüzleri (montaj / mutfak sıvası dahil) z = -3.36 ve x = ±4.76'da
+    // cepheyle aynı düzlemdeydi; bahçeden evin köşelerinde titreşen beyaz bir çizgi görünüyordu
+    this.wall('z', -3.22, -4.762, 4.762, [side(M.ext, 'dis', 0.142, YB, 0.1, { chunk: 'bahce', uv: 2 }), null], [win(0.4, 1.5, -1.85, -0.85), { a0: 2.6, a1: 3.45, b0: YB - 1, b1: YG + 2.05 }], null);
     this.col(['zemin', 'bahce'], -4.76, -0.7, -3.36, -3.22);
     // iç duvarlar
     this.wall('x', -1.7, 2.62, 7.8, [side(M.wallSalon, 'salon'), side(M.wallStair, 'merdiven', I, YG, 2.1, { chunk: 'ust' })], [], ['zemin', 'ust']);
@@ -493,9 +503,12 @@ export class House {
     // kemerin yan pervazları
     this.box('zemin', 'hol', M.wood, -0.66, -0.6, YG, -0.6, 0.96, 1.04);
     this.box('zemin', 'hol', M.wood, 0.8, 0.86, YG, -0.6, 0.96, 1.04);
-    // süpürgelikler (birkaç yerde)
+    // süpürgelikler (birkaç yerde). Holde kapı boşluklarında (kasalarla birlikte) kesilir: eskiden kapıların
+    // önünden geçip kasaların içinden çıkıyordu (eşikte 9 cm'lik bir çıta, kasanın dibinde titreşen yüzler)
     for (const [x0, x1, z0, z1, room] of [
-      [-4.6, -1.74, 2.66, 2.68, 'salon'], [-4.6, -4.58, 2.66, 9.2, 'salon'], [-0.66, -0.64, 1.0, 7.8, 'hol'], [0.84, 0.86, 1.0, 7.8, 'hol'],
+      [-4.6, -1.74, 2.66, 2.68, 'salon'], [-4.6, -4.58, 2.66, 9.2, 'salon'],
+      [-0.66, -0.64, 1.0, 1.5, 'hol'], [-0.66, -0.64, 2.45, 3.9, 'hol'], [-0.66, -0.64, 4.65, 7.8, 'hol'],
+      [0.84, 0.86, 1.0, 3.55, 'hol'], [0.84, 0.86, 4.45, 6.65, 'hol'], [0.84, 0.86, 7.5, 7.8, 'hol'],
       [-4.6, -0.74, 2.56, 2.58, 'montaj'], [-4.6, -4.58, -3.2, 2.58, 'montaj'],
     ])
       this.box('zemin', room, M.dark, x0, x1, YG, YG + 0.09, z0, z1);
@@ -533,21 +546,25 @@ export class House {
     this.mesh(new THREE.PlaneGeometry(0.012, 1.0), M.slit, this.chunks.zemin, -4.585, -1.45, 1.92).rotation.y = HALF;
     // mutfak penceresi (bahçe görünür)
     glass(0.95, -1.35, -3.21, 1.1, 1.0, 0);
-    this.box('zemin', 'mutfak', M.wood, 0.36, 1.54, -1.89, -1.85, -3.22, -3.12);
-    this.box('zemin', 'mutfak', M.wood, 0.36, 1.54, -0.85, -0.81, -3.22, -3.12);
+    // denizlik ve başlık boşluğun 3 mm içine taşar (boşluğun alt / üst yüzüyle aynı düzlemdeydiler)
+    this.box('zemin', 'mutfak', M.wood, 0.36, 1.54, -1.89, -1.847, -3.22, -3.12);
+    this.box('zemin', 'mutfak', M.wood, 0.36, 1.54, -0.853, -0.81, -3.22, -3.12);
     this.box('zemin', 'mutfak', M.wood, 0.93, 0.97, -1.85, -0.85, -3.22, -3.18);
     // banyo buzlu camı
     glass(2.1, -0.75, 9.21, 0.6, 0.5, Math.PI, M.frosted);
-    // kapı kasaları
+    // kapı kasaları: dikmeler boşluğa 3 mm taşar, başlık 3 mm alçaktır. Eskiden dikmenin iç yüzü duvarın uç
+    // yüzüyle, başlığın altı da boşluğun üstündeki duvarla aynı düzlemdeydi: kapı aralarında ahşap ile duvar
+    // kâğıdı / sıva titreşiyordu. Dikmeler başlığın altında biter (köşelerde iç içe geçen yüzler de titreşiyordu).
+    const E = 0.003;
     const frameZ = (x0, x1, z, h = 2.05, room = 'hol') => {
-      this.box('zemin', room, M.wood, x0 - 0.05, x0, YG, YG + h + 0.05, z - 0.06, z + 0.06);
-      this.box('zemin', room, M.wood, x1, x1 + 0.05, YG, YG + h + 0.05, z - 0.06, z + 0.06);
-      this.box('zemin', room, M.wood, x0 - 0.05, x1 + 0.05, YG + h, YG + h + 0.06, z - 0.06, z + 0.06);
+      this.box('zemin', room, M.wood, x0 - 0.05, x0 + E, YG, YG + h - E, z - 0.06, z + 0.06);
+      this.box('zemin', room, M.wood, x1 - E, x1 + 0.05, YG, YG + h - E, z - 0.06, z + 0.06);
+      this.box('zemin', room, M.wood, x0 - 0.05, x1 + 0.05, YG + h - E, YG + h + 0.06, z - 0.06, z + 0.06);
     };
     const frameX = (z0, z1, x, h = 2.05, room = 'hol') => {
-      this.box('zemin', room, M.wood, x - 0.06, x + 0.06, YG, YG + h + 0.05, z0 - 0.05, z0);
-      this.box('zemin', room, M.wood, x - 0.06, x + 0.06, YG, YG + h + 0.05, z1, z1 + 0.05);
-      this.box('zemin', room, M.wood, x - 0.06, x + 0.06, YG + h, YG + h + 0.06, z0 - 0.05, z1 + 0.05);
+      this.box('zemin', room, M.wood, x - 0.06, x + 0.06, YG, YG + h - E, z0 - 0.05, z0 + E);
+      this.box('zemin', room, M.wood, x - 0.06, x + 0.06, YG, YG + h - E, z1 - E, z1 + 0.05);
+      this.box('zemin', room, M.wood, x - 0.06, x + 0.06, YG + h - E, YG + h + 0.06, z0 - 0.05, z1 + 0.05);
     };
     frameZ(-0.55, 0.3, 9.2, 2.05, 'giris');
     frameZ(2.6, 3.45, -3.2, 2.05, 'mutfak');
@@ -565,12 +582,16 @@ export class House {
     this.floor('ust', 'sahanlik', M.floor, -1.7, -0.7, 2.6, 3.8, 0, 3);
     this.floor('ust', 'sahanlik', M.ceiling, -1.7, -0.7, 2.62, 4.628, 2.1, 2, true);
     // kapı kasasının üstü ile sahanlık tavanı arasındaki aralık (çatı eğimi alçakta kalıyor; merdivenden boşluk görünüyordu)
-    this.box('ust', 'sahanlik', M.ceiling, -1.7, -0.7, 2.03, 2.1, 2.6, 2.64);
-    // eğimli tavan: kafa yüksekliği her yerde 2.70
-    const L = Math.hypot(7.8 - 4.628, 2.1 - YC);
-    const sof = new THREE.BoxGeometry(1.0, 0.04, L);
-    sof.rotateX(Math.atan2(2.1 - YC, 7.8 - 4.628));
-    sof.translate(-1.2, (2.1 + YC) / 2 + 0.02, (4.628 + 7.8) / 2);
+    // (2 mm geride: tavan arası tarafındaki yüzü alın duvarıyla aynı düzlemde titreşiyordu)
+    this.box('ust', 'sahanlik', M.ceiling, -1.7, -0.7, 2.03, 2.1, 2.602, 2.64);
+    // eğimli tavan: kafa yüksekliği her yerde 2.70. Kenarları sahanlık tavanının (z 4.628, y 2.1) ve giriş tavanının
+    // (z 7.8, YC) kenarlarına tam oturan tek yüzey: eskiden döndürülmüş bir kutuydu, uçları bu kenarlara yetişmiyordu
+    // ve merdivenden bakınca girişin tavanıyla arasında ince, kara bir yarık görünüyordu.
+    const sof = new THREE.BufferGeometry();
+    const sv = [[-1.7, 2.1, 4.628], [-0.7, 2.1, 4.628], [-0.7, YC, 7.8], [-1.7, 2.1, 4.628], [-0.7, YC, 7.8], [-1.7, YC, 7.8]];
+    sof.setAttribute('position', new THREE.Float32BufferAttribute(sv.flat(), 3));
+    sof.setAttribute('uv', new THREE.Float32BufferAttribute(new Array(12).fill(0), 2));
+    sof.computeVertexNormals();
     this.add('ust', 'sahanlik', M.ceiling, worldUV(sof, 2), true);
     // basamaklar
     for (let i = 0; i < 16; i++) {
@@ -579,7 +600,7 @@ export class House {
       this.box('ust', 'merdiven', M.stair, -1.66, -0.74, top - 0.2, top, z0 - 0.025, z1, 0.8, true);
     }
     // sahanlık kenarı ile ilk basamak arasındaki 9 cm'lik açıklığı kapatan alın tahtası (katlar arası boşluk görünmesin)
-    this.box('ust', 'merdiven', M.stair, -1.66, -0.74, stairY(3.925) - 0.2, -0.002, 3.775, 3.8);
+    this.box('ust', 'merdiven', M.stair, -1.66, -0.74, stairY(3.925) - 0.2, -0.002, 3.775, 3.8, 0.8);
     // küpeşte
     this.add('ust', 'merdiven', M.wood, rodGeo(V(-0.76, 0.92, 3.6), V(-0.76, stairY(7.8) + 0.92, 7.9), 0.025));
     for (const z of [4.4, 5.8, 7.2]) this.add('ust', 'merdiven', M.metal, rodGeo(V(-0.74, stairY(z) + 0.9, z), V(-0.68, stairY(z) + 0.9, z), 0.008));
@@ -646,9 +667,12 @@ export class House {
       const hk = this.mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.16, 6), M.wood, rack, Math.cos(a) * 0.06, 1.7, Math.sin(a) * 0.06);
       hk.rotation.set(Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9);
     }
-    const card = this.mesh(new THREE.BoxGeometry(0.36, 0.62, 0.1), M.cardigan, rack, -0.08, 1.33, -0.08);
+    // askıdaki hırka: omuzlarda daralan, yassı bir kumaş gövde (düz bir kutu havada duran bir levha gibiydi)
+    const cardG = new THREE.CylinderGeometry(0.1, 0.19, 0.62, 8, 1);
+    cardG.scale(1, 1, 0.32);
+    const card = this.mesh(cardG, M.cardigan, rack, -0.08, 1.33, -0.08);
     card.rotation.y = 0.5;
-    const sleeve = this.mesh(new THREE.BoxGeometry(0.08, 0.5, 0.08), M.cardigan, rack, -0.24, 1.3, -0.02);
+    const sleeve = this.mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.5, 6), M.cardigan, rack, -0.24, 1.3, -0.02);
     sleeve.rotation.z = 0.08;
     this.tag(rack, 'ev:portmanto');
     this.col('zemin', 0.42, 0.82, 8.8, 9.2);
@@ -713,7 +737,11 @@ export class House {
     const M = this.M;
     const Z = this.chunks.zemin;
     // yolluk
-    const rug = this.mesh(new THREE.PlaneGeometry(0.9, 5.8), M.rug, Z, 0.1, YG + 0.004, 4.4);
+    // kilim dokusu (2:3) 5.8 m'lik yolluğa tek parça gerilince desen boyuna 4 kat uzuyordu: boyunca 4 kez tekrar eder
+    const rugG = new THREE.PlaneGeometry(0.9, 5.8);
+    const rugUv = rugG.attributes.uv;
+    for (let i = 0; i < rugUv.count; i++) rugUv.setY(i, rugUv.getY(i) * 4);
+    const rug = this.mesh(rugG, M.rug, Z, 0.1, YG + 0.004, 4.4);
     rug.rotation.x = -HALF;
     // çam ormanı tablosu
     const ptex = ctex(256, 160, (x, w, h) => {
@@ -941,8 +969,9 @@ export class House {
     this.box('zemin', 'montaj', M.wood, -3.72, -3.68, YG, -0.9, -3.2, -2.85);
     this.box('zemin', 'montaj', M.wood, -1.52, -1.48, YG, -0.9, -3.2, -2.85);
     this.box('zemin', 'montaj', M.dark, -3.7, -1.5, YG, -0.9, -3.2, -3.18);
-    for (const row of RACK_ROWS) this.box('zemin', 'montaj', M.wood, -3.7, -1.5, RACK_Y[row] - 0.13, RACK_Y[row] - 0.1, -3.2, -2.85);
-    this.box('zemin', 'montaj', M.wood, -3.72, -1.48, -0.93, -0.9, -3.2, -2.85);
+    // raflar ve üst tabla yan dikmelerin arasında (ön kenarları dikmelerle aynı düzlemde titreşiyordu)
+    for (const row of RACK_ROWS) this.box('zemin', 'montaj', M.wood, -3.68, -1.52, RACK_Y[row] - 0.13, RACK_Y[row] - 0.1, -3.2, -2.852);
+    this.box('zemin', 'montaj', M.wood, -3.68, -1.52, -0.93, -0.9, -3.2, -2.852);
     this.col('zemin', -3.72, -1.48, -3.2, -2.83);
     const sign = ctex(512, 64, (x, w, h) => {
       x.fillStyle = '#e8e0c4';
@@ -1132,7 +1161,7 @@ export class House {
     this.box('zemin', 'mutfak', M.cream, -0.65, 2.45, YG, -2.06, -3.2, -2.62);
     this.box('zemin', 'mutfak', M.dark, -0.65, 2.45, -2.06, -2.0, -3.2, -2.6);
     this.box('zemin', 'mutfak', M.metal, 0.65, 1.25, -2.005, -1.995, -3.12, -2.7);
-    this.box('zemin', 'mutfak', M.black, 0.7, 1.2, -2.0, -1.994, -3.08, -2.74);
+    this.box('zemin', 'mutfak', M.black, 0.7, 1.2, -2.0, -1.991, -3.08, -2.74);
     this.add('zemin', 'mutfak', M.metal, rodGeo(V(0.95, -2.0, -3.12), V(0.95, -1.75, -3.12), 0.012));
     this.add('zemin', 'mutfak', M.metal, rodGeo(V(0.95, -1.75, -3.12), V(0.95, -1.75, -2.95), 0.012));
     this.box('zemin', 'mutfak', M.porcelain, -0.6, 0.0, -2.0, -1.97, -3.15, -2.65);
@@ -1149,7 +1178,11 @@ export class House {
     this.mesh(new THREE.BoxGeometry(0.16, 0.004, 0.11), M.cream, dr, 0.09, -0.048, -0.24);
     this.drawer = dr;
     this.tag(dr, 'ev:cekmece');
-    this.box('zemin', 'mutfak', M.tileWall, -0.65, 2.45, -2.0, -1.4, -3.2, -3.19, 0.6);
+    // tezgâh arkası fayans: pencerenin (x 0.36..1.54, y -1.89 altı) iki yanında ve altında. Eskiden tek parçaydı
+    // ve pencere boşluğunun alt yarısını içeriden fayansla kapatıyordu.
+    this.box('zemin', 'mutfak', M.tileWall, -0.65, 0.36, -2.0, -1.4, -3.2, -3.19, 0.6);
+    this.box('zemin', 'mutfak', M.tileWall, 1.54, 2.45, -2.0, -1.4, -3.2, -3.19, 0.6);
+    this.box('zemin', 'mutfak', M.tileWall, 0.36, 1.54, -2.0, -1.89, -3.2, -3.19, 0.6);
     this.col('zemin', -0.65, 2.45, -3.2, -2.58);
     // buzdolabı ve üstündeki çocuk resmi
     this.box('zemin', 'mutfak', M.cream, 4.03, 4.6, YG, YG + 1.6, -0.95, -0.25);
@@ -1283,7 +1316,8 @@ export class House {
     this.col('zemin', 2.7, 3.2, 6.85, 7.35);
     // ayna kapağı (dolabın kapağı): z = 6.85 kenarından menteşeli
     const mp = new THREE.Group();
-    mp.position.set(3.19, -1.35, 6.85);
+    // 3.185: aynanın çerçevesi banyo yansımasının (shell) x = 3.18'deki duvar yüzüyle aynı düzlemdeydi (titreşiyordu)
+    mp.position.set(3.185, -1.35, 6.85);
     Z.add(mp);
     const grime = ctex(128, 160, (x, w, h) => {
       x.fillStyle = 'rgba(255,255,255,0)';
@@ -1302,8 +1336,8 @@ export class House {
     this.mirrorGlass.rotation.y = -HALF;
     this.mesh(new THREE.BoxGeometry(0.02, 0.69, 0.02), M.metal, mp, 0, 0, 0.0);
     this.mesh(new THREE.BoxGeometry(0.02, 0.69, 0.02), M.metal, mp, 0, 0, 0.5);
-    this.mesh(new THREE.BoxGeometry(0.02, 0.02, 0.52), M.metal, mp, 0, 0.335, 0.25);
-    this.mesh(new THREE.BoxGeometry(0.02, 0.02, 0.52), M.metal, mp, 0, -0.335, 0.25);
+    this.mesh(new THREE.BoxGeometry(0.02, 0.024, 0.52), M.metal, mp, 0, 0.335, 0.25);
+    this.mesh(new THREE.BoxGeometry(0.02, 0.024, 0.52), M.metal, mp, 0, -0.335, 0.25);
     this.mirrorPivot = mp;
     this.tag(mp, 'ev:ecza');
     // dolabın içi (yalnız kapak açıkken görünür)

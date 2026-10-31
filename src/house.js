@@ -593,6 +593,9 @@ export class House {
     sof.setAttribute('uv', new THREE.Float32BufferAttribute(new Array(12).fill(0), 2));
     sof.computeVertexNormals();
     this.add('ust', 'sahanlik', M.ceiling, worldUV(sof, 2), true);
+    // merdiven dibindeki giriş zemininin üst kattaki vekili (2 mm aşağıda): tavan arasındayken zemin kat çizilmez,
+    // kapıdan merdivene bakınca dipte kapkara bir boşluk vardı. Zemin kat çizilirken gerçek zemin bunu örter.
+    this.floor('ust', 'giris', M.floor, -1.7, 0.9, 7.8, 9.2, YG - 0.002, 3);
     // basamaklar
     for (let i = 0; i < 16; i++) {
       const z0 = 3.8 + i * 0.25, z1 = z0 + 0.25;
@@ -1529,6 +1532,19 @@ export class House {
     // uzak gökyüzü
     const sky = this.mesh(new THREE.PlaneGeometry(140, 50), new THREE.MeshBasicMaterial({ map: TX.skyTexture('night'), fog: false }), G, 0, 8, -48);
     sky.renderOrder = -1;
+    // gök kubbesi: düzlemin bitip arka planın göründüğü yanlarda ve tepede sert kenar kalmasın
+    // (renkler gökyüzü dokusunun ufuk ve tepe renkleri)
+    const domeG = new THREE.SphereGeometry(75, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2 + 0.25);
+    const pos = domeG.attributes.position;
+    const col = new Float32Array(pos.count * 3);
+    const top = new THREE.Color(0x02040c), hor = new THREE.Color(0x0c1630), c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      c.copy(hor).lerp(top, clamp(pos.getY(i) / 45, 0, 1));
+      col.set([c.r, c.g, c.b], i * 3);
+    }
+    domeG.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const dome = this.mesh(domeG, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false }), G, 0, 0, -10);
+    dome.renderOrder = -2;
   }
 
   // ------------------------------------------------------------------ evin bahçeden görünen dışı
@@ -1537,6 +1553,11 @@ export class House {
     // düz katran çatı (tavan arası hariç)
     for (const [x0, x1, z0, z1] of [[-4.76, 4.76, -3.36, -2.6], [-4.76, -3.0, -2.6, 2.6], [3.0, 4.76, -2.6, 2.6], [-4.76, 4.76, 2.6, 9.36]]) this.box('bahce', 'dis', M.tar, x0, x1, 0.02, 0.1, z0, z1, 2);
     this.box('bahce', 'dis', M.ext, -4.8, 4.8, 0.0, 0.16, -3.4, -3.36, 2);
+    // evin yan duvarlarının dış yüzü (bahçe parçasında): zemin kat arka kapı kapalıyken bahçeden çizilmez; bahçenin
+    // yan şeritlerinden eve doğru bakınca yan duvarlar yok, yerlerinde kara boşluk vardı. Zemin kattaki dış yüzün 2 mm
+    // dışında (kapı açıkken ikisi birden çizilir) ve çatı kaplamasına kadar (duvarın üstündeki 22 cm'lik yarık da kapanır).
+    this.box('bahce', 'dis', M.ext, 4.762, 4.78, YB, 0.1, -3.22, 6.4, 2);
+    this.box('bahce', 'dis', M.ext, -4.78, -4.762, YB, 0.1, -3.22, 9.36, 2);
     // tavan arası alın duvarının dış kaplaması (pencere boşluklu)
     const s = new THREE.Shape();
     s.moveTo(-3.02, 0.1);

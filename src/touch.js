@@ -1,6 +1,6 @@
 // Dokunmatik denetimler (telefon, tablet ve Android sürümü). Ekranın solunda başparmağın değdiği yerde beliren
-// sanal çubuk (yürü; halkanın dışına itince koş), sağda sürükleyerek bakış, kısa dokunuşla ortadaki noktanın
-// gösterdiği şeyle etkileşim ve duruma göre görünen düğmeler: ETKİLEŞ, FENER, KALK/OTUR, TV, DURAKLAT,
+// sanal çubuk (yürü; halkanın dışına itince koş), sağda sürükleyerek bakış, kısa dokunuşla parmağın değdiği
+// nesneyle etkileşim ve duruma göre görünen düğmeler: ETKİLEŞ, FENER, KALK/OTUR, TV, DURAKLAT,
 // basılı tutunca GERİ SAR, MENÜ. Beste soru sorunca üstte ekran klavyesini açan bir cevap kutusu ve şık düğmeleri çıkar.
 // Masaüstünde hiçbir şey değişmez: katman yalnızca dokunmatik kipte görünür. Hem dokunmatik hem fare olan cihazlarda
 // son kullanılan giriş kipi seçer (ekrana dokununca dokunmatik, fare kıpırdayınca masaüstü).
@@ -343,6 +343,7 @@ export class Touch {
     const el = this.joyEl;
     el.classList.remove('idle');
     el.classList.add('held');
+    document.body.classList.add('joyheld');
     el.style.left = cx + 'px';
     el.style.top = cy + 'px';
     this.joyMove(t);
@@ -374,6 +375,7 @@ export class Touch {
     }
     const el = this.joyEl;
     el.classList.remove('held', 'run');
+    document.body.classList.remove('joyheld');
     el.style.left = el.style.top = '';
     this.knob.style.transform = '';
   }
@@ -422,7 +424,8 @@ export class Touch {
     }
     if (label != null && v.label !== label) {
       v.label = label;
-      b.textContent = label;
+      // simgeli etiket: küçük simge üstte, yazı altta (dar düğmeye sığsın)
+      b.innerHTML = label;
     }
     if (cls !== undefined && v.cls !== cls) {
       if (v.cls) b.classList.remove(v.cls);
@@ -475,8 +478,8 @@ export class Touch {
     }
     this.set('use', true, null, g.ui.hoverText ? 'hot' : '');
     this.set('menu', true);
-    this.set('tv', !w.standing && !tape && !d.fakeEnding, g.room.focusTarget > 0.5 ? 'GERİ ÇEKİL' : 'TV');
-    this.set('pause', d.active && !d.fakeEnding && !d.input && !g.loadingTape, d.paused ? '▶ OYNAT' : '❚❚ DURAKLAT', d.paused ? 'on' : '');
+    this.set('tv', !w.standing && !tape && !d.fakeEnding, g.room.focusTarget > 0.5 ? '<i>TV</i>GERİ ÇEKİL' : 'TV');
+    this.set('pause', d.active && !d.fakeEnding && !d.input && !g.loadingTape, d.paused ? '<i>▶</i>OYNAT' : '<i>❚❚</i>DURAKLAT', d.paused ? 'on' : '');
     this.set('light', w.standing && !tape, null, w.lightOn ? 'on' : '');
     this.set('rw', d.active && d.rewindAvailable(), null, d.rewinding ? 'on' : '');
     const stand = walkOk && !tape && !w.trans && (w.standing ? this.nearSeat() : true);

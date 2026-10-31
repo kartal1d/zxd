@@ -1,4 +1,6 @@
 // Beste'nin Sihirli Dünyası — giriş noktası.
+// Android (Capacitor) köprüsü: geri tuşu = Esc, arka planda duraklatma; tarayıcıda ve exe'de hiçbir şey yapmaz
+import './native.js';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -459,7 +461,7 @@ class Game {
     // menü tıklanabilsin: fare kilidi açıksa bırak (Esc'ye tarayıcı dışında basılmış olabilir)
     this.releasePointer();
     this.audio.ctx?.suspend();
-    $('pause-objective').textContent = 'Hedef: ' + this.objectiveText();
+    $('pause-objective').textContent = 'Hedef: ' + this.ui.tt(this.objectiveText());
     const ph = $('pause-hint');
     if (ph) {
       ph.textContent = this.lastHint ? 'Son ipucu: ' + this.ui.tt(this.lastHint) : '';

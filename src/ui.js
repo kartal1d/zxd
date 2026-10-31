@@ -649,6 +649,8 @@ export class UI {
       idx = (i + list.length) % list.length;
       buttons.forEach((b, j) => b.classList.toggle('sel', j === idx));
       buttons[idx].focus({ preventScroll: true });
+      // dokunmatikte liste kayar: seçili (yeni) kaset görünür kalsın
+      if (this.g.isTouch) buttons[idx].scrollIntoView({ block: 'nearest' });
     };
     let resolveFn;
     const close = (n) => {

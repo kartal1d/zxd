@@ -248,7 +248,7 @@ body.touch {
   --sb: max(12px, env(safe-area-inset-bottom));
   --use: calc(78px * var(--ts));
   --bw: calc(96px * var(--ts));
-  --bh: calc(46px * var(--ts));
+  --bh: max(44px, calc(46px * var(--ts)));
   --jr: calc(54px * var(--ts));
   /* sağdaki düğme kümesinin genişliği: altyazı ve bildirimler bunun dışında kalır */
   --side: calc(var(--sr) + var(--use) + var(--bw) + 18px);
@@ -330,12 +330,14 @@ body.touch #crosshair.active { width: 22px; height: 22px; margin: -11px 0 0 -11p
 body.touch #vcr-hint, body.touch #type-hint, body.touch #click-hint { display: none !important; }
 body.touch #objective { left: var(--sl); top: var(--st); font-size: 17px; max-width: min(520px, calc(100% - var(--sl) - var(--sr) - 140px)); }
 body.touch.asking #objective { opacity: 0; }
-body.touch #inventory { left: var(--sl); bottom: calc(var(--sb) + var(--jr) * 2 + 40px); font-size: 16px; gap: 8px; max-width: 40%; }
-body.touch #inventory { transition: opacity .25s; }
-body.touch.joyheld #inventory { opacity: .18; }
-body.touch #inventory .tape-icon { transform: scale(.8); transform-origin: left center; flex: none; }
+/* elindeki kaset: sağ sütunda, düğme kümesinin üstünde (çubuğun ve bildirimlerin yolunda değil) */
+body.touch #inventory {
+  left: auto; right: var(--sr); top: auto; bottom: calc(var(--sb) + var(--use) + var(--bh) + 22px);
+  width: calc(var(--side) - var(--sr)); flex-direction: row-reverse; text-align: right; font-size: 16px; line-height: 1.15; gap: 8px;
+}
+body.touch #inventory .tape-icon { transform: scale(.8); transform-origin: right center; flex: none; }
 body.touch #secret-toast { right: var(--sr); top: calc(var(--st) + 52px); font-size: 18px; line-height: 1.15; width: calc(var(--side) - var(--sr) - 6px); text-align: right; }
-body.touch #toast { bottom: auto; top: calc(var(--st) + 60px); max-width: max(260px, calc(100% - 2 * var(--side))); font-size: 20px; }
+body.touch #toast { bottom: auto; top: calc(var(--st) + 60px); width: max(260px, calc(100% - 2 * var(--side))); max-width: none; font-size: 20px; }
 body.touch.asking #toast { top: calc(var(--vvt, 0px) + var(--st) + 118px); }
 body.touch #hover-label { top: calc(50% + 16px); font-size: 20px; }
 body.touch #subtitles { bottom: calc(var(--sb) + var(--kb, 0px)); width: max(300px, calc(100% - 2 * var(--side))); font-size: 20px; line-height: 1.18; }
@@ -378,6 +380,8 @@ body.touch .menu { gap: 4px; }
 body.touch .menu button, body.touch .back, body.touch #btn-ending-menu { min-height: 44px; padding: 4px 18px; }
 body.touch .confirm button { min-height: 40px; padding: 4px 10px; }
 body.touch .panel-inner { max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 14px 22px; gap: 10px; }
+/* uzun panelde (kontroller) GERİ kaydırmadan da erişilir */
+body.touch .panel-inner > .back { position: sticky; bottom: 0; z-index: 1; background: var(--vcr-blue-deep); box-shadow: 0 -10px 14px var(--vcr-blue-deep); }
 body.touch .panel h2 { font-size: 30px; }
 body.touch .row { min-height: 44px; font-size: 20px; }
 body.touch .row input[type=range] { width: 46%; height: 32px; }
@@ -431,6 +435,22 @@ body.touch .wordlock-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px;
 body.touch #wordlock-input { font-size: 22px; letter-spacing: .2em; padding: 4px; min-width: 0; }
 #btn-wordlock-try { font-family: var(--font-osd); font-size: 22px; letter-spacing: .08em; padding: 0 18px; min-height: 44px; color: var(--osd); background: var(--vcr-blue); border: 2px solid var(--osd); border-radius: 4px; cursor: pointer; }
 body.touch #btn-wordlock-close { min-height: 40px; }
+
+/* dar telefon: denetimler biraz küçülür, altyazıya ve bildirimlere yer kalır (dokunma hedefleri yine ≥ 44 px) */
+@media (max-width: 760px) {
+  body.touch { --ts: .88; }
+  body.touch.big { --ts: 1.1; }
+  body.touch #subtitles, body.touch #walk-hint { font-size: 18px; }
+  body.touch #toast { font-size: 17px; }
+  body.touch #hover-label { font-size: 18px; }
+}
+/* çok kısa ekran: harf kilidi sığsın */
+@media (max-height: 360px) {
+  body.touch #wordlock-help { display: none; }
+  body.touch .wordlock-box { gap: 6px; padding: 10px 14px; }
+  body.touch .wheel-letter { line-height: 46px; font-size: 38px; }
+  body.touch .keys { font-size: 16px; }
+}
 
 /* kısa yatay ekran (telefon): başlık ve son ekranı kaydırmadan sığsın */
 @media (max-height: 600px) {

@@ -334,7 +334,8 @@ export class Touch {
 
   // ------------------------------------------------------------------ çubuk
   joyStart(t) {
-    const r = R * this.scale();
+    // halka boyu CSS'ten (dar ekranda ve "Kontrolleri büyüt"te değişir)
+    const r = this.joyEl.querySelector('.joy-ring').offsetWidth / 2 || R * this.scale();
     const pad = r + 10;
     // halka ekrandan taşmasın
     const cx = clamp(t.clientX, pad, Math.max(pad, innerWidth * LEFT));
@@ -343,7 +344,6 @@ export class Touch {
     const el = this.joyEl;
     el.classList.remove('idle');
     el.classList.add('held');
-    document.body.classList.add('joyheld');
     el.style.left = cx + 'px';
     el.style.top = cy + 'px';
     this.joyMove(t);
@@ -375,7 +375,6 @@ export class Touch {
     }
     const el = this.joyEl;
     el.classList.remove('held', 'run');
-    document.body.classList.remove('joyheld');
     el.style.left = el.style.top = '';
     this.knob.style.transform = '';
   }
@@ -478,7 +477,7 @@ export class Touch {
     }
     this.set('use', true, null, g.ui.hoverText ? 'hot' : '');
     this.set('menu', true);
-    this.set('tv', !w.standing && !tape && !d.fakeEnding, g.room.focusTarget > 0.5 ? '<i>TV</i>GERİ ÇEKİL' : 'TV');
+    this.set('tv', !w.standing && !tape && !d.fakeEnding, g.room.focusTarget > 0.5 ? 'GERİ<br>ÇEKİL' : 'TV');
     this.set('pause', d.active && !d.fakeEnding && !d.input && !g.loadingTape, d.paused ? '<i>▶</i>OYNAT' : '<i>❚❚</i>DURAKLAT', d.paused ? 'on' : '');
     this.set('light', w.standing && !tape, null, w.lightOn ? 'on' : '');
     this.set('rw', d.active && d.rewindAvailable(), null, d.rewinding ? 'on' : '');

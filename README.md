@@ -31,7 +31,7 @@ Exe'yi kendin derlemek için: `cd desktop && npm install && npm run dist` (Windo
 | Sol başparmak (joystick) | Yürü; sonuna kadar it: koş |
 | Sağ tarafı sürükle | Etrafa bak |
 | Nişangahı nesneye getir + **ETKİLEŞ** | O nesneyle etkileşim (al, oku, aç); nesneye doğrudan dokunmak bir şey yapmaz |
-| **FENER**, **KALK/OTUR**, **TV** | El feneri, ayağa kalk / otur, televizyona odaklan |
+| **FENER**, **KALK/OTUR** | El feneri, ayağa kalk / otur (TV'ye odaklanmak için nişangahı TV'ye getirip **ETKİLEŞ**) |
 | **❚❚ DURAKLAT**, **◀◀ GERİ SAR** | Kaseti duraklat; geri sar (yalnızca çıktığında, basılı tut) |
 | **≡ MENÜ** ya da telefonun geri tuşu | Duraklatma menüsü |
 

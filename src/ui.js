@@ -487,8 +487,9 @@ export class UI {
     el.style.height = '';
     this.show('reader', true);
     this.g.overlay = 'reader';
-    this.readerClick = null;
-    if (this.g.isTouch) this.paginate(el);
+    el.classList.remove('cols', 'tight', 'wide');
+    el.style.removeProperty('--f');
+    if (this.g.isTouch) this.fitDoc(el);
     return new Promise((resolve) => (this.closeReader = () => {
       this.show('reader', false);
       this.g.overlay = null;
@@ -499,90 +500,50 @@ export class UI {
   }
 
   /**
-   * Dokunmatik: belge kaydırılmaz. Önce tek sayfaya sığdırmak için biraz küçültülür; olmazsa paragraflar sayfalara
-   * bölünür (◀ 1 / 3 ▶). Dokunuş sonraki sayfa, son sayfada kapatır; ✕ hep kapatır. Ölçüm yalnız belge açılınca.
+   * Dokunmatik: belge tek sayfada, kaydırmasız ve sayfasız görünür. Her öğenin yazı boyu belgenin taban boyuna
+   * oranlanıp tek bir değişkene (--f) bağlanır; --f ikili aramayla kutuya sığan en büyük değere ayarlanır (en az 11 px).
+   * Tek sütunda yazı küçük kalıyorsa yatay ekranda iki sütun denenir; yine sığmazsa satırlar sıklaşır ve kutu tüm
+   * ekranı kullanır. Ölçüm yalnız belge açılınca yapılır.
    */
-  paginate(el) {
+  fitDoc(el) {
     const pg = document.createElement('div');
     pg.className = 'pg';
     while (el.firstChild) pg.appendChild(el.firstChild);
     el.appendChild(pg);
-    // numaralı listeler madde madde bölünebilsin (sayfanın yarısı boş kalmasın)
-    for (const l of [...pg.children]) {
-      if (l.tagName !== 'OL' && l.tagName !== 'UL') continue;
-      const items = [...l.children];
-      const first = +(l.getAttribute('start') || 1);
-      l.replaceWith(
-        ...items.map((li, j) => {
-          const c = document.createElement(l.tagName);
-          if (l.tagName === 'OL') c.start = first + j;
-          if (j) c.style.marginTop = '0';
-          if (j < items.length - 1) c.style.marginBottom = '0';
-          c.appendChild(li);
-          return c;
-        }),
-      );
+    const base = parseFloat(getComputedStyle(el).fontSize) || 18;
+    for (const n of pg.querySelectorAll('*')) {
+      const r = parseFloat(getComputedStyle(n).fontSize) / base;
+      n.style.fontSize = `max(11px, calc(var(--f) * ${r.toFixed(3)}))`;
     }
-    const kids = [...pg.children];
-    const fits = () => el.scrollHeight <= el.clientHeight + 1;
-    let pages = null;
-    for (const z of [1, 0.93, 0.87, 0.8, 0.74, 0.68, 0.62]) {
-      pg.style.zoom = z;
-      kids.forEach((k) => (k.style.display = ''));
-      el.style.height = '';
-      if (z >= 0.87 && fits()) {
-        pages = [kids];
-        break;
+    el.style.fontSize = 'var(--f)';
+    const set = (f) => el.style.setProperty('--f', f + 'px');
+    const fits = () => el.scrollHeight <= el.clientHeight + 1 && el.scrollWidth <= el.clientWidth + 1;
+    const search = (lo, hi) => {
+      set(hi);
+      if (fits()) return hi;
+      set(lo);
+      if (!fits()) return 0;
+      while (hi - lo > 0.25) {
+        const mid = (lo + hi) / 2;
+        set(mid);
+        if (fits()) lo = mid;
+        else hi = mid;
       }
-      if (z > 0.93) continue;
-      // sayfalara böl: her sayfa kutunun iç yüksekliğine sığan ardışık bloklar
-      const cs = getComputedStyle(el);
-      const avail = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 4;
-      const top0 = pg.getBoundingClientRect().top;
-      const list = [];
-      let cur = [], start = 0, ok = true;
-      for (const k of kids) {
-        const r = k.getBoundingClientRect();
-        if (r.height > avail) {
-          ok = false;
-          break;
-        }
-        if (cur.length && r.bottom - top0 - start > avail) {
-          list.push(cur);
-          cur = [];
-          start = r.top - top0;
-        }
-        cur.push(k);
-      }
-      if (!ok) continue;
-      if (cur.length) list.push(cur);
-      // her sayfa gerçekten sığıyor mu (kenar boşlukları bölününce değişebilir)
-      el.style.height = el.clientHeight + 'px';
-      if (list.every((p) => (kids.forEach((k) => (k.style.display = p.includes(k) ? '' : 'none')), fits()))) {
-        pages = list;
-        break;
-      }
+      return lo;
+    };
+    const hi = Math.max(16, base);
+    let f = search(11, hi);
+    if (f < 17 && innerWidth > innerHeight) {
+      el.classList.add('cols');
+      const f2 = search(11, hi);
+      if (f2 > f + 0.5) f = f2;
+      else el.classList.remove('cols');
     }
-    if (!pages) pages = [kids];
-    let i = 0;
-    const pager = $('reader-pager');
-    const show = (n) => {
-      i = Math.max(0, Math.min(pages.length - 1, n));
-      kids.forEach((k) => (k.style.display = pages[i].includes(k) ? '' : 'none'));
-      $('reader-page').textContent = `${i + 1} / ${pages.length}`;
-      $('reader-prev').disabled = i === 0;
-      $('reader-next').disabled = i === pages.length - 1;
-      $('reader-hint').textContent = i < pages.length - 1 ? 'Dokun: sonraki sayfa' : 'Kapatmak için dokun';
-    };
-    pager.hidden = pages.length < 2;
-    if (pages.length < 2) el.style.height = '';
-    $('reader-prev').onclick = (e) => (e.stopPropagation(), show(i - 1));
-    $('reader-next').onclick = (e) => (e.stopPropagation(), show(i + 1));
-    show(0);
-    this.readerClick = (e) => {
-      if (e?.target?.closest?.('#btn-reader-close') || i >= pages.length - 1) this.closeReader?.();
-      else show(i + 1);
-    };
+    if (!f) {
+      el.classList.add('cols', 'tight', 'wide');
+      f = search(11, hi) || search(9, 11) || 9;
+    }
+    set(Math.floor(f * 4) / 4);
   }
 
   /**
@@ -744,12 +705,15 @@ export class UI {
     box.innerHTML = '';
     const touch = !!this.g.isTouch;
     // dokunmatikte liste kaymaz: kasetler 1-3 sütuna dağılır, numara solda yazdığı için ad "Kaset N — " olmadan
-    box.style.setProperty('--cols', list.length <= 4 ? 1 : list.length <= 8 ? 2 : 3);
+    const n = list.length;
+    const cols = n <= 3 ? Math.max(1, n) : n <= 6 ? 3 : n <= 8 ? 4 : n <= 10 ? 5 : 4;
+    box.style.setProperty('--cols', cols);
+    box.style.setProperty('--rows', Math.max(1, Math.ceil(list.length / cols)));
     let idx = Math.max(0, list.findIndex((t) => t.n === preferred));
     const buttons = list.map((t, i) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'tape-choice';
+      b.className = 'tape-choice' + (t.watched ? '' : ' new') + (typeof t.n === 'string' ? ' secret' : '');
       b.innerHTML = `<span class="tape-key">${t.key ?? t.n}</span><span class="tape-name"></span><span class="tape-tag">${t.watched ? 'izlendi' : 'YENİ'}</span>`;
       b.querySelector('.tape-name').textContent = touch ? t.name.replace(/^Kaset \d+ — /, '') : t.name;
       b.onclick = () => close(t.n);
@@ -810,12 +774,12 @@ export class UI {
     this.show('ending', true);
     // dokunmatik: kaydırma yok, uzun son yazısı ekrana sığana dek küçülür (yalnız açılışta ölçülür)
     const inner = document.querySelector('#ending .ending-inner');
-    inner.style.zoom = '';
+    inner.style.removeProperty('--ek');
     if (this.g.isTouch) {
       const scr = $('ending');
-      for (const z of [0.94, 0.88, 0.82, 0.76, 0.7, 0.64]) {
+      for (let k = 1; k >= 0.6; k -= 0.04) {
+        inner.style.setProperty('--ek', k.toFixed(2));
         if (scr.scrollHeight <= scr.clientHeight + 1) break;
-        inner.style.zoom = z;
       }
     }
   }

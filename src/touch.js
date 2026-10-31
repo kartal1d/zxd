@@ -1,6 +1,6 @@
 // Dokunmatik denetimler (telefon, tablet ve Android sürümü). Ekranın solunda başparmağın değdiği yerde beliren
 // sanal çubuk (yürü; halkanın dışına itince koş), sağda sürükleyerek bakış ve duruma göre görünen düğmeler:
-// ETKİLEŞ, FENER, KALK/OTUR, TV, DURAKLAT, basılı tutunca GERİ SAR, MENÜ. Beste soru sorunca üstte ekran klavyesini
+// ETKİLEŞ, FENER, KALK/OTUR, DURAKLAT, basılı tutunca GERİ SAR, MENÜ (televizyona odaklanmak da ETKİLEŞ'le). Beste soru sorunca üstte ekran klavyesini
 // açan bir cevap kutusu ve şık düğmeleri çıkar.
 // Etkileşim yalnızca nişangâhla: ortadaki noktayı nesneye getirip ETKİLEŞ'e basılır; 3B görüntüye dokunmak bir şey yapmaz.
 // Küçük nesneler için hafif nişan yardımı: orta ışın boşa giderse ~1,5° çevresindeki nesne de hedef sayılır ve
@@ -245,9 +245,6 @@ export class Touch {
       case 'menu':
         g.pause();
         break;
-      case 'tv':
-        g.toggleFocus();
-        break;
       case 'pause':
         if (d.togglePause() && d.paused) g.state.flags.pauses++;
         break;
@@ -459,7 +456,7 @@ export class Touch {
     }
     this.set('use', true, null, g.ui.hoverText ? 'hot' : '');
     this.set('menu', true);
-    this.set('tv', !w.standing && !tape && !d.fakeEnding, g.room.focusTarget > 0.5 ? 'GERİ<br>ÇEKİL' : 'TV');
+    // ayrı TV düğmesi yok: televizyona nişan alıp ETKİLEŞ'e basmak odaklar, odaktayken yine ETKİLEŞ geri çeker
     this.set('pause', d.active && !d.fakeEnding && !d.input && !g.loadingTape, d.paused ? '<i>▶</i>OYNAT' : '<i>❚❚</i>DURAKLAT', d.paused ? 'on' : '');
     this.set('light', w.standing && !tape, null, w.lightOn ? 'on' : '');
     this.set('rw', d.active && d.rewindAvailable(), null, d.rewinding ? 'on' : '');

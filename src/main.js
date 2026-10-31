@@ -1085,6 +1085,8 @@ class Game {
     this.room.vcrText = '12:00';
     if (res !== 'done' || this.mode === 'title') {
       if (this.playingTape === n) this.playingTape = null;
+      // çıkarılan / yarıda kalan kaset: kamera kendiliğinden ekranda kalmaz (oyuncu isterse yeniden odaklanır)
+      if (this.mode === 'play') this.room.setFocus(false);
       this.refreshInventory();
       this.room.applyStage(st);
       return;
@@ -1214,7 +1216,8 @@ class Game {
     this.rare?.update(dt);
     this.gazeOnTv = r.gaze;
     // televizyona odaklanınca ekranın ortasına yazı basma
-    const tvFocus = r.hover === 'tv' && r.focusTarget > 0.5;
+    // (dokunmatikte odaktayken "Geri çekil" yazar: geri çekilmek de ETKİLEŞ'le)
+    const tvFocus = r.hover === 'tv' && r.focusTarget > 0.5 && !this.isTouch;
     if (this.mode === 'play' && !this.overlay && !tvFocus && !r.locked) this.ui.hover(this.label(r.hover));
     else this.ui.hover('');
 

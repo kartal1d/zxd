@@ -298,7 +298,8 @@ class Game {
       this.settings.quality = 'low';
       this.applySettings();
     };
-    $('reader').onclick = () => this.ui.closeReader?.();
+    // dokunmatikte belge sayfalıdır: dokunuş sonraki sayfa, son sayfada kapatır (ui.read)
+    $('reader').onclick = (e) => (this.ui.readerClick ? this.ui.readerClick(e) : this.ui.closeReader?.());
     document.querySelectorAll('.keypad-grid button').forEach((b) => (b.onclick = () => this.ui.keypadKey?.(b.dataset.k || b.textContent)));
     $('btn-tapes-cancel').onclick = () => this.ui.closeTapes?.(null);
     $('btn-wordlock-close').onclick = () => {
@@ -1192,6 +1193,8 @@ class Game {
     const ndc = this.free && this.mode === 'play' ? this.ndc : ZERO2;
     this.walk.update(dt);
     r.update(dt, ndc);
+    // dokunmatikte küçük nesneler için nişan yardımı (hedef, aşağıdaki etiketten önce belirlenir)
+    if (this.isTouch && this.mode === 'play' && !this.overlay) this.touch.assist();
     this.house.update(dt, this.clock);
     this.scares.update(dt);
     this.rare?.update(dt);

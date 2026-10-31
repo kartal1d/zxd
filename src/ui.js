@@ -39,15 +39,16 @@ export const REVERSED = {
  * Masaüstünde metinler olduğu gibi kalır.
  */
 const TOUCH_TEXT = [
-  [/Etrafa bakmak için ekrana tıkla\./g, 'Etrafa bakmak için parmağını ekranın sağında sürükle.'],
+  [/Etrafa bakmak için ekrana tıkla\./g, "Etrafa bakmak için parmağını sürükle. Nişangâhı bir şeye getirip ETKİLEŞ'e bas."],
   [/ ?\[[A-ZÇĞİÖŞÜ]\]/g, ''],
   [/Artık W A S D ile yürüyebilirsin/g, 'Artık sol başparmağınla yürüyebilirsin'],
   [/W A S D ile yürü/g, 'Sol başparmağınla yürü'],
-  [/Fareyle/g, 'Parmağınla'],
-  [/fareyle/g, 'parmağınla'],
+  [/Fareyle/g, 'Parmağını sürükleyip'],
+  [/fareyle/g, 'parmağını sürükleyip'],
   [/ayağa kalk \(W\)/g, 'ayağa kalk (KALK)'],
-  [/ve E'ye bas/g, 've dokun'],
-  [/tıkla(?=[\s.,:;!]|$)/g, 'dokun'],
+  [/E'ye bas/g, "ETKİLEŞ'e bas"],
+  [/bak ve tıkla(?=[\s.,:;!]|$)/g, "bak ve ETKİLEŞ'e bas"],
+  [/tıkla(?=[\s.,:;!]|$)/g, "nişan al, ETKİLEŞ'e bas"],
   [/klavyeden cevap ver/g, 'üstteki kutuya yazarak cevap ver'],
   [/\(Q\)/g, '(FENER düğmesi)'],
   [/(BOŞLUK|[Bb]oşluk) tuşuna bas/g, '❚❚ DURAKLAT düğmesine bas'],
@@ -234,6 +235,17 @@ export class UI {
     }
     line.appendChild(document.createTextNode(text));
     el.appendChild(line);
+    if (this.g.isTouch) this.fit(el);
+  }
+
+  /** Dokunmatik: metin kutusuna sığmıyorsa yazı iki basamak küçülür (yalnız metin değişince ölçülür, her kare değil) */
+  fit(el) {
+    el.classList.remove('fit1', 'fit2');
+    if (el.scrollHeight <= el.clientHeight + 1) return;
+    el.classList.add('fit1');
+    if (el.scrollHeight <= el.clientHeight + 1) return;
+    el.classList.remove('fit1');
+    el.classList.add('fit2');
   }
 
   beginTyping() {
@@ -255,6 +267,9 @@ export class UI {
   }
 
   hover(text) {
+    // her kare çağrılır: değişmediyse DOM'a dokunma
+    if (text === this._hoverIn) return;
+    this._hoverIn = text;
     if (text && this.g.isTouch) text = touchText(text);
     this.hoverText = text || '';
     $('hover-label').innerHTML = text || '';
@@ -278,6 +293,7 @@ export class UI {
     const el = $('toast');
     el.textContent = this.tt(text);
     el.classList.add('show');
+    if (this.g.isTouch) this.fit(el);
     clearTimeout(this.toastT);
     this.toastT = setTimeout(() => el.classList.remove('show'), sec * 1000);
   }
@@ -311,7 +327,8 @@ export class UI {
 
   inventory(label) {
     this.show('inventory', !!label);
-    $('inventory-label').textContent = label || '';
+    // dokunmatikte dar sol sütunda kısa ad ("Kaset 7"); tam adı kaset seçicide
+    $('inventory-label').textContent = (label && this.g.isTouch ? label.replace(/ — .*$/, '') : label) || '';
   }
 
   /** Tam ekran beyaz çakma (korkutma). 'Titreşimi azalt' ayarında hiçbir şey yapmaz. */
@@ -330,6 +347,11 @@ export class UI {
   walkHint(on = true, sec = 6) {
     const el = $('walk-hint');
     if (!el) return;
+    // dokunmatikte ayrı bir ipucu satırı yok: bildirim bölgesinde gösterilir
+    if (this.g.isTouch) {
+      if (on) this.toast("Sol başparmakla yürü · sağda sürükleyerek bak · nişangâhı bir şeye getirip ETKİLEŞ'e bas.", sec);
+      return;
+    }
     clearTimeout(this.walkHintT);
     el.hidden = !on;
     if (on) this.walkHintT = setTimeout(() => (el.hidden = true), sec * 1000);
@@ -462,14 +484,105 @@ export class UI {
     const el = $('reader-doc');
     el.className = doc.cls;
     el.innerHTML = doc.html;
+    el.style.height = '';
     this.show('reader', true);
     this.g.overlay = 'reader';
+    this.readerClick = null;
+    if (this.g.isTouch) this.paginate(el);
     return new Promise((resolve) => (this.closeReader = () => {
       this.show('reader', false);
       this.g.overlay = null;
       this.closeReader = null;
+      this.readerClick = null;
       resolve();
     }));
+  }
+
+  /**
+   * Dokunmatik: belge kaydırılmaz. Önce tek sayfaya sığdırmak için biraz küçültülür; olmazsa paragraflar sayfalara
+   * bölünür (◀ 1 / 3 ▶). Dokunuş sonraki sayfa, son sayfada kapatır; ✕ hep kapatır. Ölçüm yalnız belge açılınca.
+   */
+  paginate(el) {
+    const pg = document.createElement('div');
+    pg.className = 'pg';
+    while (el.firstChild) pg.appendChild(el.firstChild);
+    el.appendChild(pg);
+    // numaralı listeler madde madde bölünebilsin (sayfanın yarısı boş kalmasın)
+    for (const l of [...pg.children]) {
+      if (l.tagName !== 'OL' && l.tagName !== 'UL') continue;
+      const items = [...l.children];
+      const first = +(l.getAttribute('start') || 1);
+      l.replaceWith(
+        ...items.map((li, j) => {
+          const c = document.createElement(l.tagName);
+          if (l.tagName === 'OL') c.start = first + j;
+          if (j) c.style.marginTop = '0';
+          if (j < items.length - 1) c.style.marginBottom = '0';
+          c.appendChild(li);
+          return c;
+        }),
+      );
+    }
+    const kids = [...pg.children];
+    const fits = () => el.scrollHeight <= el.clientHeight + 1;
+    let pages = null;
+    for (const z of [1, 0.93, 0.87, 0.8, 0.74, 0.68, 0.62]) {
+      pg.style.zoom = z;
+      kids.forEach((k) => (k.style.display = ''));
+      el.style.height = '';
+      if (z >= 0.87 && fits()) {
+        pages = [kids];
+        break;
+      }
+      if (z > 0.93) continue;
+      // sayfalara böl: her sayfa kutunun iç yüksekliğine sığan ardışık bloklar
+      const cs = getComputedStyle(el);
+      const avail = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 4;
+      const top0 = pg.getBoundingClientRect().top;
+      const list = [];
+      let cur = [], start = 0, ok = true;
+      for (const k of kids) {
+        const r = k.getBoundingClientRect();
+        if (r.height > avail) {
+          ok = false;
+          break;
+        }
+        if (cur.length && r.bottom - top0 - start > avail) {
+          list.push(cur);
+          cur = [];
+          start = r.top - top0;
+        }
+        cur.push(k);
+      }
+      if (!ok) continue;
+      if (cur.length) list.push(cur);
+      // her sayfa gerçekten sığıyor mu (kenar boşlukları bölününce değişebilir)
+      el.style.height = el.clientHeight + 'px';
+      if (list.every((p) => (kids.forEach((k) => (k.style.display = p.includes(k) ? '' : 'none')), fits()))) {
+        pages = list;
+        break;
+      }
+    }
+    if (!pages) pages = [kids];
+    let i = 0;
+    const pager = $('reader-pager');
+    const show = (n) => {
+      i = Math.max(0, Math.min(pages.length - 1, n));
+      kids.forEach((k) => (k.style.display = pages[i].includes(k) ? '' : 'none'));
+      $('reader-page').textContent = `${i + 1} / ${pages.length}`;
+      $('reader-prev').disabled = i === 0;
+      $('reader-next').disabled = i === pages.length - 1;
+      $('reader-hint').textContent = i < pages.length - 1 ? 'Dokun: sonraki sayfa' : 'Kapatmak için dokun';
+    };
+    pager.hidden = pages.length < 2;
+    if (pages.length < 2) el.style.height = '';
+    $('reader-prev').onclick = (e) => (e.stopPropagation(), show(i - 1));
+    $('reader-next').onclick = (e) => (e.stopPropagation(), show(i + 1));
+    show(0);
+    this.readerClick = (e) => {
+      if (e?.target?.closest?.('#btn-reader-close') || i >= pages.length - 1) this.closeReader?.();
+      else show(i + 1);
+    };
   }
 
   /**
@@ -629,13 +742,16 @@ export class UI {
   chooseTape(list, preferred) {
     const box = $('tapes-list');
     box.innerHTML = '';
+    const touch = !!this.g.isTouch;
+    // dokunmatikte liste kaymaz: kasetler 1-3 sütuna dağılır, numara solda yazdığı için ad "Kaset N — " olmadan
+    box.style.setProperty('--cols', list.length <= 4 ? 1 : list.length <= 8 ? 2 : 3);
     let idx = Math.max(0, list.findIndex((t) => t.n === preferred));
     const buttons = list.map((t, i) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'tape-choice';
       b.innerHTML = `<span class="tape-key">${t.key ?? t.n}</span><span class="tape-name"></span><span class="tape-tag">${t.watched ? 'izlendi' : 'YENİ'}</span>`;
-      b.querySelector('.tape-name').textContent = t.name;
+      b.querySelector('.tape-name').textContent = touch ? t.name.replace(/^Kaset \d+ — /, '') : t.name;
       b.onclick = () => close(t.n);
       // seçim yalnızca gerçek fare hareketiyle değişir: liste açılınca imlecin altında kalan kaset
       // (tarayıcının sahte mouseenter olayı) yeni kasetin ön seçimini bozmasın
@@ -649,8 +765,6 @@ export class UI {
       idx = (i + list.length) % list.length;
       buttons.forEach((b, j) => b.classList.toggle('sel', j === idx));
       buttons[idx].focus({ preventScroll: true });
-      // dokunmatikte liste kayar: seçili (yeni) kaset görünür kalsın
-      if (this.g.isTouch) buttons[idx].scrollIntoView({ block: 'nearest' });
     };
     let resolveFn;
     const close = (n) => {
@@ -694,5 +808,15 @@ export class UI {
       (sec ? ' · Bir gizli kelime ve başka sonlar daha var.' : good ? '' : ' · Başka bir son daha var. Kapılarda geri sar ve bırakma.');
     this.show('hud', false);
     this.show('ending', true);
+    // dokunmatik: kaydırma yok, uzun son yazısı ekrana sığana dek küçülür (yalnız açılışta ölçülür)
+    const inner = document.querySelector('#ending .ending-inner');
+    inner.style.zoom = '';
+    if (this.g.isTouch) {
+      const scr = $('ending');
+      for (const z of [0.94, 0.88, 0.82, 0.76, 0.7, 0.64]) {
+        if (scr.scrollHeight <= scr.clientHeight + 1) break;
+        inner.style.zoom = z;
+      }
+    }
   }
 }

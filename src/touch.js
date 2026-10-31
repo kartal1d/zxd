@@ -1,11 +1,12 @@
 // Dokunmatik denetimler (telefon, tablet ve Android sürümü). Ekranın solunda başparmağın değdiği yerde beliren
-// sanal çubuk (yürü; halkanın dışına itince koş), sağda sürükleyerek bakış, kısa dokunuşla parmağın değdiği
-// nesneyle etkileşim ve duruma göre görünen düğmeler: ETKİLEŞ, FENER, KALK/OTUR, TV, DURAKLAT,
-// basılı tutunca GERİ SAR, MENÜ. Beste soru sorunca üstte ekran klavyesini açan bir cevap kutusu ve şık düğmeleri çıkar.
+// sanal çubuk (yürü; halkanın dışına itince koş), sağda sürükleyerek bakış ve duruma göre görünen düğmeler:
+// ETKİLEŞ, FENER, KALK/OTUR, TV, DURAKLAT, basılı tutunca GERİ SAR, MENÜ. Beste soru sorunca üstte ekran klavyesini
+// açan bir cevap kutusu ve şık düğmeleri çıkar.
+// Etkileşim yalnızca nişangâhla: ortadaki noktayı nesneye getirip ETKİLEŞ'e basılır; 3B görüntüye dokunmak bir şey yapmaz.
+// Küçük nesneler için hafif nişan yardımı: orta ışın boşa giderse ~1,5° çevresindeki nesne de hedef sayılır ve
+// hedefin üstündeyken bakış yavaşlar.
 // Masaüstünde hiçbir şey değişmez: katman yalnızca dokunmatik kipte görünür. Hem dokunmatik hem fare olan cihazlarda
 // son kullanılan giriş kipi seçer (ekrana dokununca dokunmatik, fare kıpırdayınca masaüstü).
-// Kısa dokunuş, parmağın değdiği yerdeki nesneyle etkileşir (ortadaki noktayla aynı erişim kuralları, room.pick);
-// küçük hedefler (kaset, zincir, telefon) için dokunulan yerin ~25 px çevresi de denenir. ETKİLEŞ ortadaki noktaya bakar.
 import { Raycaster, Vector2 } from 'three';
 
 const $ = (id) => document.getElementById(id);
@@ -15,9 +16,9 @@ const LEFT = 0.42; // çubuk bölgesi: ekranın sol %42'si (yürüyüş açıkke
 const R = 54; // çubuk halkasının yarıçapı (px; "Kontrolleri büyüt" ile ölçeklenir)
 const DEAD = 0.12; // ölü bölge (halkanın oranı)
 const RUN_AT = 1.4; // parmak halkanın 1,4 katı dışına itilince koşu
-const TAP_MS = 320; // kısa dokunuş en çok bu kadar sürer...
-const TAP_PX = 12; // ...ve en çok bu kadar kayar
-const TAP_RINGS = [9, 17, 25]; // dokunulan yer boşsa çevresinde denenen halkalar (px)
+const ASSIST_DEG = 1.5; // nişan yardımı: orta ışının çevresinde bu açıya kadar
+const ASSIST_DIRS = 6; // ...bu kadar yönde denenir (iki karede bir)
+const SLOW = 0.6; // nişangâh bir nesnenin üstündeyken bakış hızı
 const SLOP = 6; // bakış bu kadar kaydıktan sonra başlar: dokunuşta kamera titremesin
 const LOOK_K = 0.0035; // piksel başına radyan (hassasiyet 1): ekran genişliği ≈ yarım tur
 const FINE = matchMedia('(any-pointer: fine)');
@@ -40,7 +41,8 @@ export class Touch {
     this.wasStanding = false;
     this.rc = new Raycaster();
     this.ndc = new Vector2();
-    this.markEl = $('tap-mark');
+    this.aim = null; // nişan yardımının son bulduğu { id, n }
+    this.aimN = 0;
     this.bind();
   }
 
@@ -53,6 +55,7 @@ export class Touch {
     g.isTouch = on;
     document.body.classList.toggle('touch', on);
     this.vis = {};
+    if (g.ui) g.ui._hoverIn = undefined; // etiket yeni kipin diliyle yeniden yazılsın
     // çizim oranı kipe bağlı (perf.js)
     if (g.renderer) g.perf?.applyScale();
     if (on) {
@@ -198,12 +201,8 @@ export class Touch {
     for (const t of e.changedTouches) {
       const id = t.identifier;
       if (this.joy && id === this.joy.id) this.joyEnd();
-      else if (this.look && id === this.look.id) {
-        const L = this.look;
-        this.look = null;
-        // kısa ve kıpırdamayan dokunuş: parmağın değdiği yerdeki nesneyle etkileşim
-        if (e.type === 'touchend' && L.moved < TAP_PX && performance.now() - L.t0 < TAP_MS && this.live()) this.tapAt(L.sx, L.sy);
-      }
+      // 3B görüntüye dokunmak etkileşim değildir (yalnızca bakış); etkileşim ETKİLEŞ düğmesiyle
+      else if (this.look && id === this.look.id) this.look = null;
       if (id === this.rwId) this.rwRelease();
       const el = this.pressed.get(id);
       if (el) {
@@ -228,7 +227,8 @@ export class Touch {
       dy = L.ay;
     }
     if (!this.live()) return;
-    const k = LOOK_K * (this.g.settings?.tsens || 1);
+    // nişangâh bir nesnenin üstündeyken bakış yavaşlar: küçük hedefe getirmek kolaylaşır
+    const k = LOOK_K * (this.g.settings?.tsens || 1) * (this.g.room.hover ? SLOW : 1);
     this.g.room.look(dx * k, dy * k);
   }
 
@@ -274,56 +274,38 @@ export class Touch {
     this.g.director?.stopRewind();
   }
 
-  /** Dokunulan ekran noktasındaki (yoksa çevresindeki en yakın) etkileşimli nesneyle etkileşir; boşsa hiçbir şey olmaz */
-  tapAt(x, y) {
+  /**
+   * Nişan yardımı (her kare, room.update'ten hemen sonra; main.update çağırır): orta ışın bir şeye değmiyorsa
+   * ~1,5° çevresindeki ışınlar denenir, değen etkileşimli nesne hedef sayılır (etiket ve ETKİLEŞ onu gösterir).
+   * Işınlar iki karede bir atılır; aradaki karede son bulunan hedef korunur (yapışkan, titremez).
+   */
+  assist() {
     const g = this.g;
-    const id = this.pickAt(x, y);
-    if (!id) return;
-    this.mark(x, y, g.label(id));
-    g.interact(id);
-  }
-
-  /** Ekran noktası (px) -> etkileşim kimliği. Önce tam nokta, sonra büyüyen halkalarda kameraya en yakın isabet. */
-  pickAt(x, y) {
-    const g = this.g;
-    const room = g.room;
-    room.camera.updateMatrixWorld();
-    const W = innerWidth, H = innerHeight;
-    const at = (px, py) => {
-      this.ndc.set((px / W) * 2 - 1, -(py / H) * 2 + 1);
-      const h = room.pick(this.ndc, this.rc);
-      // etiketi boş olan nesne (ör. kaset oynarken televizyon) dokunuşa açık sayılmaz
-      return h && g.label(h.id) ? h : null;
-    };
-    const hit = at(x, y);
-    if (hit) return hit.id;
-    for (const r of TAP_RINGS) {
-      let best = null;
-      for (let i = 0; i < 8; i++) {
-        const a = (i / 8) * Math.PI * 2 + (r === TAP_RINGS[1] ? Math.PI / 8 : 0);
-        const h = at(x + Math.cos(a) * r, y + Math.sin(a) * r);
-        if (h && (!best || h.dist < best.dist)) best = h;
-      }
-      if (best) return best.id;
+    const r = g.room;
+    if (!this.on || r.hover || r.locked) {
+      this.aim = null;
+      return;
     }
-    return null;
-  }
-
-  /** Dokunulan nesnenin üstünde kısa bir halka ve adı */
-  mark(x, y, label) {
-    const el = this.markEl;
-    if (!el) return;
-    const tmp = document.createElement('div');
-    tmp.innerHTML = label || '';
-    el.querySelector('span').textContent = this.g.ui.tt(tmp.textContent || '');
-    el.style.left = x + 'px';
-    el.style.top = y + 'px';
-    el.hidden = false;
-    el.classList.remove('go');
-    void el.offsetWidth;
-    el.classList.add('go');
-    clearTimeout(this.markT);
-    this.markT = setTimeout(() => (el.hidden = true), 700);
+    this.aimN = (this.aimN + 1) | 0;
+    if (this.aim && this.aimN - this.aim.n < 2) {
+      r.hover = this.aim.id;
+      return;
+    }
+    const cam = r.camera;
+    const dy = Math.tan((ASSIST_DEG * Math.PI) / 180) / Math.tan((cam.fov * Math.PI) / 360);
+    const dx = dy / (cam.aspect || 1);
+    let best = null;
+    for (let i = 0; i < ASSIST_DIRS; i++) {
+      const a = (i / ASSIST_DIRS) * Math.PI * 2;
+      this.ndc.set(Math.cos(a) * dx, Math.sin(a) * dy);
+      const h = r.pick(this.ndc, this.rc);
+      if (h && g.label(h.id) && (!best || h.dist < best.dist)) best = h;
+    }
+    // son yardımlı hedef hâlâ yakındaysa ona yapış
+    if (!best && this.aim && this.aimN - this.aim.n < 6) best = { id: this.aim.id };
+    else if (best) this.aim = { id: best.id, n: this.aimN };
+    if (!best) this.aim = null;
+    r.hover = best ? best.id : null;
   }
 
   /** Koltuğun yanında mı (F'nin ayaktayken oturttuğu mesafe, main.toggleFocus) */
@@ -334,16 +316,16 @@ export class Touch {
 
   // ------------------------------------------------------------------ çubuk
   joyStart(t) {
-    // halka boyu CSS'ten (dar ekranda ve "Kontrolleri büyüt"te değişir)
-    const r = this.joyEl.querySelector('.joy-ring').offsetWidth / 2 || R * this.scale();
+    const el = this.joyEl;
+    el.classList.remove('idle');
+    el.classList.add('held');
+    // basılı halkanın boyu CSS'ten (ekran boyuna ve "Kontrolleri büyüt"e göre); yalnız dokunuş başında ölçülür
+    const r = el.querySelector('.joy-ring').offsetWidth / 2 || R * this.scale();
     const pad = r + 10;
     // halka ekrandan taşmasın
     const cx = clamp(t.clientX, pad, Math.max(pad, innerWidth * LEFT));
     const cy = clamp(t.clientY, pad, Math.max(pad, innerHeight - pad));
     this.joy = { id: t.identifier, cx, cy, r, dead: false };
-    const el = this.joyEl;
-    el.classList.remove('idle');
-    el.classList.add('held');
     el.style.left = cx + 'px';
     el.style.top = cy + 'px';
     this.joyMove(t);

@@ -22,11 +22,15 @@ const SLOW = 0.6; // nişangâh bir nesnenin üstündeyken bakış hızı
 const SLOP = 6; // bakış bu kadar kaydıktan sonra başlar: dokunuşta kamera titremesin
 const LOOK_K = 0.0035; // piksel başına radyan (hassasiyet 1): ekran genişliği ≈ yarım tur
 // oyun içi klavye: Türkçe Q, büyük harf (I ile İ ayrı tuş); son satır BOŞLUK, SİL, GÖNDER (şıklı soruda ŞIKLAR da)
+// harfler üç sıra; rakamlar ve noktalama '123' tuşunun arkasında (klavye alçak kalsın, televizyon görünsün)
 const OKB_ROWS = [
-  ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'Ğ', 'Ü'],
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ş', 'İ'],
-  ['Z', 'X', 'C', 'V', 'B', 'N', 'M', 'Ö', 'Ç', '.'],
+  ['Z', 'X', 'C', 'V', 'B', 'N', 'M', 'Ö', 'Ç'],
+];
+const OKB_NUM_ROWS = [
+  ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+  ['.', ',', '-', "'", '?', '!'],
 ];
 const FINE = matchMedia('(any-pointer: fine)');
 const PORTRAIT = matchMedia('(orientation: portrait)');
@@ -411,6 +415,7 @@ export class Touch {
     $('okb-label').textContent = inp?.label || '>';
     this.kbOptKey.hidden = !opts.length;
     this.kbText = '';
+    this.kbMode(false);
     this.kbSync(false);
     this.openKb(!opts.length);
   }
@@ -443,14 +448,17 @@ export class Touch {
       keys.appendChild(r);
       return r;
     };
-    for (const row of OKB_ROWS) mk(row.map((c) => [c, c]));
+    for (const row of OKB_ROWS) mk(row.map((c) => [c, c]), 'abc');
+    for (const row of OKB_NUM_ROWS) mk(row.map((c) => [c, c]), 'num');
     const last = mk([
+      ['NUM', '123', 'act mode'],
       ['OPT', '◀ ŞIKLAR', 'act'],
       ['SP', 'BOŞLUK', 'wide'],
       ['BS', '⌫ SİL', 'act'],
       ['OK', 'GÖNDER', 'act ok'],
     ]);
-    this.kbOptKey = last.firstChild;
+    this.kbOptKey = last.children[1];
+    this.kbModeKey = last.firstChild;
     keys.addEventListener('click', (e) => {
       const k = e.target.closest?.('button')?.dataset.k;
       if (k) this.kbKey(k);
@@ -475,6 +483,7 @@ export class Touch {
     const d = this.g.director;
     if (!d?.input) return;
     if (k === 'OPT') return this.openKb(false);
+    if (k === 'NUM') return this.kbMode(!this.kbNum);
     if (k === 'OK') {
       d.typed(this.kbText);
       d.submit();
@@ -485,6 +494,13 @@ export class Touch {
     else if (chars.length < (d.input.maxLen || 24)) chars.push(k === 'SP' ? ' ' : k);
     this.kbText = chars.join('');
     this.kbSync(true);
+  }
+
+  /** Harf / rakam düzeni arasında geçiş */
+  kbMode(num) {
+    this.kbNum = !!num;
+    $('okb').classList.toggle('num', this.kbNum);
+    if (this.kbModeKey) this.kbModeKey.textContent = this.kbNum ? 'ABC' : '123';
   }
 
   kbSync(send) {

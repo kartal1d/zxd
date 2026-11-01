@@ -103,14 +103,17 @@ export async function tape8(d) {
     if (v.bloom > 0) E.bloom(c, v.bx, v.by, v.bloom, lowFlash);
     if (v.tear > 0) E.tear(c, v.tear, d.time);
   };
-  /** Fener objektife döner: beyaz parlama */
+  /**
+   * Fener objektife döner: parlama yumuşakça açılır (~0.5 sn), kısa durur, yavaşça söner (~0.8 sn).
+   * Eskiden 0.16 sn'de tam beyaza çıkıyordu; telefonda TV'ye odaklıyken ekranın tamamı bir anda bembeyaz oluyordu.
+   */
   async function bloomFlash(peak = 1) {
     v.aim = 1;
     d.sfx('whoosh');
-    d.tweens.add(v, 'bloom', peak, 0.16);
-    await d.wait(0.3);
-    d.tweens.add(v, 'bloom', 0, 0.55);
-    await d.wait(0.3);
+    d.tweens.add(v, 'bloom', peak, lowFlash ? 0.8 : 0.5);
+    await d.wait(lowFlash ? 0.9 : 0.65);
+    d.tweens.add(v, 'bloom', 0, 0.8);
+    await d.wait(0.45);
     v.aim = 0;
   }
 
@@ -345,8 +348,8 @@ export async function tape8(d) {
     // fener objektife döner; parlamanın tepesinde tahtaya geçilir
     v.aim = 1;
     d.sfx('whoosh');
-    d.tweens.add(v, 'bloom', 1, 0.16);
-    await d.wait(0.22);
+    d.tweens.add(v, 'bloom', 1, 0.45);
+    await d.wait(0.5);
     Object.assign(B, { x: 580, y: 462, scale: 0.74, flip: true, expr: 'happy', wave: 0, tilt: 0, lookTarget: { x: 0.85, y: -0.3 } });
     Object.assign(v, { sweep: false, tx: 250, ty: 110, br: 150, pow: 1, dark: 0.8 });
     const boardScene = (c, t) => {
@@ -400,8 +403,8 @@ export async function tape8(d) {
       fxLayer(c);
     };
     d.scene(boardScene);
-    d.tweens.add(v, 'bloom', 0, 0.6);
-    await d.wait(0.35);
+    d.tweens.add(v, 'bloom', 0, 0.9);
+    await d.wait(0.45);
     v.aim = 0;
     await d.wait(0.5);
     {

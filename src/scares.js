@@ -1,5 +1,6 @@
 // Ev bölümünün korkutmaları ve olayları (docs/ev-tasarim.md §6, docs/ev-akisi.md §4): yalnız yürürken, asla kaset sırasında.
-// S1-S8, ortam olayları A1-A3 (A4 salıncak house.js'te), aşama 3-9'a dağılmış yeni korkutmalar (ayak, hat, zil, buzdolabi,
+// S1-S8, ortam olayları A1-A3 (A4 salıncak house.js'te), aşama 3-9'a dağılmış yeni korkutmalar (ayak, hat, zil, buzdolabi
+// (artık buzdolabının yanındaki duvar dolabı; buzdolabı hiç açılmaz, kimlik kayıtlar için aynı),
 // sandalye, kapida, fener, kosan, arka, cam, esik, tokat), 9. kaset sonrası geri dönüş sayımı (R1) ve kapının mühürlenmesi.
 // Her korkutma bir kez çalışır: kimliği st.room.scares'e eklenir ve hemen kaydedilir. Süreler oyun saatiyle (update dt) akar.
 import * as THREE from 'three';
@@ -1149,10 +1150,11 @@ export class Scares {
     const w = this.walk;
     const h = this.house;
     const st = this.stage();
-    const behind = this.angleTo(V(h.points.fridge.x, -2.1, h.points.fridge.z)) > 110;
+    const cab = h.points.kitchenCab;
+    const behind = this.angleTo(V(cab.x, cab.y, cab.z)) > 110;
     let near = false;
     if (st === 5 && this.r.koliDown) near = Math.hypot(w.pos.x - h.points.gift.x, w.pos.z - h.points.gift.z) <= 1.8;
-    else if (st >= 6) near = Math.hypot(w.pos.x - h.points.fridge.x, w.pos.z - h.points.fridge.z) <= 3;
+    else if (st >= 6) near = Math.hypot(w.pos.x - cab.x, w.pos.z - cab.z) <= 3;
     if (near && behind) this.fridgeT += dt;
     else this.fridgeT = 0;
     const need = st === 5 ? this.fridgeNeed : 2;
@@ -1162,22 +1164,23 @@ export class Scares {
     }
   }
 
+  /** 'buzdolabi': arkanda, buzdolabının yanındaki duvar dolabının kapağı çarparak açılır, fincanlar şıngırdar */
   async fridgeRun() {
     const g = this.g;
     const au = g.audio;
     const h = this.house;
     this.mark('buzdolabi');
     const fp = h.fp;
-    g.room.tweens.add(fp.fridgeDoor.rotation, 'y', -1.9, 0.18);
-    au.sfx('doorSlam', h.points.fridge, 1.1);
-    fp.fridgeIn.material.color.setHex(0xdff4ff);
-    au.sfx('scare', h.points.fridge);
+    const p = h.points.kitchenCab;
+    g.room.tweens.add(fp.cabDoor.rotation, 'y', -1.75, 0.2);
+    au.sfx('doorSlam', p, 1.0);
+    au.sfx('scare', p);
     this.walk.shake(0.015, 0.25);
-    h.ambience.setFridge(3);
+    await this.wait(0.35);
+    au.sfx('boxClick', p, 0.6);
+    // kapak biraz geri sekip yarı açık kalır
+    g.room.tweens.add(fp.cabDoor.rotation, 'y', -1.45, 0.5);
     await this.wait(6);
-    au.sfx('click');
-    fp.fridgeIn.material.color.setHex(0x1a1c1e);
-    h.ambience.setFridge(1);
   }
 
   updateChair(dt) {

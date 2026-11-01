@@ -1,6 +1,6 @@
 // Evde bulunan kasetler (docs/ev-akisi.md §2): salon televizyonundaki 4. kaset, giriş telefonu ve hol halısının
 // altındaki 5. kaset, mutfaktaki koliler ve hediye kutusu (6), salıncaktaki 8. kaset, montaj kapısının kilidi ve
-// ışık şeridi; ayrıca korkutmalar için buzdolabı kapağı, ikinci sandalye, sahanlıktaki hayalet ve camdaki el.
+// ışık şeridi; ayrıca korkutmalar için mutfak duvar dolabının kapağı, ikinci sandalye, sahanlıktaki hayalet ve camdaki el.
 // Etiketler, etkileşimler, duruma bağlı ses ipuçları (updateLeads) ve test kancası debugFind(n) buradadır.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -239,6 +239,36 @@ export function buildFridgeDoor(h, Z) {
   return pivot;
 }
 
+/**
+ * Buzdolabının yanındaki duvar dolabı (mutfak, sağ duvar): 'buzdolabi' korkutmasında kapağı çarparak açılır.
+ * (Oyuncu isteği: buzdolabı hiç açılmasın. Korkutmanın kimliği kayıtlar ve testler için aynı kaldı.)
+ */
+export function buildKitchenCab(h, Z) {
+  const M = h.M;
+  const fp = h.fp;
+  const X0 = 4.28, X1 = 4.6, Y0 = -1.55, Y1 = -0.85, Z0 = 0.05, Z1 = 0.65;
+  // gövde: tavan, taban, yanlar, arka (içi koyu)
+  const inner = std({ color: 0x241d18, roughness: 0.9 });
+  h.box('zemin', 'mutfak', M.cream, X0, X1, Y1 - 0.02, Y1, Z0, Z1);
+  h.box('zemin', 'mutfak', M.cream, X0, X1, Y0, Y0 + 0.02, Z0, Z1);
+  h.box('zemin', 'mutfak', M.cream, X0, X1, Y0 + 0.02, Y1 - 0.02, Z0, Z0 + 0.02);
+  h.box('zemin', 'mutfak', M.cream, X0, X1, Y0 + 0.02, Y1 - 0.02, Z1 - 0.02, Z1);
+  h.box('zemin', 'mutfak', inner, X1 - 0.03, X1 - 0.01, Y0 + 0.02, Y1 - 0.02, Z0 + 0.02, Z1 - 0.02);
+  h.box('zemin', 'mutfak', inner, X0 + 0.01, X1 - 0.03, -1.21, -1.195, Z0 + 0.02, Z1 - 0.02);
+  // içindekiler: iki fincan, bir tabak yığını
+  for (const [z, c] of [[0.2, 0xd8d2c4], [0.32, 0x8a3a2a]]) h.box('zemin', 'mutfak', std({ color: c, roughness: 0.5 }), 4.42, 4.5, -1.195, -1.12, z - 0.04, z + 0.04);
+  h.box('zemin', 'mutfak', M.porcelain, 4.38, 4.56, Y0 + 0.02, Y0 + 0.07, 0.4, 0.58);
+  h.col('zemin', X0, X1, Z0, Z1);
+  // kapak: z = 0.05 kenarından menteşeli, odaya (-x) doğru açılır
+  const pivot = new THREE.Group();
+  pivot.position.set(X0 - 0.002, (Y0 + Y1) / 2, Z0);
+  Z.add(pivot);
+  h.mesh(new THREE.BoxGeometry(0.018, Y1 - Y0, Z1 - Z0), M.cream, pivot, -0.009, 0, (Z1 - Z0) / 2);
+  h.mesh(new THREE.BoxGeometry(0.02, 0.1, 0.015), M.metal, pivot, -0.025, -0.2, Z1 - Z0 - 0.05);
+  fp.cabDoor = pivot;
+  return pivot;
+}
+
 // ===================================================================== durum
 export function applyFlow(h, st) {
   const r = st.room || {};
@@ -274,9 +304,10 @@ export function applyFlow(h, st) {
   }
   fp.giftLid.rotation.x = r.hediyeOpen ? -1.9 : 0;
   fp.giftTape.visible = !!r.hediyeOpen && next(6);
-  // buzdolabı (korkutmadan sonra açık, ışığı sönük)
-  fp.fridgeDoor.rotation.y = sc.includes('buzdolabi') ? -1.9 : 0;
+  // buzdolabı hiç açılmaz; korkutmadan ('buzdolabi') sonra yanındaki duvar dolabının kapağı açık kalır
+  fp.fridgeDoor.rotation.y = 0;
   fp.fridgeIn.material.color.setHex(0x1a1c1e);
+  fp.cabDoor.rotation.y = sc.includes('buzdolabi') ? -1.45 : 0;
   // ikinci sandalye
   if (sc.includes('sandalye')) {
     fp.chair2.position.set(CHAIR2.out[0], YG, CHAIR2.out[1]);

@@ -180,6 +180,7 @@ export class House {
     this.points = {
       clock: V(0.84, -1.15, 8.25),
       fridge: V(4.2, -2.1, -0.6),
+      kitchenCab: V(4.3, -1.2, 0.35),
       sink: V(0.95, -2.0, -2.9),
       tub: V(2.2, -2.5, 8.8),
       pipe: V(3.1, -1.0, 8.0),
@@ -336,6 +337,24 @@ export class House {
     M.paleWood = std({ color: 0xd8c49a, roughness: 0.8 });
     M.rug = std({ map: TX.kilim(), roughness: 1 });
     M.glass = std({ color: 0x0c141c, transparent: true, opacity: 0.35, roughness: 0.08, metalness: 0.3 });
+    // mutfak penceresinin camı: görünür, hafif yansıtan; iki yüzlü (ışını iki yönden de keser, bkz. occ)
+    M.winGlass = std({ color: 0x223040, transparent: true, opacity: 0.5, roughness: 0.06, metalness: 0.55, side: THREE.DoubleSide, depthWrite: false });
+    // mutfak perdesi: koyu kırmızı-krem kareli pamuklu
+    M.gingham = std({
+      map: ctex(64, 64, (x, w, h) => {
+        x.fillStyle = '#8f8572';
+        x.fillRect(0, 0, w, h);
+        x.fillStyle = 'rgba(96,30,26,.5)';
+        for (let i = 0; i < 4; i++) {
+          x.fillRect(i * 16, 0, 8, h);
+          x.fillRect(0, i * 16, w, 8);
+        }
+      }),
+      roughness: 1,
+      side: THREE.DoubleSide,
+    });
+    M.gingham.map.wrapS = M.gingham.map.wrapT = THREE.RepeatWrapping;
+    M.gingham.map.repeat.set(3, 6);
     M.night = new THREE.MeshBasicMaterial({ map: this.room.skyNight, fog: false });
     M.frosted = new THREE.MeshBasicMaterial({ color: 0x1c2434 });
     M.slit = new THREE.MeshBasicMaterial({ color: 0x8090c0 });
@@ -550,8 +569,27 @@ export class House {
     // montaj: siyah kartonla kapatılmış, ince bir ay ışığı yarığı
     this.box('zemin', 'montaj', M.black, -4.61, -4.59, -2.0, -0.9, 1.3, 2.3);
     this.mesh(new THREE.PlaneGeometry(0.012, 1.0), M.slit, this.chunks.zemin, -4.585, -1.45, 1.92).rotation.y = HALF;
-    // mutfak penceresi (bahçe görünür)
-    glass(0.95, -1.35, -3.21, 1.1, 1.0, 0);
+    // mutfak penceresi (bahçe görünür): kanat çerçevesi, yansıtan cam ve yarı çekili perde. Cam ışın örtücüdür
+    // (occ): içeriden pencerenin ardındaki yaşlı çama / bahçe eşyalarına erişilemez (bahçeden de içeriye)
+    {
+      const gg = new THREE.PlaneGeometry(1.1, 1.0);
+      gg.translate(0.95, -1.35, -3.205);
+      this.add('zemin', 'mutfak', M.winGlass, gg, true);
+      this.box('zemin', 'mutfak', M.wood, 0.36, 0.42, -1.847, -0.853, -3.22, -3.16);
+      this.box('zemin', 'mutfak', M.wood, 1.48, 1.54, -1.847, -0.853, -3.22, -3.16);
+      this.box('zemin', 'mutfak', M.wood, 0.42, 0.93, -1.37, -1.33, -3.215, -3.19);
+      this.box('zemin', 'mutfak', M.wood, 0.97, 1.48, -1.37, -1.33, -3.215, -3.19);
+      // perde: korniş ve iki yana toplanmış, dalgalı iki kanat (tek ağ)
+      this.add('zemin', 'mutfak', M.metal, rodGeo(V(0.24, -0.76, -3.1), V(1.66, -0.76, -3.1), 0.01));
+      for (const [x0, x1] of [[0.27, 0.66], [1.24, 1.63]]) {
+        const cg = new THREE.PlaneGeometry(x1 - x0, 1.08, 10, 1);
+        const cp = cg.attributes.position;
+        for (let i = 0; i < cp.count; i++) cp.setZ(i, Math.sin(cp.getX(i) * 40) * 0.018);
+        cg.computeVertexNormals();
+        cg.translate((x0 + x1) / 2, -1.31, -3.095);
+        this.add('zemin', 'mutfak', M.gingham, cg);
+      }
+    }
     // denizlik ve başlık boşluğun 3 mm içine taşar (boşluğun alt / üst yüzüyle aynı düzlemdeydiler)
     this.box('zemin', 'mutfak', M.wood, 0.36, 1.54, -1.89, -1.847, -3.22, -3.12);
     this.box('zemin', 'mutfak', M.wood, 0.36, 1.54, -0.853, -0.81, -3.22, -3.12);
@@ -1197,6 +1235,8 @@ export class House {
     this.box('zemin', 'mutfak', M.cream, 4.03, 4.6, YG, YG + 1.6, -0.95, -0.25);
     const fridgeDoor = HF.buildFridgeDoor(this, Z);
     this.col('zemin', 3.93, 4.6, -0.97, -0.23);
+    // yanındaki duvar dolabı ('buzdolabi' korkutmasında kapağı çarparak açılır; buzdolabı hiç açılmaz)
+    HF.buildKitchenCab(this, Z);
     const dtex = ctex(128, 160, (x, w, h) => {
       x.fillStyle = '#f2eee2';
       x.fillRect(0, 0, w, h);
@@ -1232,7 +1272,7 @@ export class House {
       x.font = 'bold 14px "Caveat", cursive';
       x.fillText('NERMİN ABLAMA', 10, 140);
     });
-    // resim buzdolabı kapağında (kapak korkutmada açılır)
+    // resim buzdolabı kapağında
     const draw = this.mesh(new THREE.PlaneGeometry(0.22, 0.28), std({ map: dtex, roughness: 0.9 }), fridgeDoor, -0.032, 1.3, 0.35);
     draw.rotation.y = -HALF;
     draw.rotation.x = 0.04;
@@ -1484,14 +1524,16 @@ export class House {
     tree.position.set(2.0, YB, -6.4);
     G.add(tree);
     this.mesh(new THREE.CylinderGeometry(0.15, 0.34, 10, 14), M.bark, tree, 0, 5, 0);
+    // yapraklar baş hizasının üstünde başlar (en alt koninin tabanı 2.2 m): eskiden 1.3 m'deydi ve ağacın
+    // altına yürüyünce kamera iğne yaprakların içinden geçiyordu. Gövdeye çarpılır (col), kutuya yine eğilinebilir.
     for (let i = 0; i < 5; i++) {
-      const y = 2.5 + i * 1.35;
+      const y = 3.4 + i * 1.25;
       const rr = 2.4 - i * 0.4;
       this.mesh(new THREE.ConeGeometry(rr, 2.4, 9), M.needles, tree, 0, y, 0).rotation.y = i;
     }
     for (let i = 0; i < 4; i++) {
       const a = i * 1.7 + 0.4;
-      const y = 1.9 + i * 0.4;
+      const y = 2.3 + i * 0.35;
       this.add('bahce', 'agac', M.deadWood, rodGeo(V(2.0 + Math.cos(a) * 0.2, YB + y, -6.4 + Math.sin(a) * 0.2), V(2.0 + Math.cos(a) * 1.1, YB + y - 0.25, -6.4 + Math.sin(a) * 1.1), 0.03, 5));
     }
     // kökler
@@ -1623,9 +1665,101 @@ export class House {
     // gri adam billboardları (koridordaki ve çitteki)
     this.man = this.makeMan(false);
     this.manArms = this.makeMan(true);
-    // bahçedeki mutfak penceresi: iç mekân çizilmediğinde de soluk mavi parlasın
-    const kw = this.mesh(new THREE.PlaneGeometry(1.1, 1.0), new THREE.MeshBasicMaterial({ color: 0x1a2a48 }), this.chunks.bahce, 0.95, -1.35, -3.24);
-    kw.rotation.y = Math.PI;
+    this.buildFacadeWindows();
+  }
+
+  /**
+   * Bahçeden görünen dış cephelerin pencereleri: pervaz, denizlik, kayıt ve koyu, hafif yansıtan cam
+   * (içerideki pencerelerin yerinde; içeride penceresi olmayan duvarlarda kapalı panjur). Hepsi bahçe
+   * parçasında durağan, malzeme başına birleşir (birkaç çizim çağrısı).
+   */
+  buildFacadeWindows() {
+    const M = this.M;
+    const paneTex = (curtain) =>
+      ctex(128, 128, (x, w, h) => {
+        const gr = x.createLinearGradient(0, 0, 0, h);
+        gr.addColorStop(0, '#16202c');
+        gr.addColorStop(1, '#0a0f16');
+        x.fillStyle = gr;
+        x.fillRect(0, 0, w, h);
+        // gökyüzünün camdaki eğik yansıması
+        x.fillStyle = 'rgba(120,140,175,0.10)';
+        x.beginPath();
+        x.moveTo(w * 0.15, 0);
+        x.lineTo(w * 0.45, 0);
+        x.lineTo(w * 0.05, h);
+        x.lineTo(-w * 0.25, h);
+        x.fill();
+        if (curtain) {
+          // iki yana toplanmış perdenin soluk gölgesi, arada çok hafif sıcak bir parıltı
+          x.fillStyle = 'rgba(150,110,70,0.10)';
+          x.fillRect(w * 0.3, 0, w * 0.4, h);
+          x.fillStyle = curtain;
+          for (const [a, b] of [[0, 0.28], [0.72, 1]]) {
+            x.fillRect(a * w, 0, (b - a) * w, h);
+            x.fillStyle = 'rgba(0,0,0,0.25)';
+            for (let i = 0; i < 4; i++) x.fillRect((a + ((b - a) * (i + 0.5)) / 4) * w, 0, 2, h);
+            x.fillStyle = curtain;
+          }
+        }
+      });
+    const P = {
+      kitchen: std({ map: paneTex('rgba(92,52,44,0.55)'), roughness: 0.14, metalness: 0.5 }),
+      curtain: std({ map: paneTex('rgba(70,22,22,0.6)'), roughness: 0.14, metalness: 0.5 }),
+      dark: std({ map: paneTex(null), roughness: 0.14, metalness: 0.5 }),
+    };
+    const trim = M.paleWood;
+    const shutter = std({ color: 0x5a6650, roughness: 0.85 });
+    /**
+     * axis 'z': cephe z = at düzleminde, x a0..a1; axis 'x': cephe x = at düzleminde, z a0..a1. out: dışarı yön (+1 / -1).
+     * kind: 'kitchen' | 'curtain' | 'dark' (cam) ya da 'shutter' (kapalı panjur); inset: cam cephenin bu kadar içinde.
+     */
+    const win = (axis, at, a0, a1, y0, y1, out, kind, inset = 0.004) => {
+      const bx = (p0, p1, q0, q1, d0, d1, mat) =>
+        axis === 'z' ? this.box('bahce', 'dis', mat, p0, p1, q0, q1, at + out * d0, at + out * d1) : this.box('bahce', 'dis', mat, at + out * d0, at + out * d1, q0, q1, p0, p1);
+      const T = 0.07;
+      bx(a0 - T, a1 + T, y1, y1 + T, 0, 0.035, trim);
+      bx(a0 - T, a0, y0, y1, 0, 0.035, trim);
+      bx(a1, a1 + T, y0, y1, 0, 0.035, trim);
+      bx(a0 - T - 0.04, a1 + T + 0.04, y0 - 0.06, y0, 0, 0.08, trim);
+      const am = (a0 + a1) / 2, ym = (y0 + y1) / 2;
+      if (kind === 'shutter') {
+        // iki kanatlı panjur; yatay ince çıtalar
+        for (const [p0, p1] of [[a0, am - 0.006], [am + 0.006, a1]]) {
+          bx(p0, p1, y0, y1, 0, 0.025, shutter);
+          for (let i = 1; i < 9; i++) {
+            const yy = y0 + ((y1 - y0) * i) / 9;
+            bx(p0 + 0.03, p1 - 0.03, yy - 0.006, yy + 0.006, 0.025, 0.033, M.dark);
+          }
+        }
+        return;
+      }
+      const g = new THREE.PlaneGeometry(a1 - a0, y1 - y0);
+      if (axis === 'z') {
+        if (out < 0) g.rotateY(Math.PI);
+        g.translate(am, ym, at + out * inset);
+      } else {
+        g.rotateY(out > 0 ? Math.PI / 2 : -Math.PI / 2);
+        g.translate(at + out * inset, ym, am);
+      }
+      this.add('bahce', 'dis', P[kind], g, true);
+      // kayıt: ortada dikey ve yatay
+      bx(am - 0.02, am + 0.02, y0, y1, inset - 0.004, inset + 0.012, trim);
+      bx(a0, a1, ym - 0.02, ym + 0.02, inset - 0.004, inset + 0.012, trim);
+    };
+    // arka cephe (dış yüz z = -3.362): mutfak penceresi (camı boşluğun içinde), montaj tarafında kapalı panjur
+    win('z', -3.362, 0.4, 1.5, -1.85, -0.85, -1, 'kitchen', -0.06);
+    win('z', -3.362, -3.4, -2.3, -1.95, -0.85, -1, 'shutter');
+    // sol yan (dış yüz x = -4.78): salon (perdeli) ve montaj (içeriden kartonla kapalı: koyu)
+    win('x', -4.78, 5.4, 6.6, -2.0, -0.7, -1, 'curtain');
+    win('x', -4.78, 1.3, 2.3, -2.0, -0.9, -1, 'dark');
+    // sağ yan (dış yüz x = 4.78): Nermin'in odası, panjur kapalı
+    win('x', 4.78, 3.0, 4.0, -2.0, -0.9, 1, 'shutter');
+    // tavan arası penceresinin dış pervazı (alın kaplaması z = -2.63; boşluk x 1.05..1.75, y 1.15..1.95)
+    const T = 0.06;
+    this.box('bahce', 'dis', trim, 1.05 - T, 1.75 + T, 1.95, 1.95 + T, -2.665, -2.63);
+    this.box('bahce', 'dis', trim, 1.05 - T, 1.05, 1.15, 1.95, -2.665, -2.63);
+    this.box('bahce', 'dis', trim, 1.75, 1.75 + T, 1.15, 1.95, -2.665, -2.63);
   }
 
   /** 2.30 m boyunda billboard: gövde + ayrı baş (başı eğilebilir) */
@@ -2144,10 +2278,6 @@ export class House {
         ui.toast("Mayıs 1998'de kalmış bir takvim. 14'ün kutusuna 'ÇAMLIK DIŞ ÇEKİM 09.00' yazılmış. Sonraki bütün günlere küçük harflerle aynı soru yazılmış: 'bulundu mu?'", 7);
         break;
       case 'ev:buzdolabi':
-        if ((r.scares || []).includes('buzdolabi')) {
-          ui.toast('Buzdolabının kapağı açık. İçi boş ve ılık. Fişi prizde değil.', 5);
-          break;
-        }
         ui.toast('Mıknatısla tutturulmuş bir çocuk resmi: el ele bir kadın ve sarı elbiseli bir kız. Altında: NERMİN ABLAMA. Kenara sonradan, kurşun kalemle, çok uzun, gri bir adam eklenmiş. Çizgiler çocuk eli değil.', 8);
         break;
       case 'ev:cekmece':

@@ -51,14 +51,20 @@
     <div id="ask-opts" class="touch-only"></div>
   </form>
 
+  <!-- dokunmatik: oyun içi klavye (Android klavyesi hiç açılmaz; src/touch.js kurar) -->
+  <div id="okb" class="touch-only" hidden>
+    <div id="okb-line"><span id="okb-label">&gt;</span><span id="okb-text"></span><span class="okb-cur">_</span></div>
+    <div id="okb-keys"></div>
+  </div>
+
   <section id="title" class="screen">
     <div class="title-inner">
       <p class="vhs-label">VHS · SP · 1998</p>
       <h1>Beste'nin<br>Sihirli Dünyası</h1>
       <p class="tagline">Yıldız Çocuk Yapım sunar</p>
       <nav class="menu" aria-label="Ana menü">
-        <button id="btn-continue" type="button" hidden>▶ DEVAM ET</button>
-        <button id="btn-new" type="button">▶ YENİ OYUN</button>
+        <button id="btn-continue" type="button" hidden><span class="cur">▶ </span>DEVAM ET</button>
+        <button id="btn-new" type="button"><span class="cur">▶ </span>YENİ OYUN</button>
         <button id="btn-controls" type="button">KONTROLLER</button>
         <button id="btn-settings" type="button">AYARLAR</button>
         <button id="btn-exit" type="button">ÇIKIŞ</button>
@@ -123,7 +129,7 @@
       <p id="pause-hint" class="objective-line hint-line" hidden></p>
       <p id="pause-secrets" class="objective-line"></p>
       <nav class="menu">
-        <button id="btn-resume" type="button">▶ DEVAM</button>
+        <button id="btn-resume" type="button"><span class="cur">▶ </span>DEVAM</button>
         <button id="btn-pause-settings" type="button">AYARLAR</button>
         <button id="btn-pause-controls" type="button">KONTROLLER</button>
         <button id="btn-quit" type="button">ANA MENÜ</button>

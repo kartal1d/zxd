@@ -817,7 +817,12 @@ export class Room {
     const a = tv.avg;
     const lum = (a.r + a.g + a.b) / 3;
     this.tvLight.color.setRGB(a.r + 0.05, a.g + 0.05, a.b + 0.08);
-    this.tvLight.intensity = pw * (0.25 + lum * 2.4);
+    // çok parlak ekranda (beyaz parlama) oda ışığı yumuşak tavanlı; ekran ortalaması 4 karede bir okunduğu
+    // için ışık basamak basamak değil, ~0.1 sn'lik yumuşatmayla izler
+    const kl = lum < 0.45 ? lum : 0.45 + (lum - 0.45) * 0.45;
+    const want = pw * (0.25 + kl * 2.4);
+    this._tvI = this._tvI == null ? want : this._tvI + (want - this._tvI) * Math.min(1, dt * 10);
+    this.tvLight.intensity = this._tvI;
 
     // toz
     const p = this.dust.geometry.attributes.position;

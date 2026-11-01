@@ -342,35 +342,54 @@ body.touch #subtitles .line { display: inline-block; max-width: 100%; padding: .
 body.touch #subtitles.fit1 { font-size: calc(var(--u) * .86); }
 body.touch #subtitles.fit2 { font-size: calc(var(--u) * .74); }
 
-/* ---------- Beste'nin sorusu: üst şeritte cevap kutusu, ikinci şeritte şıklar ---------- */
+/* ---------- Beste'nin sorusu: üst şeritte şık düğmeleri (+ ⌨ YAZ); yazmak oyun içi klavyeyle ---------- */
+body.touch .ask-row, body.touch #answer, body.touch #ask-send { display: none !important; }
 body.touch #ask-bar {
-  display: none; position: absolute; left: var(--sl); right: calc(var(--sr) + var(--menu) + var(--gap)); top: calc(var(--vvt, 0px) + var(--st));
-  gap: var(--gap); margin: 0;
+  display: none; position: absolute; left: var(--sl); right: calc(var(--sr) + var(--menu) + var(--gap)); top: var(--st); margin: 0;
 }
-body.touch.asking #ask-bar { display: grid; }
-body.touch .ask-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--gap); height: var(--bh); }
-body.touch #answer {
-  position: static; left: auto; top: auto; width: 100%; min-width: 0; opacity: 1; height: var(--bh);
-  font: inherit; font-size: calc(var(--u) * 1.25); letter-spacing: .04em; padding: 0 12px; margin: 0;
-  color: var(--osd); background: rgba(5, 5, 6, .86); border: 2px solid var(--osd); border-radius: 6px; outline: none;
-}
-body.touch #answer::placeholder { color: var(--dim); }
-body.touch #answer:focus { border-color: var(--beste-yellow); }
-#ask-send {
-  font-family: var(--font-osd); font-size: calc(var(--u) * 1.15); letter-spacing: .06em; padding: 0 14px; height: var(--bh);
-  color: var(--osd); background: var(--vcr-blue); border: 2px solid var(--osd); border-radius: 6px; cursor: pointer;
-}
-#ask-send:active { background: var(--vcr-blue-deep); }
-#ask-opts { display: flex; flex-wrap: nowrap; justify-content: center; gap: 6px; height: var(--bh); }
+body.touch.asking:not(.okb) #ask-bar { display: block; }
+#ask-opts { display: flex; flex-wrap: wrap; gap: 6px; }
 #ask-opts:empty { display: none !important; }
 #ask-opts button {
-  flex: 0 1 auto; min-width: 0; height: var(--bh); padding: 0 12px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font-family: var(--font-cartoon); font-weight: 800; font-size: clamp(13px, 3.9vmin, 19px); color: #e8323c;
-  background: rgba(255, 255, 255, .92); border: 3px solid #1c1c1c; border-radius: calc(var(--bh) / 2);
+  height: var(--bh); min-width: calc(var(--bh) * 1.6); padding: 0 14px; cursor: pointer; white-space: nowrap;
+  font-family: var(--font-osd); font-size: calc(var(--u) * 1.15); letter-spacing: .06em; color: var(--osd);
+  background: rgba(13, 22, 119, .88); border: 2px solid rgba(244, 244, 244, .75); border-radius: 6px; text-shadow: 0 1px 2px #000;
 }
-#ask-opts button:active { transform: scale(.95); background: var(--beste-yellow); }
-#ask-bar.evil #answer { border-color: var(--blood); }
-#ask-bar.evil #ask-opts button { background: rgba(30, 0, 0, .9); color: #ff6060; border-color: #ff3030; }
+#ask-opts button:active { background: var(--vcr-blue); border-color: var(--osd); }
+#ask-opts button.type { color: var(--beste-yellow); border-color: var(--beste-yellow); background: rgba(5, 5, 6, .8); }
+#ask-bar.evil #ask-opts button { background: rgba(40, 0, 0, .88); color: #ff6060; border-color: #ff3030; }
+
+/* ---------- oyun içi klavye: ekranın alt kısmı; üstte televizyon görünür kalır ---------- */
+#okb { display: none; }
+body.touch { --kh: clamp(40px, 10.6vmin, 50px); --kbh: calc(var(--kh) * 5.8 + 24px); }
+body.touch.okb #okb { display: grid; position: absolute; left: var(--sl); right: var(--sr); bottom: var(--sb); gap: 4px; }
+#okb-line {
+  display: flex; align-items: center; gap: .5em; height: calc(var(--kh) * .8); padding: 0 .7em; overflow: hidden; white-space: nowrap;
+  font-family: var(--font-osd); font-size: calc(var(--kh) * .56); letter-spacing: .08em; color: var(--beste-yellow);
+  background: rgba(5, 5, 6, .78); border-bottom: 2px solid rgba(255, 210, 63, .7);
+}
+#okb-label { color: var(--osd); }
+.okb-cur { animation: pulse 1s steps(1) infinite; margin-left: -.35em; }
+#okb.evil #okb-line { color: #ff6060; border-bottom-color: #ff3030; }
+#okb-keys { display: grid; gap: 4px; }
+.okb-row { display: flex; justify-content: center; gap: 4px; }
+.okb-row button {
+  flex: 1 1 0; min-width: 0; max-width: calc(var(--kh) * 1.7); height: var(--kh); padding: 0; cursor: pointer; touch-action: manipulation;
+  font-family: var(--font-osd); font-size: calc(var(--kh) * .52); line-height: 1; color: var(--osd);
+  background: rgba(13, 22, 119, .86); border: 1px solid rgba(244, 244, 244, .5); border-radius: 5px;
+}
+.okb-row button:active { background: var(--vcr-blue); border-color: var(--osd); }
+.okb-row button[hidden] { display: none; }
+.okb-row .wide { flex: 4 1 0; max-width: none; }
+.okb-row .act { flex: 2 1 0; max-width: none; font-size: calc(var(--kh) * .44); background: rgba(5, 5, 6, .82); }
+.okb-row .ok { color: var(--beste-yellow); border-color: var(--beste-yellow); }
+/* klavye açıkken: düğme şeridi, çubuk, bildirimler ve nişangâh çekilir; altyazı üstte, MENÜ'nün solunda */
+body.touch.okb #tbar, body.touch.okb #joy, body.touch.okb #toast, body.touch.okb #secret-toast,
+body.touch.okb #hover-label, body.touch.okb #crosshair { visibility: hidden; }
+body.touch.okb #subtitles {
+  top: var(--st); bottom: auto; left: var(--sl); transform: none; width: calc(100% - var(--sl) - var(--sr) - var(--menu) - 2 * var(--gap));
+  max-height: calc(100% - var(--st) - var(--sb) - var(--kbh) - var(--gap));
+}
 
 /* ---------- ekranlar: kaydırma yok, her şey tek bakışta sığar ---------- */
 body.touch .screen { padding: var(--st) var(--sr) var(--sb) var(--sl); overflow: hidden; }
@@ -392,7 +411,7 @@ body.touch #settings .panel-inner > h2, body.touch #settings .panel-inner > .bac
 body.touch #pause .panel-inner { grid-template-columns: minmax(0, 1fr) auto; column-gap: 28px; align-items: center; }
 body.touch #pause .panel-inner > * { grid-column: 1; }
 body.touch #pause .panel-inner > .menu { grid-column: 2; grid-row: 1 / span 4; margin: 0; justify-items: stretch; }
-body.touch #pause .menu button { text-align: left; }
+body.touch #pause .panel-inner > .menu { padding: 0; }
 
 /* belge okuyucu: tek sayfa, kaydırma ve sayfalama yok. Yazı boyu ui.fitDoc'ta kutuya sığan en büyük değere (en az 11 px)
    ayarlanır (--f); uzun belgeler yatay ekranda iki sütuna dökülür. Köşede kapatma. */
@@ -416,40 +435,18 @@ body.touch .reader-close { height: 24px; line-height: 24px; font-size: clamp(13p
   font-size: calc(var(--u) * 1.3); line-height: 1; color: var(--osd); background: rgba(13, 22, 119, .8); border: 2px solid var(--osd); border-radius: 50%;
 }
 
-/* kaset seçimi: VHS etiketli kaset kartları ızgarası (12 kasete kadar kaydırmasız), başlık satırında VAZGEÇ */
-body.touch #tapes .panel-inner { width: min(960px, 100%); height: calc(100dvh - var(--st) - var(--sb)); grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); align-items: center; padding: clamp(8px, 2.6vmin, 14px) clamp(10px, 3vmin, 18px); }
+/* kaset seçimi: başlık ve VAZGEÇ aynı satırda, kasetler satır satır (1-3 sütun); az kasette satırlar uzamaz, kutu daralır */
+body.touch #tapes .panel-inner {
+  width: min(var(--tw, 560px), 100%); max-height: calc(100dvh - var(--st) - var(--sb)); grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto;
+  align-items: center; padding: clamp(10px, 3vmin, 16px) clamp(12px, 3.4vmin, 20px);
+}
 body.touch #tapes h2 { grid-column: 1; grid-row: 1; font-size: clamp(20px, 6vmin, 30px); }
-body.touch #btn-tapes-cancel { grid-column: 2; grid-row: 1; justify-self: end; border: 2px solid rgba(244, 244, 244, .6); }
-body.touch .tapes-list {
-  grid-column: 1 / -1; grid-row: 2; align-self: stretch; min-height: 0; overflow: hidden;
-  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); grid-template-rows: repeat(var(--rows, 1), minmax(0, 132px)); align-content: center; gap: clamp(6px, 1.8vmin, 10px);
-}
-/* kart: kaset gövdesi, üstte krem etiket (numara büyük, ad altında en çok iki satır), altta iki makara */
-body.touch .tape-choice {
-  position: relative; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 0;
-  min-height: 44px; height: 100%; padding: clamp(3px, 1vmin, 7px) clamp(4px, 1.2vmin, 8px) clamp(10px, 3.2vmin, 18px); overflow: hidden; text-align: left;
-  background: #171717; border: 2px solid #3a3a3a; border-radius: 6px; color: var(--paper-ink); font-size: clamp(12px, 3.6vmin, 16px); line-height: 1.12;
-}
-body.touch .tape-choice::before, body.touch .tape-choice::after {
-  content: ""; position: absolute; bottom: clamp(2px, .7vmin, 4px); width: clamp(6px, 2vmin, 11px); height: clamp(6px, 2vmin, 11px);
-  border-radius: 50%; border: 2px solid #8a8a8a; background: #0b0b0b;
-}
-body.touch .tape-choice::before { left: 30%; }
-body.touch .tape-choice::after { right: 30%; }
-body.touch .tape-choice > span { display: block; background: #efe6cf; padding: 0 6px; }
-body.touch .tape-key { order: 0; padding-top: 1px !important; border-radius: 3px 3px 0 0; border-top: 3px solid #e8323c; font-family: var(--font-osd); font-size: 1.4em; line-height: 1; color: #2b241b; }
-body.touch .tape-name {
-  order: 1; flex: 1; min-height: 0; padding-bottom: 2px !important; border-radius: 0 0 3px 3px; font-family: var(--font-type); line-height: 1.06; color: #2b241b;
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; overflow-wrap: break-word; hyphens: none;
-}
-body.touch .tape-tag { position: absolute; top: clamp(5px, 1.4vmin, 9px); right: clamp(7px, 2vmin, 12px); background: none !important; padding: 0 !important; font-family: var(--font-osd); font-size: max(11px, .82em); letter-spacing: .06em; color: #7a6a50; }
-body.touch .tape-choice.sel .tape-tag { color: #7a6a50; }
-body.touch .tape-choice.new .tape-tag { color: #e8323c; }
-body.touch .tape-choice.secret { background: #1d0505; border-color: #5a1010; }
-body.touch .tape-choice.secret .tape-key { border-top-color: #111; background: #d9cdb0; }
-body.touch .tape-choice.secret .tape-name { background: #d9cdb0; }
-body.touch .tape-choice.sel, body.touch .tape-choice:focus-visible { border-color: var(--beste-yellow); box-shadow: 0 0 0 2px var(--beste-yellow); background: #20232f; }
-body.touch .tape-choice:active { transform: scale(.97); }
+body.touch #btn-tapes-cancel { grid-column: 2; grid-row: 1; justify-self: end; }
+body.touch .tapes-list { grid-column: 1 / -1; grid-row: 2; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); grid-auto-rows: minmax(44px, auto); gap: 6px; min-height: 0; overflow: hidden; }
+body.touch .tape-choice { min-height: 44px; gap: 8px; padding: 4px 10px; font-size: clamp(13px, 4vmin, 19px); line-height: 1.12; overflow: hidden; }
+body.touch .tape-key { font-size: 1.3em; }
+body.touch .tape-tag { font-size: max(11px, .78em); }
+body.touch .tape-choice.secret .tape-key { color: #ff6060; }
 
 /* şifre tuş takımı: yatay ekranda iki sütun */
 body.touch #keypad .keypad-box {
@@ -475,7 +472,8 @@ body.touch #wordlock-slots { display: none; }
 .wheel button:active { transform: translateY(2px); border-bottom-width: 2px; }
 .wheel-letter { background: #1b1408; color: #ffd23f; font-size: clamp(32px, 10.5vmin, 44px); line-height: clamp(40px, 12.5vmin, 56px); text-align: center; text-shadow: 0 0 10px rgba(255, 210, 63, .5); }
 #wordlock-slots.ok + #wordlock-wheels .wheel-letter { color: #5cff6a; text-shadow: 0 0 10px rgba(92, 255, 106, .7); }
-body.touch .wordlock-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+body.touch .wordlock-row { grid-template-columns: minmax(0, 1fr); }
+body.touch #wordlock-input { display: none; }
 body.touch #wordlock-input { font-size: clamp(18px, 5.4vmin, 22px); letter-spacing: .2em; padding: 4px; min-width: 0; height: 44px; }
 #btn-wordlock-try { font-family: var(--font-osd); font-size: 22px; letter-spacing: .08em; padding: 0 18px; min-height: 44px; color: var(--osd); background: var(--vcr-blue); border: 2px solid var(--osd); border-radius: 4px; cursor: pointer; }
 body.touch #wordlock-help { font-size: clamp(13px, 3.8vmin, 16px); }
@@ -489,10 +487,17 @@ body.touch .title-inner {
 }
 body.touch .title-inner > * { grid-column: 1; }
 body.touch .title-inner > .menu {
-  grid-column: 2; grid-row: 1 / span 7; align-self: center; margin: 0; padding: 6px; gap: 3px; justify-items: stretch;
-  min-width: clamp(200px, 30vw, 280px); background: rgba(4, 6, 30, .8); border: 2px solid rgba(244, 244, 244, .5); box-shadow: 0 0 0 4px rgba(4, 6, 30, .55);
+  grid-column: 2; grid-row: 1 / span 7; align-self: center; margin: 0; padding: 8px 0; gap: 0; justify-items: stretch; width: max-content;
+  background: rgba(13, 22, 119, .62); border: 2px solid rgba(244, 244, 244, .8);
 }
-body.touch .title-inner .menu button { text-align: left; min-height: max(44px, 12vmin); padding: 0 12px; font-size: clamp(20px, 6.2vmin, 27px); }
+/* VCR ekran menüsü: bütün satırlar aynı girintide, ▶ imleç yalnız seçili (odaktaki) satırda */
+body.touch .menu .cur { display: none; }
+body.touch .title-inner .menu button, body.touch #pause .menu button {
+  position: relative; text-align: left; min-height: max(44px, 11.5vmin); padding: 0 24px 0 calc(1.15em + 12px);
+  font-size: clamp(19px, 6vmin, 26px); letter-spacing: .1em; background: transparent;
+}
+body.touch .title-inner .menu button:focus, body.touch #pause .menu button:focus { background: var(--vcr-blue); outline: none; }
+body.touch .title-inner .menu button:focus::before, body.touch #pause .menu button:focus::before { content: "▶"; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); }
 body.touch #title h1 { font-size: clamp(30px, min(6.3vw, 11.5vmin), 64px); }
 body.touch .vhs-label { font-size: clamp(13px, 4vmin, 20px); }
 body.touch .tagline { font-size: clamp(14px, 4.4vmin, 19px); }

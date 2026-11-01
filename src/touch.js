@@ -21,6 +21,13 @@ const ASSIST_DIRS = 6; // ...bu kadar yönde denenir (iki karede bir)
 const SLOW = 0.6; // nişangâh bir nesnenin üstündeyken bakış hızı
 const SLOP = 6; // bakış bu kadar kaydıktan sonra başlar: dokunuşta kamera titremesin
 const LOOK_K = 0.0035; // piksel başına radyan (hassasiyet 1): ekran genişliği ≈ yarım tur
+// oyun içi klavye: Türkçe Q, büyük harf (I ile İ ayrı tuş); son satır BOŞLUK, SİL, GÖNDER (şıklı soruda ŞIKLAR da)
+const OKB_ROWS = [
+  ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+  ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'Ğ', 'Ü'],
+  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ş', 'İ'],
+  ['Z', 'X', 'C', 'V', 'B', 'N', 'M', 'Ö', 'Ç', '.'],
+];
 const FINE = matchMedia('(any-pointer: fine)');
 const PORTRAIT = matchMedia('(orientation: portrait)');
 
@@ -43,6 +50,9 @@ export class Touch {
     this.ndc = new Vector2();
     this.aim = null; // nişan yardımının son bulduğu { id, n }
     this.aimN = 0;
+    this.kbOpen = false; // oyun içi klavye açık mı (soru varken)
+    this.kbText = '';
+    this.buildKeyboard();
     this.bind();
   }
 
@@ -54,6 +64,11 @@ export class Touch {
     this.on = on;
     g.isTouch = on;
     document.body.classList.toggle('touch', on);
+    // dokunmatikte cevap kutusu hiç odak almaz: Android klavyesi açılmasın (oyun içi klavye yazar)
+    const a = $('answer');
+    a.readOnly = on;
+    a.inputMode = on ? 'none' : '';
+    if (on && document.activeElement === a) a.blur();
     this.vis = {};
     if (g.ui) g.ui._hoverIn = undefined; // etiket yeni kipin diliyle yeniden yazılsın
     // çizim oranı kipe bağlı (perf.js)
@@ -368,18 +383,36 @@ export class Touch {
   }
 
   // ------------------------------------------------------------------ Beste'nin sorusu
-  /** Soru açılınca (ui.beginTyping): şıklı sorularda şıklar büyük düğmeler olur */
+  /**
+   * Soru açılınca (ui.beginTyping): şıklı soruda üst şeritte şık düğmeleri ve "⌨ YAZ" (gizli kelimeler de yazılabilsin),
+   * şıksız soruda doğrudan oyun içi klavye açılır. Yazılan metin masaüstündeki kutu gibi director.typed / submit'e gider.
+   */
   ask(inp) {
     const box = $('ask-opts');
     box.textContent = '';
-    for (const o of inp?.options || []) {
+    const opts = inp?.options || [];
+    for (const o of opts) {
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = o;
       b.onclick = () => this.answer(o);
       box.appendChild(b);
     }
+    if (opts.length) {
+      const t = document.createElement('button');
+      t.type = 'button';
+      t.className = 'type';
+      t.textContent = '⌨ YAZ';
+      t.onclick = () => this.openKb(true);
+      box.appendChild(t);
+    }
     $('ask-bar').classList.toggle('evil', !!inp?.evil);
+    $('okb').classList.toggle('evil', !!inp?.evil);
+    $('okb-label').textContent = inp?.label || '>';
+    this.kbOptKey.hidden = !opts.length;
+    this.kbText = '';
+    this.kbSync(false);
+    this.openKb(!opts.length);
   }
 
   answer(text) {
@@ -388,6 +421,76 @@ export class Touch {
     $('answer').value = text;
     d.typed(text);
     d.submit();
+  }
+
+  openKb(on) {
+    this.kbOpen = !!on;
+  }
+
+  buildKeyboard() {
+    const keys = $('okb-keys');
+    const mk = (row, cls) => {
+      const r = document.createElement('div');
+      r.className = 'okb-row' + (cls ? ' ' + cls : '');
+      for (const [k, label, kc] of row) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.dataset.k = k;
+        b.textContent = label;
+        if (kc) b.className = kc;
+        r.appendChild(b);
+      }
+      keys.appendChild(r);
+      return r;
+    };
+    for (const row of OKB_ROWS) mk(row.map((c) => [c, c]));
+    const last = mk([
+      ['OPT', '◀ ŞIKLAR', 'act'],
+      ['SP', 'BOŞLUK', 'wide'],
+      ['BS', '⌫ SİL', 'act'],
+      ['OK', 'GÖNDER', 'act ok'],
+    ]);
+    this.kbOptKey = last.firstChild;
+    keys.addEventListener('click', (e) => {
+      const k = e.target.closest?.('button')?.dataset.k;
+      if (k) this.kbKey(k);
+    });
+    // fiziksel klavye (tablet): harfler oyun içi klavyeye yazar, ENTER main.onKey'de gönderir
+    window.addEventListener(
+      'keydown',
+      (e) => {
+        if (!this.on || !this.g.director?.input || e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key === 'Backspace') this.kbKey('BS');
+        else if (e.key.length === 1) this.kbKey(e.key === ' ' ? 'SP' : e.key.toLocaleUpperCase('tr'));
+        else return;
+        e.preventDefault();
+        e.stopPropagation();
+      },
+      true,
+    );
+  }
+
+  /** Oyun içi klavyenin tuşu */
+  kbKey(k) {
+    const d = this.g.director;
+    if (!d?.input) return;
+    if (k === 'OPT') return this.openKb(false);
+    if (k === 'OK') {
+      d.typed(this.kbText);
+      d.submit();
+      return;
+    }
+    const chars = Array.from(this.kbText);
+    if (k === 'BS') chars.pop();
+    else if (chars.length < (d.input.maxLen || 24)) chars.push(k === 'SP' ? ' ' : k);
+    this.kbText = chars.join('');
+    this.kbSync(true);
+  }
+
+  kbSync(send) {
+    $('okb-text').textContent = this.kbText;
+    $('answer').value = this.kbText;
+    if (send) this.g.director?.typed(this.kbText);
   }
 
   // ------------------------------------------------------------------ her kare
@@ -428,6 +531,12 @@ export class Touch {
     }
     const d = g.director;
     this.flag('asking', live && !!d?.input);
+    const kb = live && !!d?.input && this.kbOpen;
+    this.flag('okb', kb);
+    if (this.vis.okbEl !== kb) {
+      this.vis.okbEl = kb;
+      $('okb').hidden = !kb;
+    }
     if (!live) {
       if (this.joy || this.look || this.rwId != null || this.pressed.size) this.reset();
       return;

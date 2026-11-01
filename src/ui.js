@@ -619,7 +619,7 @@ export class UI {
     const slots = $('wordlock-slots');
     $('wordlock-title').textContent = o.title || 'HARF KİLİDİ';
     const touch = !!this.g.isTouch;
-    $('wordlock-help').textContent = o.help ? this.tt(o.help) : touch ? `Çarkları çevir ya da yaz · DENE` : `${len} harf yaz · ENTER: dene · Esc: kapat`;
+    $('wordlock-help').textContent = o.help ? this.tt(o.help) : touch ? `Çarkları çevir · DENE` : `${len} harf yaz · ENTER: dene · Esc: kapat`;
     input.value = '';
     input.maxLength = len;
     // dokunmatik: her harf için ▲ / ▼ çarkı (ekran klavyesi kutuyu kapatmasın diye kutu kendiliğinden odaklanmaz)
@@ -705,10 +705,10 @@ export class UI {
     box.innerHTML = '';
     const touch = !!this.g.isTouch;
     // dokunmatikte liste kaymaz: kasetler 1-3 sütuna dağılır, numara solda yazdığı için ad "Kaset N — " olmadan
-    const n = list.length;
-    const cols = n <= 3 ? Math.max(1, n) : n <= 6 ? 3 : n <= 8 ? 4 : n <= 10 ? 5 : 4;
+    // dokunmatik: kasetler satır satır, 1-3 sütun; az kasette kutu dar kalır (satırlar uzamaz)
+    const cols = list.length <= 4 ? 1 : list.length <= 8 ? 2 : 3;
     box.style.setProperty('--cols', cols);
-    box.style.setProperty('--rows', Math.max(1, Math.ceil(list.length / cols)));
+    $('tapes').style.setProperty('--tw', [0, '560px', '820px', '980px'][cols]);
     let idx = Math.max(0, list.findIndex((t) => t.n === preferred));
     const buttons = list.map((t, i) => {
       const b = document.createElement('button');

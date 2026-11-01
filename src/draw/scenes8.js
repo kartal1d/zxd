@@ -97,20 +97,26 @@ export function lights(ctx, o = {}) {
 /** Fener objektife dönünce beyaz parlama (bloom). low: ışık hassasiyeti ayarı açıksa çok daha hafif. */
 export function bloom(ctx, x, y, k, low = false) {
   if (k <= 0.001) return;
-  const kk = low ? k * 0.4 : k;
+  // Telefonda TV'ye odaklanınca ekranın çoğu bu tuval: eskiden k > 0.55'te tuval neredeyse düz beyaza
+  // boyanıyordu (göz alıcı, sert geçiş). Artık objektif parlaması gibi: merkez sıcak ve parlak, kenarlar
+  // yalnız ılık bir pusla açılır; tepe değeri sınırlı ve yumuşak (k'nin karesiyle büyür).
+  const kk = (low ? 0.4 : 1) * Math.min(1, k);
+  const e = kk * kk * (3 - 2 * kk);
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  const g = ctx.createRadialGradient(x, y, 0, x, y, 40 + kk * 560);
-  g.addColorStop(0, `rgba(255,250,228,${kk})`);
-  g.addColorStop(0.3, `rgba(255,236,184,${0.65 * kk})`);
-  g.addColorStop(1, 'rgba(255,230,170,0)');
+  const g = ctx.createRadialGradient(x, y, 0, x, y, 40 + kk * 420);
+  g.addColorStop(0, `rgba(255,248,224,${0.85 * e})`);
+  g.addColorStop(0.25, `rgba(255,232,180,${0.45 * e})`);
+  g.addColorStop(1, 'rgba(255,226,170,0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = `rgba(255,246,220,${0.45 * kk})`;
-  ctx.fillRect(0, y - 4 * kk, W, 8 * kk);
+  // yatay mercek çizgisi
+  ctx.fillStyle = `rgba(255,244,214,${0.3 * e})`;
+  ctx.fillRect(0, y - 3 * kk, W, 6 * kk);
   ctx.restore();
-  if (kk > 0.55) {
-    ctx.fillStyle = `rgba(255,252,240,${Math.min(0.9, (kk - 0.55) * 2)})`;
+  // genel pus: düz beyaz değil, en çok %22 ılık ton
+  if (e > 0.3 && !low) {
+    ctx.fillStyle = `rgba(255,240,210,${Math.min(0.22, (e - 0.3) * 0.32)})`;
     ctx.fillRect(0, 0, W, H);
   }
 }

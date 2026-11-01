@@ -362,18 +362,20 @@ body.touch.asking:not(.okb) #ask-bar { display: block; }
 /* ---------- oyun içi klavye: ekranın alt kısmı; üstte televizyon görünür kalır ---------- */
 #okb { display: none; }
 /* alçak ve dar: 3 harf sırası + alt sıra, ortada; ekranın yaklaşık %40'ı */
-body.touch { --kh: clamp(32px, 8vmin, 38px); --kbh: calc(var(--kh) * 4.8 + 18px); }
+body.touch { --kh: clamp(27px, 6.8vmin, 32px); --kbh: calc(var(--kh) * 4.75 + 24px); }
+/* opak panel: arkadaki oda klavyeye karışmaz */
 body.touch.okb #okb {
-  display: grid; position: absolute; left: 50%; transform: translateX(-50%); bottom: var(--sb); gap: 3px;
-  width: min(calc(100% - var(--sl) - var(--sr) - 2 * var(--gap)), calc(var(--kh) * 19));
+  display: grid; position: absolute; left: 50%; transform: translateX(-50%); bottom: var(--sb); gap: 3px; padding: 4px 5px 5px;
+  width: min(calc(100% - var(--sl) - var(--sr) - 2 * var(--gap)), calc(var(--kh) * 17.5));
+  background: #06071c; border: 2px solid rgba(244, 244, 244, .55); border-radius: 6px; box-shadow: 0 0 0 1px #000;
 }
 #okb .okb-row.num { display: none; }
 #okb.num .okb-row.num { display: flex; }
 #okb.num .okb-row.abc { display: none; }
 #okb-line {
-  display: flex; align-items: center; gap: .5em; height: calc(var(--kh) * .9); padding: 0 .7em; overflow: hidden; white-space: nowrap;
+  display: flex; align-items: center; gap: .5em; height: calc(var(--kh) * .78); padding: 0 .6em; overflow: hidden; white-space: nowrap;
   font-family: var(--font-osd); font-size: calc(var(--kh) * .56); letter-spacing: .08em; color: var(--beste-yellow);
-  background: rgba(5, 5, 6, .78); border-bottom: 2px solid rgba(255, 210, 63, .7);
+  background: #000; border-bottom: 2px solid rgba(255, 210, 63, .7);
 }
 #okb-label { color: var(--osd); }
 .okb-cur { animation: pulse 1s steps(1) infinite; margin-left: -.35em; }
@@ -383,12 +385,12 @@ body.touch.okb #okb {
 .okb-row button {
   flex: 1 1 0; min-width: 0; max-width: calc(var(--kh) * 1.5); height: var(--kh); padding: 0; cursor: pointer; touch-action: manipulation;
   font-family: var(--font-osd); font-size: calc(var(--kh) * .52); line-height: 1; color: var(--osd);
-  background: rgba(13, 22, 119, .78); border: 1px solid rgba(244, 244, 244, .45); border-radius: 4px;
+  background: #0d1677; border: 1px solid rgba(244, 244, 244, .45); border-radius: 4px;
 }
 .okb-row button:active { background: var(--vcr-blue); border-color: var(--osd); }
 .okb-row button[hidden] { display: none; }
 .okb-row .wide { flex: 4 1 0; max-width: none; }
-.okb-row .act { flex: 2 1 0; max-width: none; font-size: calc(var(--kh) * .44); background: rgba(5, 5, 6, .82); }
+.okb-row .act { flex: 2 1 0; max-width: none; font-size: calc(var(--kh) * .44); background: #15151c; }
 .okb-row .mode { flex: 1.3 1 0; }
 .okb-row .ok { color: var(--beste-yellow); border-color: var(--beste-yellow); }
 /* klavye açıkken: düğme şeridi, çubuk, bildirimler ve nişangâh çekilir; altyazı üstte, MENÜ'nün solunda */

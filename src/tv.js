@@ -111,6 +111,7 @@ export class TVScreen {
     this.bufSize = 120;
     this.frames = [];
     this.meta = [];
+    this.times = []; // her karenin bant zamanı (geri sarmadan sonra ileri oynatma için)
     this.head = 0;
     this.count = 0;
     this.recT = 0;
@@ -160,8 +161,8 @@ export class TVScreen {
     this.kickFx = { amount, dur: Math.max(dur, 0.01), t: 0 };
   }
 
-  /** Mevcut kareyi geri sarma tamponuna yazar. */
-  record(dt, meta) {
+  /** Mevcut kareyi geri sarma tamponuna yazar. t: kasetin bant zamanı (director.time). */
+  record(dt, meta, t) {
     this.recT += dt;
     if (this.recT < 1 / 12) return;
     this.recT = 0;
@@ -173,6 +174,7 @@ export class TVScreen {
     }
     c.getContext('2d').drawImage(this.canvas, 0, 0, TV_W / 2, TV_H / 2);
     this.meta[this.head] = meta;
+    this.times[this.head] = t;
     this.head = (this.head + 1) % this.bufSize;
     this.count = Math.min(this.count + 1, this.bufSize);
   }
@@ -182,7 +184,7 @@ export class TVScreen {
     if (this.count === 0) return null;
     n = Math.max(0, Math.min(this.count - 1, n));
     const i = (this.head - 1 - n + this.bufSize * 2) % this.bufSize;
-    return { canvas: this.frames[i], meta: this.meta[i] };
+    return { canvas: this.frames[i], meta: this.meta[i], t: this.times[i] };
   }
 
   update(dt, time) {

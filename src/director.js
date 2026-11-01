@@ -15,6 +15,10 @@ const REWIND_WINDOW = 10;
 const LOOK_FF = { jitter: 0.9, tracking: 1.1 };
 const LOOK_RW = { jitter: 1.2, tracking: 1.4, noise: 0.12 };
 const LOOK_PAUSE = { jitter: 0.6 };
+/** Geri sarmadan sonra yeniden oynatma için tutulan ses / altyazı kaydının süresi (bant saniyesi; tampon ~10 sn) */
+const LOG_KEEP = 14;
+/** Kayda girmeyen, oynatıcının kendi efektleri */
+const VCR_SFX = new Set(['rewind', 'ffwd', 'warble', 'click']);
 /** Ses dosyası olmayan replik bu kadar (bant zamanı) ekranda kalır. */
 const SILENT_LINE_SEC = 2.5;
 /** İleri sararken atlanan replik, bu kadar bant saniyesi içinde soru açılırsa yeniden okunur. */
@@ -52,6 +56,31 @@ export class Director {
     this.lines = game.lines;
     this.active = false;
     this.reset();
+    // Geri sarmadan sonra ileri oynatma için kasetin sesleri ve altyazıları bant zamanıyla kaydedilir
+    // (kasetlerin doğrudan çaldığı ters fısıltılar ve yazdığı altyazılar dahil). Odadan gelen sesler kaydedilmez.
+    const pv = this.audio.playVoice.bind(this.audio);
+    this.audio.playVoice = (id, opts = {}) => {
+      const h = pv(id, opts);
+      if (this.logging() && opts.bucket !== 'room') {
+        const e = { t: this.time, id, opts: { ...opts }, speed: h.speed ?? 1, end: null };
+        this.vlog.push(e);
+        h.promise.then(() => {
+          if (e.end == null) e.end = this.time;
+        });
+      }
+      return h;
+    };
+    const ui = game.ui;
+    const sub = ui.subtitle.bind(ui);
+    ui.subtitle = (...a) => {
+      if (this.logging()) this.slog.push({ t: this.time, a });
+      return sub(...a);
+    };
+  }
+
+  /** Kasetin kendi sesi / altyazısı mı (geri sarma, yeniden oynatma ve oynatıcı efektleri kaydedilmez) */
+  logging() {
+    return this.active && !this.rewinding && !this.replay && !this.noLog;
   }
 
   reset() {
@@ -59,6 +88,11 @@ export class Director {
     this.paused = false;
     this.rewinding = false;
     this.rw = null;
+    this.replay = null; // geri sarmadan sonra tampondaki karelerin ileri oynatılması
+    this.vlog = []; // { t, id, opts, speed, end }: kasetin çaldığı sesler
+    this.slog = []; // { t, a }: altyazı çağrıları
+    this.xlog = []; // { t, name, a }: tek seferlik efektler
+    this.noLog = false;
     this.ff = false;
     this.ffStop = null;
     this.aborted = false;
@@ -149,6 +183,8 @@ export class Director {
     this.rw?.stopSfx?.();
     this.rw = null;
     this.rewinding = false;
+    this.stopReplayAudio();
+    this.replay = null;
     this.ffStop?.();
     this.ffStop = null;
     this.ff = false;
@@ -193,6 +229,10 @@ export class Director {
       this.updateRewind(dt);
       return true;
     }
+    if (this.replay) {
+      this.updateReplay(dt);
+      return true;
+    }
     if (!this.paused) {
       if (this.ff) dt *= FF_SPEED;
       this.time += dt;
@@ -206,7 +246,8 @@ export class Director {
     if (this.tv.due === false) return true;
     this.drawFrame();
     // geri sarma tamponuna OSD'siz kare girer (yoksa geri sararken eski "▶ OYNAT"/sayaç yazıları üst üste biner)
-    if (this.recDt) this.tv.record(this.recDt, this.meta);
+    if (this.recDt) this.tv.record(this.recDt, this.meta, this.time);
+    this.pruneLogs();
     this.recDt = 0;
     this.drawOsd();
     return true;
@@ -378,7 +419,7 @@ export class Director {
    */
   rewindAvailable() {
     if (!this.active || this.fakeEnding || this.paused) return false;
-    if (this.allowRewind || this.onRewindHold || this.rewinding) return true;
+    if (this.allowRewind || this.onRewindHold || this.rewinding || this.replay) return true;
     if (this.meta?.rev || this.meta?.secret) return true;
     return this.tagAt != null && this.time - this.tagAt < REWIND_WINDOW;
   }
@@ -437,7 +478,7 @@ export class Director {
     this.ffSkipped = this.ff ? { id, o, at: this.time } : null;
     this.voice = h;
     const cur = (this.sayCur = { id, o, h, sub, tok });
-    if (this.paused || this.rewinding) h.pause();
+    if (this.paused || this.rewinding || this.replay) h.pause();
     try {
       await this.race(h.promise);
     } finally {
@@ -529,7 +570,10 @@ export class Director {
   }
 
   sfx(name, ...a) {
-    return this.audio.sfx(name, ...a);
+    const r = this.audio.sfx(name, ...a);
+    // tek seferlik efektler yeniden oynatma için kaydedilir (döngüler canlı kasette zaten sürüyor)
+    if (typeof r !== 'function' && !VCR_SFX.has(name) && this.logging()) this.xlog.push({ t: this.time, name, a });
+    return r;
   }
 
   /** Ekran shader parametrelerini yumuşakça değiştirir. */
@@ -676,26 +720,38 @@ export class Director {
     if (this.ff) this.stopFF();
     this.paused = !this.paused;
     this.sfx('click');
+    // geri sarmadan sonraki ileri oynatmada duraklatma yalnız oynatıcının: kasetin duraklatma kancaları
+    // (sayım, bulmaca) canlı kasete aittir, onlar çalışmaz
+    const rp = this.replay;
     if (this.paused) {
       this.pausedAt = this.g.clock;
-      this.pauseCount++;
+      if (!rp) this.pauseCount++;
       this.audio.pauseVoices();
       this.audio.music?.pause();
       // cızırtı kaset kapattıysa (ör. sahte bitiş) devam edince de kapalı kalır
       this.hissWas = this.audio.hissOn !== false;
       this.audio.setHiss(false);
-      if (this.meta?.secret) this.g.foundSecret(this.meta.secret.id, this.meta.secret.text);
+      const m = rp ? this.tv.frameAt(rp.n)?.meta : this.meta;
+      if (m?.secret) this.g.foundSecret(m.secret.id, m.secret.text);
     } else {
       this.pausedFor = this.g.clock - this.pausedAt;
-      this.audio.resumeVoices();
-      this.audio.music?.resume();
+      this.resumeTapeAudio();
       this.audio.setHiss(this.hissWas);
-      this.showOsd('▶ OYNAT', 2);
-      this.onResume?.(this.pauseCount);
+      if (!rp) {
+        this.showOsd('▶ OYNAT', 2);
+        this.onResume?.(this.pauseCount);
+      }
     }
     this.vcrLook();
-    this.onPause?.(this.paused);
+    if (!rp) this.onPause?.(this.paused);
     return true;
+  }
+
+  /** Kasetin sesini sürdürür: ileri oynatmadaysa yalnız onun kopyaları (canlı replik oynatma bitene dek bekler) */
+  resumeTapeAudio() {
+    if (this.replay) for (const v of this.replay.voices) v.h.resume();
+    else this.audio.resumeVoices();
+    this.audio.music?.resume();
   }
 
   /** Kaseti kod içinden duraklatır (oyuncu Boşluk'a basmış gibi). */
@@ -740,14 +796,17 @@ export class Director {
       this.ffSkipped = null;
       if (this.paused || this.rewinding) this.voice.pause();
     }
-    if (!this.paused && !this.rewinding) {
-      this.audio.resumeVoices();
-      this.audio.music?.resume();
-    }
+    if (!this.paused && !this.rewinding) this.resumeTapeAudio();
     this.vcrLook();
     this.showOsd('▶ OYNAT', 1.5);
   }
 
+  /**
+   * Geri sarma (sol ok / GERİ SAR basılıyken). Tamponda geriye doğru ilk gizli kareye ya da ters mesaja
+   * gelince onun başında durur, daha geriye gitmez (yoksa tamponun başında). Bırakınca kaset canlı yere
+   * atlamaz: son geri sarılan kareden itibaren tampondaki kareler sesleri ve altyazılarıyla ileri oynatılır,
+   * canlı ana gelince kaset kaldığı yerden sürer (startReplay).
+   */
   startRewind() {
     // ters mesaj çalarken tuş bırakılıp yeniden basılırsa geri sarma mesaj bitince kesilmez
     if (this.rewinding && this.rw) this.rw.release = false;
@@ -755,11 +814,30 @@ export class Director {
     if (!this.active || this.rewinding || this.fakeEnding || this.tv.p.power < 0.05) return;
     if (!this.rewindAvailable()) return;
     if (this.ff) this.stopFF();
+    // ileri oynatma sırasında yeniden geri sarılırsa oynatılan yerden başlar
+    const from = this.replay ? this.replay.n : 0;
+    const tEnd = this.replay ? this.replay.tEnd : this.time;
+    this.stopReplayAudio();
+    this.replay = null;
     this.rewinding = true;
     this.audio.pauseVoices();
     this.audio.music?.pause();
-    this.rw = { n: 0, acc: 0, stick: 0, held: 0, seen: new Set(), stopSfx: this.sfx('rewind'), auto: false, release: false, revPlayed: false, revH: null };
+    this.rw = { n: from, acc: 0, stick: 0, held: 0, seen: new Set(), stopSfx: this.sfx('rewind'), auto: false, release: false, revPlayed: false, revH: null, tEnd, limit: this.rewindLimit(from) };
     this.vcrLook();
+  }
+
+  /** from'dan geriye ilk gizli kare / ters mesaj bölümünün en eski karesi (yoksa tamponun başı) */
+  rewindLimit(from) {
+    const last = Math.max(0, this.tv.count - 1);
+    const key = (m) => (m?.secret ? 's:' + m.secret.id : m?.rev ? 'r:' + m.rev : null);
+    for (let n = from; n <= last; n++) {
+      const k = key(this.tv.frameAt(n)?.meta);
+      if (!k) continue;
+      let e = n;
+      while (e < last && key(this.tv.frameAt(e + 1)?.meta) === k) e++;
+      return e;
+    }
+    return last;
   }
 
   stopRewind(force = false) {
@@ -774,12 +852,11 @@ export class Director {
     if (force && rw.revH && !rw.revH.done) rw.revH.stop();
     this.rw = null;
     this.rewinding = false;
-    if (!this.paused) {
-      this.audio.resumeVoices();
-      this.audio.music?.resume();
-    }
+    // kendi geri sarma mekaniği olan bölümlerde (onRewindHold) ve zorla devamda kaset canlı yerden sürer
+    const replayed = !force && !this.onRewindHold && rw.n > 0 && this.startReplay(rw.n, rw.tEnd);
+    if (!replayed && !this.paused) this.resumeTapeAudio();
     this.vcrLook();
-    this.showOsd('▶ OYNAT', 2);
+    if (!replayed) this.showOsd('▶ OYNAT', 2);
     this.tv.kick(0.6, 0.35);
     if (force) return;
     this.onRewindEnd?.(rw.held);
@@ -791,14 +868,15 @@ export class Director {
     const rw = this.rw;
     if (this.g.input?.rewindHeld !== false) rw.held += dt;
     if (this.onRewindHold?.(rw.held)) return;
-    // tamponun en eski karesinde durur (sayaç da orada kalır)
+    // tamponun en eski karesinde ya da ilk gizli kare / ters mesajın başında durur (sayaç da orada kalır)
     const last = Math.max(0, this.tv.count - 1);
+    const lim = Math.min(rw.limit ?? last, last);
     if (rw.stick > 0) rw.stick -= dt;
     else {
       rw.acc += dt * 18;
       while (rw.acc >= 1) {
         rw.acc -= 1;
-        rw.n = Math.min(rw.n + 1, last);
+        rw.n = Math.min(rw.n + 1, lim);
       }
     }
     const ctx = this.tv.ctx;
@@ -811,17 +889,20 @@ export class Director {
       ctx.drawImage(f.canvas, 0, 0, W, H);
       ctx.restore();
     }
-    const atEnd = !f || rw.n >= last;
-    if (atEnd) S.staticNoise(ctx, this.g.clock, 0.55);
-    // geri sarma bantları
-    for (let i = 0; i < 3; i++) {
-      const y = (((this.g.clock * (180 + i * 70)) % (H + 60)) - 30) | 0;
-      ctx.fillStyle = 'rgba(255,255,255,.18)';
-      ctx.fillRect(0, y, W, 6 + i * 3);
-      ctx.fillStyle = 'rgba(0,0,0,.4)';
-      ctx.fillRect(0, y + 8, W, 3);
-    }
     const meta = f?.meta;
+    const resting = rw.n >= lim;
+    const atEnd = !f || (resting && rw.n >= last && !meta?.secret && !meta?.rev);
+    if (atEnd) S.staticNoise(ctx, this.g.clock, 0.55);
+    // geri sarma bantları (gizli karenin / mesajın başında durunca kare temiz görünür)
+    if (!resting || atEnd) {
+      for (let i = 0; i < 3; i++) {
+        const y = (((this.g.clock * (180 + i * 70)) % (H + 60)) - 30) | 0;
+        ctx.fillStyle = 'rgba(255,255,255,.18)';
+        ctx.fillRect(0, y, W, 6 + i * 3);
+        ctx.fillStyle = 'rgba(0,0,0,.4)';
+        ctx.fillRect(0, y + 8, W, 3);
+      }
+    }
     if (meta?.secret && !rw.seen.has(meta.secret.id)) {
       rw.seen.add(meta.secret.id);
       rw.stick = 1.6;
@@ -832,6 +913,138 @@ export class Director {
     if (meta?.rev && !rw.revPlayed) this.playReversed(rw, meta.rev);
     if (rw.revPlayed && rw.auto) S.realGirl(ctx, this.g.clock, { alpha: 0.55 + Math.sin(this.g.clock * 7) * 0.15 });
     S.osd(ctx, { label: '◀◀ GERİ SAR', counter: this.counter() - rw.n / 12 });
+  }
+
+  // ---------------------------------------------------------------- geri sarmadan sonra ileri oynatma
+  /**
+   * Tampondaki n. kareden canlı ana (tEnd) kadar ileri oynatma: kareler bant zamanlarıyla, o aralıkta çalan
+   * replikler (yarıda kalanlar doğru ofsetten), efektler ve altyazılar kayıttan yeniden çalınır. Kasetin
+   * betiği bu sırada donuk kalır (hiçbir soru, bayrak, korkutma yeniden çalışmaz); sonra kaldığı yerden sürer.
+   */
+  startReplay(n, tEnd = this.time) {
+    const f = this.tv.frameAt(n);
+    if (!f || f.t == null || f.t >= tEnd - 0.04) return false;
+    const t0 = f.t;
+    const rp = (this.replay = { n, t: t0, t0, tEnd, voices: [] });
+    // t0'da süren replikler kaldıkları yerden
+    for (const e of this.vlog) if (e.t <= t0 && (e.end == null || e.end > t0)) this.replayVoice(e, t0 - e.t);
+    // t0 anındaki altyazı
+    let sub = null;
+    for (const e of this.slog) if (e.t <= t0) sub = e;
+    this.noLog = true;
+    try {
+      if (sub) this.g.ui.subtitle(...sub.a);
+      else this.g.ui.subtitle(null);
+    } finally {
+      this.noLog = false;
+    }
+    if (!this.paused) this.audio.music?.resume();
+    else for (const v of rp.voices) v.h.pause();
+    return true;
+  }
+
+  replayVoice(e, off) {
+    const rp = this.replay;
+    this.noLog = true;
+    let h;
+    try {
+      h = this.audio.playVoice(e.id, e.opts);
+    } finally {
+      this.noLog = false;
+    }
+    if (off > 0.02 && h.buf) {
+      h.pause();
+      h.offset = off * (e.speed || 1);
+      h.resume();
+    }
+    if (this.paused) h.pause();
+    rp.voices.push({ e, h });
+  }
+
+  stopReplayAudio() {
+    const rp = this.replay;
+    if (!rp) return;
+    for (const v of rp.voices) v.h.stop();
+    rp.voices = [];
+  }
+
+  updateReplay(dt) {
+    const rp = this.replay;
+    if (!this.paused) {
+      const prev = rp.t;
+      rp.t = Math.min(rp.tEnd, rp.t + dt);
+      for (const e of this.vlog) if (e.t > prev && e.t <= rp.t) this.replayVoice(e, rp.t - e.t);
+      this.noLog = true;
+      try {
+        for (const e of this.slog) if (e.t > prev && e.t <= rp.t) this.g.ui.subtitle(...e.a);
+        for (const e of this.xlog) if (e.t > prev && e.t <= rp.t) this.audio.sfx(e.name, ...e.a);
+      } finally {
+        this.noLog = false;
+      }
+      // canlı kasette erken kesilen replikler kopyada da kesilir
+      for (const v of rp.voices) if (v.e.end != null && v.e.end <= rp.t && !v.h.done) v.h.stop();
+      rp.voices = rp.voices.filter((v) => !v.h.done);
+      while (rp.n > 0) {
+        const nf = this.tv.frameAt(rp.n - 1);
+        if (nf && nf.t != null && nf.t <= rp.t + 1e-6) rp.n--;
+        else break;
+      }
+    }
+    const f = this.tv.frameAt(rp.n);
+    const m = f?.meta;
+    // ileri oynatırken görülen gizli kare de sayılır (zaten bulunduysa ikinci kez verilmez)
+    if (m?.secret) this.g.foundSecret(m.secret.id, m.secret.text);
+    if (rp.t >= rp.tEnd - 1e-6) {
+      this.endReplay();
+      return;
+    }
+    if (this.tv.due === false) return;
+    const ctx = this.tv.ctx;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    if (f) {
+      ctx.save();
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(f.canvas, 0, 0, W, H);
+      ctx.restore();
+    }
+    const counter = this.counter() - (rp.tEnd - rp.t);
+    if (this.paused) S.osd(ctx, { label: '❚❚ DURAKLAT', counter });
+    else if (rp.t - rp.t0 < 1.5) S.osd(ctx, { label: '▶ OYNAT', counter });
+  }
+
+  /** İleri oynatma canlı ana ulaştı: kopyalar susar, kasetin kendi sesi ve altyazısı kaldığı yerden sürer */
+  endReplay() {
+    this.stopReplayAudio();
+    this.replay = null;
+    if (!this.paused) this.resumeTapeAudio();
+    let sub = null;
+    for (const e of this.slog) if (e.t <= this.time) sub = e;
+    this.noLog = true;
+    try {
+      const cur = this.sayCur;
+      if (cur && !cur.h.done) {
+        this.subTok = cur.tok;
+        this.g.ui.subtitle(...cur.sub);
+      } else if (sub) this.g.ui.subtitle(...sub.a);
+      else this.g.ui.subtitle(null);
+    } finally {
+      this.noLog = false;
+    }
+    this.vcrLook();
+  }
+
+  /** Eski kayıtları atar (tampon ~10 sn; sürmekte olan replikler kalır) */
+  pruneLogs() {
+    const lim = this.time - LOG_KEEP;
+    if (this.vlog.length && this.vlog[0].t < lim) this.vlog = this.vlog.filter((e) => e.t >= lim || e.end == null || e.end > lim);
+    if (this.xlog.length && this.xlog[0].t < lim) this.xlog = this.xlog.filter((e) => e.t >= lim);
+    if (this.slog.length > 1 && this.slog[1].t < lim) {
+      // en son altyazı durumu (lim'den önceki son kayıt) kalır
+      let k = 0;
+      while (k + 1 < this.slog.length && this.slog[k + 1].t < lim) k++;
+      this.slog = this.slog.slice(k);
+    }
   }
 
   /** Geri sararken ters kaydedilmiş mesajın düz hâli çalınır; bitene kadar geri sarma sürer. */

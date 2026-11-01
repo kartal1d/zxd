@@ -45,17 +45,12 @@
 
   <form id="ask-bar" autocomplete="off" novalidate>
     <div class="ask-row">
-      <input id="answer" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="24" enterkeyhint="send" lang="tr" placeholder="Cevabını yaz…" aria-label="Cevabın">
+      <input id="answer" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="24" enterkeyhint="send" lang="tr" placeholder="Cevabını yaz…" aria-label="Cevabın">
       <button id="ask-send" class="touch-only" type="submit">GÖNDER</button>
+      <button id="ask-x" class="touch-only" type="button" aria-label="Yazmayı kapat">✕</button>
     </div>
     <div id="ask-opts" class="touch-only"></div>
   </form>
-
-  <!-- dokunmatik: oyun içi klavye (Android klavyesi hiç açılmaz; src/touch.js kurar) -->
-  <div id="okb" class="touch-only" hidden>
-    <div id="okb-line"><span id="okb-label">&gt;</span><span id="okb-text"></span><span class="okb-cur">_</span></div>
-    <div id="okb-keys"></div>
-  </div>
 
   <section id="title" class="screen">
     <div class="title-inner">

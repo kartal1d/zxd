@@ -49,7 +49,7 @@ Kulaklıkla ve karanlıkta oynaman önerilir. Oyun akıcı çalışsın diye her
 | **F** | Televizyona odaklan / geri çekil (kaset oynarken kilitli) |
 | **W A S D**, **Shift**, **Q** | 3. kasetten sonra: yürü, koş, el feneri |
 | **Boşluk** | Kaseti duraklat (Beste fark edebilir) |
-| **◀ Sol ok** (basılı tut) | Kaseti geri sar (yalnızca ekranda "◀ geri sar" yazdığında) |
+| **◀ Sol ok** (basılı tut) | Kaseti geri sar (yalnızca ekranda "◀ geri sar" yazdığında). Gizli kareye / ters mesajın başına gelince durur; bırakınca kaset o kareden itibaren ileri akar |
 | **Esc** | Duraklatma menüsü |
 | **F11** | Tam ekran |
 

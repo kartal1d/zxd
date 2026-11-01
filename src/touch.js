@@ -434,31 +434,43 @@ export class Touch {
 
   buildKeyboard() {
     const keys = $('okb-keys');
+    // düzen: solda 123 / ŞIKLAR, ortada harfler + BOŞLUK, sağda SİL / GÖNDER
+    // (panel ekranın iki ucuna kadar uzanır ama tuşlar kareye yakın kalır)
+    const col = (cls) => {
+      const d = document.createElement('div');
+      d.className = cls;
+      keys.appendChild(d);
+      return d;
+    };
+    const left = col('okb-side');
+    const mid = col('okb-mid');
+    const right = col('okb-side');
+    const btn = (parent, k, label, kc) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.k = k;
+      b.textContent = label;
+      if (kc) b.className = kc;
+      parent.appendChild(b);
+      return b;
+    };
     const mk = (row, cls) => {
       const r = document.createElement('div');
       r.className = 'okb-row' + (cls ? ' ' + cls : '');
-      for (const [k, label, kc] of row) {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.dataset.k = k;
-        b.textContent = label;
-        if (kc) b.className = kc;
-        r.appendChild(b);
-      }
-      keys.appendChild(r);
+      for (const c of row) btn(r, c, c);
+      mid.appendChild(r);
       return r;
     };
-    for (const row of OKB_ROWS) mk(row.map((c) => [c, c]), 'abc');
-    for (const row of OKB_NUM_ROWS) mk(row.map((c) => [c, c]), 'num');
-    const last = mk([
-      ['NUM', '123', 'act mode'],
-      ['OPT', '◀ ŞIKLAR', 'act'],
-      ['SP', 'BOŞLUK', 'wide'],
-      ['BS', '⌫ SİL', 'act'],
-      ['OK', 'GÖNDER', 'act ok'],
-    ]);
-    this.kbOptKey = last.children[1];
-    this.kbModeKey = last.firstChild;
+    for (const row of OKB_ROWS) mk(row, 'abc');
+    for (const row of OKB_NUM_ROWS) mk(row, 'num');
+    const sp = document.createElement('div');
+    sp.className = 'okb-row';
+    btn(sp, 'SP', 'BOŞLUK', 'wide');
+    mid.appendChild(sp);
+    this.kbModeKey = btn(left, 'NUM', '123', 'act mode');
+    this.kbOptKey = btn(left, 'OPT', '◀ ŞIKLAR', 'act');
+    btn(right, 'BS', '⌫ SİL', 'act');
+    btn(right, 'OK', 'GÖNDER', 'act ok');
     keys.addEventListener('click', (e) => {
       const k = e.target.closest?.('button')?.dataset.k;
       if (k) this.kbKey(k);

@@ -661,7 +661,9 @@ export class Director {
 
   submit() {
     const inp = this.input;
-    if (!inp) return;
+    if (!inp || this.rewinding) return;
+    // geri sarmadan sonraki ileri oynatmada cevap verilirse oynatma biter, kaset canlı yerden sürer
+    if (this.replay) this.endReplay();
     const text = inp.text.trim();
     if (!text) {
       this.sfx('beep', false);
